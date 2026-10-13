@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Open Ephys</Authors>
+    <Copyright>Copyright © Open Ephys</Copyright>
+    <PackageProjectUrl></PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile></PackageLicenseFile>
+    <PackageIcon></PackageIcon>
+  </PropertyGroup>
+</Project>
