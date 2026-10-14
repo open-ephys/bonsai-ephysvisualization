@@ -2,9 +2,9 @@
   <PropertyGroup>
     <Authors>Open Ephys</Authors>
     <Copyright>Copyright © Open Ephys</Copyright>
-    <PackageProjectUrl></PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/open-ephys/bonsai-ephysvisualization</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile></PackageLicenseFile>
-    <PackageIcon></PackageIcon>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 </Project>

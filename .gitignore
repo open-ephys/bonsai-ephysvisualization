@@ -3,3 +3,7 @@
 .bonsai/Settings/
 .vs/
 artifacts/
+
+*.user
+*.suo
+*.layout

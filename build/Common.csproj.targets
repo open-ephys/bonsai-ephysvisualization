@@ -5,7 +5,7 @@
 <Project>
   <ItemGroup>
     <None Include="$(PackageIconSourcePath)" Condition="'$(PackageIcon)' != ''" Pack="true" PackagePath="$(PackageIcon)" Visible="false" />
-    <None Include="$(PackageLicenseSourcePath)" Condition="'$(PackageLicenseFile)' != ''" Pack="true" PackagePath="$(PackageLicenseFile)" Visible="false" />
+    <None Include="$(PackageLicenseSourcePath)" Condition="'$(PackageLicenseFile)' != ''" Pack="true" PackagePath="" Visible="false" />
     <None Include="$(PackageReadmeSourcePath)" Condition="'$(PackageReadmeFile)' != ''" Pack="true" PackagePath="$(PackageReadmeFile)" Visible="false" />
   </ItemGroup>
 
