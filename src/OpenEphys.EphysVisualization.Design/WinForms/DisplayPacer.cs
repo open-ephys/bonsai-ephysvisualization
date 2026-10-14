@@ -20,7 +20,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
     /// priority <c>WM_TIMER</c> that delivers data.
     /// </para>
     /// </remarks>
-    internal sealed class WindowsDisplayPacer : IDisposable
+    internal sealed class DisplayPacer : IDisposable
     {
         // NB: DwmFlush returns at once when the compositor has nothing to present, as while a paint is still
         // pending, and without this the thread would spin.
@@ -38,10 +38,10 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         volatile int refreshRate = DefaultRefreshRate;
         int pending;
 
-        public WindowsDisplayPacer(IntPtr window)
+        public DisplayPacer(IntPtr window)
         {
             this.window = window;
-            thread = new Thread(Run) { IsBackground = true, Name = nameof(WindowsDisplayPacer) };
+            thread = new Thread(Run) { IsBackground = true, Name = nameof(DisplayPacer) };
             thread.Start();
         }
 

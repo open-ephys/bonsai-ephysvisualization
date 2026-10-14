@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace OpenEphys.EphysVisualization.Design.WinForms
 {
-    internal class WinFormsImGuiControl : GLControl, IGLContext
+    internal class ImGuiGLControl : GLControl, IGLContext
     {
         static readonly object RenderEvent = new();
 #if DEBUG
@@ -24,7 +24,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         bool initialized;
         int renderDepth;
 
-        public WinFormsImGuiControl()
+        public ImGuiGLControl()
         {
             GraphicsContext.ShareContexts = false;
             Size = new Size(640, 480);
@@ -89,7 +89,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                     MakeCurrent();
 
                     // NB: the Win32 and OpenGL3 backends share one current-context global inside
-                    // ImGuiImpl.dll, and WndProc on any WinFormsImGuiControl repoints it. A message for another
+                    // ImGuiImpl.dll, and WndProc on any ImGuiGLControl repoints it. A message for another
                     // control dispatched mid-frame leaves it pointing at that control's context, so it is
                     // re-asserted immediately before each backend call rather than once per frame.
                     ImGuiImplOpenGL3.SetCurrentContext(imGuiCtx);

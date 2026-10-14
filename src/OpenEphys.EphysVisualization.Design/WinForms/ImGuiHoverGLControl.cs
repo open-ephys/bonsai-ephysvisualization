@@ -8,14 +8,14 @@ using System.Windows.Forms;
 namespace OpenEphys.EphysVisualization.Design.WinForms
 {
     /// <summary>
-    /// A <see cref="WinFormsImGuiControl"/> that answers the pointer whichever window is active.
+    /// An <see cref="ImGuiGLControl"/> that answers the pointer whichever window is active.
     /// </summary>
     /// <remarks>
     /// A plot of live data has to answer the user the moment they act on it, whichever window was
     /// active, so the plot under the pointer answers a click, a wheel, or one of its hover keys,
     /// taking focus as it does.
     /// </remarks>
-    internal class WinFormsImGuiHoverControl : WinFormsImGuiControl
+    internal class ImGuiHoverGLControl : ImGuiGLControl
     {
         const int WM_KEYDOWN = 0x0100;
         const int WM_MOUSEWHEEL = 0x020A;
@@ -28,7 +28,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         /// Keys that reach this control while the pointer is over it even when another window has the
         /// keyboard. Any other key goes wherever the keyboard already is.
         /// </param>
-        public WinFormsImGuiHoverControl(IEnumerable<ImGuiKey> hoverKeys) => this.hoverKeys = new(hoverKeys);
+        public ImGuiHoverGLControl(IEnumerable<ImGuiKey> hoverKeys) => this.hoverKeys = new(hoverKeys);
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -80,8 +80,8 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
 
                 var key = ToImGuiKey((Keys)(int)m.WParam);
                 var handle = WindowFromPoint(Cursor.Position);
-                var under = Control.FromHandle(handle) as WinFormsImGuiHoverControl;
-                var focused = Control.FromHandle(m.HWnd) as WinFormsImGuiHoverControl;
+                var under = Control.FromHandle(handle) as ImGuiHoverGLControl;
+                var focused = Control.FromHandle(m.HWnd) as ImGuiHoverGLControl;
 
                 if (under is not null && under != focused && under.hoverKeys.Contains(key))
                 {
