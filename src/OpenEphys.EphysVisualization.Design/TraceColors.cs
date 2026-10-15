@@ -21,7 +21,7 @@ namespace OpenEphys.EphysVisualization.Design
     }
 
     /// <summary>
-    /// The colors channels are drawn in: a palette, and whether consecutive channels share a color in groups.
+    /// The colors channels are drawn in: a palette, and the group each channel takes its color from.
     /// </summary>
     internal sealed class TraceColors
     {
@@ -29,25 +29,20 @@ namespace OpenEphys.EphysVisualization.Design
 
         readonly WaveformScope settings;
 
-        int grouping = 1;
         uint[] packed = Array.Empty<uint>();
 
         /// <param name="settings">The node whose palette and custom color are read and written.</param>
         public TraceColors(WaveformScope settings) => this.settings = settings;
 
         /// <summary>
-        /// Whether consecutive channels are colored in groups rather than all alike.
+        /// The group a channel takes its color from, which channels sharing a color share. Each channel is its
+        /// own group unless the owner says otherwise.
         /// </summary>
-        public bool GroupingEnabled { get; set; }
-
-        /// <summary>
-        /// Number of consecutive channels sharing a color when <see cref="GroupingEnabled"/>.
-        /// </summary>
-        public int Grouping
-        {
-            get => grouping;
-            set => grouping = Math.Max(1, value);
-        }
+        /// <remarks>
+        /// Read for every channel every frame, so an assignment that reads its owner's settings live never has to
+        /// be told they changed.
+        /// </remarks>
+        public Func<int, int> GroupOf { get; set; } = channel => channel;
 
         /// <summary>
         /// Palette the colors are drawn from.
@@ -79,20 +74,18 @@ namespace OpenEphys.EphysVisualization.Design
         /// <remarks>
         /// Read by the trace, its outline and its label's highlight alike, so they always agree.
         /// </remarks>
-        public Vector4 Of(int channel) => Group(GroupingEnabled
-            ? channel / grouping
-            : Palette == ColorPalette.OpenEphysGui ? channel : 0);
+        public Vector4 Of(int channel) => Group(GroupOf(channel));
 
         /// <summary>
-        /// The colors of the first <paramref name="channels"/> channels, packed as RGBA, for drawing in bulk. The
+        /// The colors of the first <paramref name="count"/> channels, packed as RGBA, for drawing in bulk. The
         /// array is reused from call to call.
         /// </summary>
-        public uint[] Packed(int channels)
+        public uint[] Packed(int count)
         {
-            if (packed.Length != channels)
-                packed = new uint[channels];
+            if (packed.Length != count)
+                packed = new uint[count];
 
-            for (int i = 0; i < channels; i++)
+            for (int i = 0; i < count; i++)
             {
                 var c = Of(i);
                 packed[i] = (uint)(c.X * 255) | (uint)(c.Y * 255) << 8 | (uint)(c.Z * 255) << 16 | 0xFFu << 24;

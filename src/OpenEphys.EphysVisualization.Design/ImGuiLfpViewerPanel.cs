@@ -298,7 +298,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public double RangeAmplitude
         {
-            get => Math.Max(1, settings.RangeAmplitude);
+            get => Math.Max(MinRange, settings.RangeAmplitude);
             set => settings.RangeAmplitude = value;
         }
 

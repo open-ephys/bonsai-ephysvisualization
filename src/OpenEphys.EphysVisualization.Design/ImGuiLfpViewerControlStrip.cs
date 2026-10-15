@@ -68,12 +68,17 @@ namespace OpenEphys.EphysVisualization.Design
         /// Number of columns holding parameters. The strip adds the flexible gap and the pause button
         /// after them itself.
         /// </summary>
-        private protected virtual int ParameterColumns => 6;
+        private protected virtual int ParameterColumns => 5;
 
         /// <summary>
         /// Columns drawn ahead of the standard ones.
         /// </summary>
         private protected virtual void LeadingColumns(ImGuiLfpViewerPanel panel) { }
+
+        /// <summary>
+        /// Columns drawn after the standard ones.
+        /// </summary>
+        private protected virtual void TrailingColumns(ImGuiLfpViewerPanel panel) { }
 
         /// <summary>
         /// Whether the controls are folded away, leaving only the toggle that brings them back.
@@ -214,24 +219,6 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGuiControls.Tooltip("The color the custom palette is made from. Click to choose another.");
             }
 
-            var groupWidth = MenuColumn("Color Groups");
-            var enabled = panel.Colors.GroupingEnabled;
-            if (ImGui.Checkbox("##colorGroupingEnabled", ref enabled))
-                panel.Colors.GroupingEnabled = enabled;
-            ImGuiControls.Tooltip("Color neighboring channels alike, in groups of the size beside it, to tell groups " +
-                "of channels apart.");
-
-            ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-            ImGui.BeginDisabled(!enabled);
-            var grouping = panel.Colors.Grouping;
-            ImGui.SetNextItemWidth(
-                groupWidth - ImGui.GetFrameHeight() - ImGui.GetStyle().ItemInnerSpacing.X);
-            if (ImGui.InputInt("##colorGrouping", ref grouping, 1))
-                panel.Colors.Grouping = grouping;
-            ImGuiControls.Tooltip("How many neighboring channels share a color.",
-                "Check the box beside it to color channels in groups.");
-            ImGui.EndDisabled();
-
             // NB: two lines of checkboxes in the height of a label and a control, so their frames are made shorter.
             var spacing = ImGui.GetStyle().ItemSpacing.Y;
             var line = (rowPitch - RowGap - spacing) / 2;
@@ -262,6 +249,8 @@ namespace OpenEphys.EphysVisualization.Design
             ImGuiControls.Tooltip("Warn when a channel's signal reaches the limit of the amplifier's range, by " +
                 "flashing CLIPPING in the plot and the channel's label. Hidden channels do not warn.");
             ImGui.PopStyleVar();
+
+            TrailingColumns(panel);
 
             var style = ImGui.GetStyle();
             var pauseHeight = rowPitch - RowGap;
@@ -314,8 +303,7 @@ namespace OpenEphys.EphysVisualization.Design
             var width = MenuColumn(string.IsNullOrEmpty(panel.Unit) ? "Color" : $"Color ({panel.Unit})");
             var corner = ImGui.GetCursorScreenPos();
             var style = ImGui.GetStyle();
-            var widest = panel.StandardRanges[panel.StandardRanges.Count - 1].ToString();
-            var rangeWidth = ImGui.CalcTextSize(widest).X + 2 * style.FramePadding.X + ImGui.GetFrameHeight();
+            var rangeWidth = ImGui.CalcTextSize(WidestRange).X + 2 * style.FramePadding.X + ImGui.GetFrameHeight();
             var barWidth = width - rangeWidth - style.ItemInnerSpacing.X;
 
             var threshold = (float)panel.ColorThreshold;
@@ -333,6 +321,11 @@ namespace OpenEphys.EphysVisualization.Design
                 "Amplitude at which the colors are brightest. A smaller range brings out smaller signals.\n" + RangeKeys))
                 panel.RangeAmplitude = range;
         }
+
+        // NB: fixed rather than measured off the presets, which move with the range and would make the bar jump. %g
+        // prints any range of the sequence in seven characters or fewer, turning to an exponent below 1e-4 and from
+        // 1e6.
+        const string WidestRange = "0.00025";
 
         const string RangeKeys = "Keys: Alt+W smaller, Alt+S larger\nOn the plot: Alt+Wheel, or Alt+Drag up and down";
 

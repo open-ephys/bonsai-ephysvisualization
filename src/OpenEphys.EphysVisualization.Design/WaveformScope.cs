@@ -25,18 +25,6 @@ namespace OpenEphys.EphysVisualization.Design
     public abstract class WaveformScope : SingleArgumentExpressionBuilder
     {
         /// <summary>
-        /// Gets or sets the number of seconds of data retained behind the display.
-        /// </summary>
-        /// <remarks>
-        /// While the display is paused, the view can be moved back through this much of what has already been
-        /// shown and redrawn at any timebase.
-        /// </remarks>
-        [DefaultValue(10.0)]
-        [Description("The number of seconds of data retained behind the display, which a paused view can " +
-            "be moved back through. Longer histories cost proportionally more memory.")]
-        public double HistorySeconds { get; set; } = 10;
-
-        /// <summary>
         /// Gets or sets the number of seconds the display spans.
         /// </summary>
         [DefaultValue(2.5)]

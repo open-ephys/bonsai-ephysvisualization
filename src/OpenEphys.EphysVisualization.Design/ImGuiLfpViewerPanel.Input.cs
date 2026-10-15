@@ -447,19 +447,11 @@ namespace OpenEphys.EphysVisualization.Design
 
         void StepRange(int direction)
         {
-            var i = Array.BinarySearch(standardRanges, RangeAmplitude);
-            if (i < 0)
-            {
-                i = ~i;
-                if (direction < 0)
-                    i--;
-            }
-            else
-            {
+            var (i, exact) = RangeIndex(RangeAmplitude);
+            if (exact || direction > 0)
                 i += direction;
-            }
 
-            RangeAmplitude = standardRanges[Math.Max(0, Math.Min(standardRanges.Length - 1, i))];
+            RangeAmplitude = RangeAt(Math.Max(RangeIndex(MinRange).Index, i));
         }
 
         static float ChannelStep(in RowLayout layout)

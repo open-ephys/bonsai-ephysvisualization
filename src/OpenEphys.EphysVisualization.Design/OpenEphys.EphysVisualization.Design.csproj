@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Bonsai.Core" Version="2.9.1" />
+    <PackageReference Include="Bonsai.Design" Version="2.9.1" />
     <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" GeneratePathProperty="true" />
     <PackageReference Include="Hexa.NET.ImGui.Backends" Version="1.0.18" GeneratePathProperty="true" />
     <PackageReference Include="Hexa.NET.Utilities" Version="2.2.9" />
