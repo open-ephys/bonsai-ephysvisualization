@@ -525,6 +525,9 @@ namespace OpenEphys.EphysVisualization.Design
         // since Q and E may have stepped away from it. Not at all if it is in view there already.
         void Collapse()
         {
+            if (SingleChannel)
+                return;
+
             var height = ChannelHeight;
             var rowTop = expandedChannel * height;
             if (rowTop < collapsedScroll)

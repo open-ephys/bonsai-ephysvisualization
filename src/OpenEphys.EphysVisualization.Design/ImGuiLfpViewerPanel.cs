@@ -90,9 +90,19 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public bool ShowHeatmap
         {
-            get => settings.ShowHeatmap;
-            set => settings.ShowHeatmap = value;
+            get => !SingleChannel && settings.ShowHeatmap;
+            set
+            {
+                if (!SingleChannel)
+                    settings.ShowHeatmap = value;
+            }
         }
+
+        /// <summary>
+        /// Whether there is only one channel, which is always shown expanded, so that nothing that arranges a stack
+        /// of channels applies.
+        /// </summary>
+        public bool SingleChannel => channels == 1;
 
         /// <summary>
         /// Whether clipping channels are marked and CLIPPING shown.
@@ -130,7 +140,11 @@ namespace OpenEphys.EphysVisualization.Design
         public bool FitChannels
         {
             get => settings.FitChannels;
-            set => settings.FitChannels = value;
+            set
+            {
+                if (!SingleChannel)
+                    settings.FitChannels = value;
+            }
         }
 
         /// <summary>
@@ -406,6 +420,13 @@ namespace OpenEphys.EphysVisualization.Design
 
                 if (channels != rows)
                 {
+                    // NB: set outright rather than through Expand and Collapse, which move the scroll, and this can
+                    // run outside a frame, from the owner's drain timer.
+                    if (rows == 1)
+                        expandedChannel = 0;
+                    else if (channels == 1)
+                        expandedChannel = -1;
+
                     channels = rows;
                     lastClip = new double[rows];
                     ClearClipping();

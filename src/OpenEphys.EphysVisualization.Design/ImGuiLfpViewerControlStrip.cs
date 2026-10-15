@@ -169,7 +169,8 @@ namespace OpenEphys.EphysVisualization.Design
             var previousHeight = panel.ChannelHeight;
             var channelHeight = previousHeight;
             const float Step = ImGuiLfpViewerPanel.ChannelHeightStep;
-            ImGui.BeginDisabled(panel.FitChannels);
+            var single = panel.SingleChannel;
+            ImGui.BeginDisabled(panel.FitChannels || single);
             if (ImGui.InputFloat("##channelHeight", ref channelHeight, Step, Step,
                 channelHeight % 1 == 0 ? "%.0f" : "%.1f"))
             {
@@ -183,13 +184,16 @@ namespace OpenEphys.EphysVisualization.Design
             ImGuiControls.Tooltip("Height of each channel's row, in pixels.\n" +
                 "Keys: Ctrl+W taller, Ctrl+S shorter\n" +
                 "On the plot: Ctrl+Wheel, or Ctrl+Drag up and down while paused",
-                "Turn Fit off to set the height yourself.");
+                single ? SingleChannelHint : "Turn Fit off to set the height yourself.");
             ImGui.EndDisabled();
             ImGui.SameLine(0, inner);
+            ImGui.BeginDisabled(single);
             var fit = panel.FitChannels;
             if (ImGui.Checkbox(FitLabel + "##fitChannels", ref fit))
                 panel.FitChannels = fit;
-            ImGuiControls.Tooltip("Fit every channel into the plot's height, so that none is out of view.\nKey: F");
+            ImGuiControls.Tooltip("Fit every channel into the plot's height, so that none is out of view.\nKey: F",
+                SingleChannelHint);
+            ImGui.EndDisabled();
 
             if (panel.ShowHeatmap)
                 ColorColumn(panel);
@@ -228,12 +232,14 @@ namespace OpenEphys.EphysVisualization.Design
                 new Vector2(padding.X, Math.Max(0, (line - ImGui.GetFontSize()) / 2)));
 
             ImGui.SetCursorScreenPos(slot);
+            ImGui.BeginDisabled(panel.SingleChannel);
             var showHeatmap = panel.ShowHeatmap;
             if (ImGui.Checkbox("Heatmap", ref showHeatmap))
                 panel.ShowHeatmap = showHeatmap;
             ImGuiControls.Tooltip("Show each channel as a row of color, brighter for larger signals, instead of as a " +
                 "trace, so that patterns of activity across neighboring channels stand out. Double-click a row to read " +
-                "it as a trace.\nKey: H");
+                "it as a trace.\nKey: H", SingleChannelHint);
+            ImGui.EndDisabled();
 
             ImGui.SameLine();
             var showCursors = panel.ShowCursors;
@@ -328,6 +334,8 @@ namespace OpenEphys.EphysVisualization.Design
         const string WidestRange = "0.00025";
 
         const string RangeKeys = "Keys: Alt+W smaller, Alt+S larger\nOn the plot: Alt+Wheel, or Alt+Drag up and down";
+
+        const string SingleChannelHint = "There is only one channel, which is always shown expanded.";
 
         const string RecordTooltip = "How much recent signal is kept for scrolling back through while paused.";
 
