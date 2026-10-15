@@ -1,15 +1,39 @@
 ﻿using System;
-using System.Text;
 using Hexa.NET.ImGui;
 
 namespace OpenEphys.EphysVisualization.Design
 {
     /// <summary>
-    /// Small ImGui rendering helpers shared across dialogs and panels: tooltips, fixed-size text
-    /// buffer marshaling, and label/value row layout.
+    /// Specifies the button a user chose in a modal drawn by <see cref="ImGuiWidgets.ConfirmModal"/>.
     /// </summary>
-    internal static class ImGuiControls
+    public enum ModalChoice
     {
+        /// <summary>
+        /// Neither button has been chosen, or the modal is not open.
+        /// </summary>
+        Pending,
+
+        /// <summary>
+        /// The accept button was chosen.
+        /// </summary>
+        Accepted,
+
+        /// <summary>
+        /// The decline button was chosen.
+        /// </summary>
+        Declined,
+    }
+
+    /// <summary>
+    /// Provides customized ImGui widgets shared by Open Ephys interfaces.
+    /// </summary>
+    public static class ImGuiWidgets
+    {
+        /// <summary>
+        /// Draws a label and its value on one line, the label dimmed.
+        /// </summary>
+        /// <param name="label">The label, drawn followed by a colon.</param>
+        /// <param name="value">The value.</param>
         public static void InfoRow(string label, string value)
         {
             ImGui.TextDisabled(label + ":");
@@ -21,6 +45,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// Writes <paramref name="text"/> one character per line, each centered on the region's width, so
         /// that a label fits a column too narrow to hold it across.
         /// </summary>
+        /// <param name="text">The label to write.</param>
         public static void StackedLabel(string text)
         {
             var width = ImGui.GetContentRegionAvail().X;
@@ -41,6 +66,18 @@ namespace OpenEphys.EphysVisualization.Design
         static uint lastDeactivatedItemId;
         static double lastDeactivatedTime = -1.0;
 
+        /// <summary>
+        /// Shows a tooltip for the last item drawn once the pointer has rested on it, including when it is
+        /// disabled. Call immediately after the item.
+        /// </summary>
+        /// <remarks>
+        /// The tooltip is not shown while the item is being used, and waits out the hover delay again after
+        /// each use rather than appearing the moment the item is released.
+        /// </remarks>
+        /// <param name="text">The tooltip.</param>
+        /// <param name="disabledHint">
+        /// A line added to the tooltip while the item is disabled, saying why, or null for none.
+        /// </param>
         public static void Tooltip(string text, string? disabledHint = null)
         {
             if (ImGui.IsItemDeactivated())
@@ -62,29 +99,16 @@ namespace OpenEphys.EphysVisualization.Design
             ImGui.SetTooltip(disabled && disabledHint != null ? $"{text}\n{disabledHint}" : text);
         }
 
-        public static void WriteString(byte[] buf, string value)
-        {
-            Array.Clear(buf, 0, buf.Length);
-            if (!string.IsNullOrEmpty(value))
-            {
-                var bytes = Encoding.UTF8.GetBytes(value);
-                Array.Copy(bytes, buf, Math.Min(bytes.Length, buf.Length - 1));
-            }
-        }
-
-        public static string ReadBuffer(byte[] buf)
-        {
-            int len = Array.IndexOf(buf, (byte)0);
-            return Encoding.UTF8.GetString(buf, 0, len < 0 ? buf.Length : len);
-        }
-
-        public enum ModalChoice { Pending, Accepted, Declined }
-
         /// <summary>
         /// Draws the modal popup identified by <paramref name="id"/> if it's currently open (via
         /// <see cref="ImGui.OpenPopup(string)"/>), showing <paramref name="message"/> above an accept/decline
         /// button pair. Call every frame regardless of whether the popup is open; it draws nothing otherwise.
         /// </summary>
+        /// <param name="id">The popup's ImGui identifier, as passed to <see cref="ImGui.OpenPopup(string)"/>.</param>
+        /// <param name="message">The message shown above the buttons.</param>
+        /// <param name="acceptLabel">The accept button's label.</param>
+        /// <param name="declineLabel">The decline button's label.</param>
+        /// <returns>The button chosen this frame, or <see cref="ModalChoice.Pending"/>.</returns>
         public static ModalChoice ConfirmModal(string id, string message, string acceptLabel = "Continue", string declineLabel = "Cancel")
         {
             var choice = ModalChoice.Pending;

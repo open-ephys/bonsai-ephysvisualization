@@ -20,7 +20,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Color of the cursors and of everything marking what they read.
         /// </summary>
-        public const uint Color = ImGuiPalette.White;
+        public static readonly uint Color = ImGuiPalette.White;
 
         const int MaxCursors = 4;
         const float LineWeight = 1;
@@ -430,7 +430,7 @@ namespace OpenEphys.EphysVisualization.Design
                         }
                         if (ImGui.SmallButton($"C{i}"))
                             center = positions[i];
-                        ImGuiControls.Tooltip("Center the view on this cursor.", "While paused.");
+                        ImGuiWidgets.Tooltip("Center the view on this cursor.", "While paused.");
                         if (!measured)
                             ImGui.PopStyleColor(2);
                         ImGui.EndDisabled();
@@ -453,7 +453,7 @@ namespace OpenEphys.EphysVisualization.Design
                         if (measured && ImGui.SmallButton($"x##remove{i}"))
                             remove = i;
                         if (measured)
-                            ImGuiControls.Tooltip("Remove this cursor.");
+                            ImGuiWidgets.Tooltip("Remove this cursor.");
                     }
 
                     ImGui.EndTable();
@@ -469,13 +469,13 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.BeginDisabled(positions.Count >= MaxCursors);
                 if (ImGui.SmallButton("+ Add cursor"))
                     positions.Add(frame.Axis.Snap(window.Start + window.Span / 2));
-                ImGuiControls.Tooltip("Add a cursor in the middle of the view.", "Four cursors at most.");
+                ImGuiWidgets.Tooltip("Add a cursor in the middle of the view.", "Four cursors at most.");
                 ImGui.EndDisabled();
 
                 ImGui.SameLine();
                 if (ImGui.SmallButton("Home"))
                     Home(frame.Axis);
-                ImGuiControls.Tooltip("Bring the cursors back into view, keeping their spacing.");
+                ImGuiWidgets.Tooltip("Bring the cursors back into view, keeping their spacing.");
             }
 
             ImGui.EndChild();

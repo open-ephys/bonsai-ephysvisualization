@@ -181,7 +181,7 @@ namespace OpenEphys.EphysVisualization.Design
                     channelHeight = ImGuiLfpViewerPanel.StepChannelHeight(previousHeight, -1);
                 panel.ChannelHeight = channelHeight;
             }
-            ImGuiControls.Tooltip("Height of each channel's row, in pixels.\n" +
+            ImGuiWidgets.Tooltip("Height of each channel's row, in pixels.\n" +
                 "Keys: Ctrl+W taller, Ctrl+S shorter\n" +
                 "On the plot: Ctrl+Wheel, or Ctrl+Drag up and down while paused",
                 single ? SingleChannelHint : "Turn Fit off to set the height yourself.");
@@ -191,7 +191,7 @@ namespace OpenEphys.EphysVisualization.Design
             var fit = panel.FitChannels;
             if (ImGui.Checkbox(FitLabel + "##fitChannels", ref fit))
                 panel.FitChannels = fit;
-            ImGuiControls.Tooltip("Fit every channel into the plot's height, so that none is out of view.\nKey: F",
+            ImGuiWidgets.Tooltip("Fit every channel into the plot's height, so that none is out of view.\nKey: F",
                 SingleChannelHint);
             ImGui.EndDisabled();
 
@@ -220,7 +220,7 @@ namespace OpenEphys.EphysVisualization.Design
                 if (ImGui.ColorEdit3("##customColor", ref customColor,
                     ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoTooltip))
                     panel.Colors.CustomColor = customColor;
-                ImGuiControls.Tooltip("The color the custom palette is made from. Click to choose another.");
+                ImGuiWidgets.Tooltip("The color the custom palette is made from. Click to choose another.");
             }
 
             // NB: two lines of checkboxes in the height of a label and a control, so their frames are made shorter.
@@ -236,7 +236,7 @@ namespace OpenEphys.EphysVisualization.Design
             var showHeatmap = panel.ShowHeatmap;
             if (ImGui.Checkbox("Heatmap", ref showHeatmap))
                 panel.ShowHeatmap = showHeatmap;
-            ImGuiControls.Tooltip("Show each channel as a row of color, brighter for larger signals, instead of as a " +
+            ImGuiWidgets.Tooltip("Show each channel as a row of color, brighter for larger signals, instead of as a " +
                 "trace, so that patterns of activity across neighboring channels stand out. Double-click a row to read " +
                 "it as a trace.\nKey: H", SingleChannelHint);
             ImGui.EndDisabled();
@@ -245,14 +245,14 @@ namespace OpenEphys.EphysVisualization.Design
             var showCursors = panel.ShowCursors;
             if (ImGui.Checkbox("Cursors", ref showCursors))
                 panel.ShowCursors = showCursors;
-            ImGuiControls.Tooltip("Show cursors for measuring time and amplitude on the selected channel, with a table " +
+            ImGuiWidgets.Tooltip("Show cursors for measuring time and amplitude on the selected channel, with a table " +
                 "of their readings. Click a channel's label or trace to choose the channel they read.\nKey: C");
 
             ImGui.SetCursorScreenPos(new Vector2(slot.X, slot.Y + line + spacing));
             var showClipping = panel.ShowClipping;
             if (ImGui.Checkbox("Clipping", ref showClipping))
                 panel.ShowClipping = showClipping;
-            ImGuiControls.Tooltip("Warn when a channel's signal reaches the limit of the amplifier's range, by " +
+            ImGuiWidgets.Tooltip("Warn when a channel's signal reaches the limit of the amplifier's range, by " +
                 "flashing CLIPPING in the plot and the channel's label. Hidden channels do not warn.");
             ImGui.PopStyleVar();
 
@@ -289,11 +289,11 @@ namespace OpenEphys.EphysVisualization.Design
                 span > 0 ? (float)(held / span) : 0f,
                 new Vector2(pauseWidth, barHeight),
                 string.Empty);
-            ImGuiControls.Tooltip(RecordTooltip);
+            ImGuiWidgets.Tooltip(RecordTooltip);
 
             ImGui.SetCursorScreenPos(new Vector2(stackX, stackY + pauseHeight + 2 * style.ItemSpacing.Y + ImGui.GetTextLineHeight()));
             ImGui.Text($"Record Length: {held:0.0} / {span:0.0} s");
-            ImGuiControls.Tooltip(RecordTooltip);
+            ImGuiWidgets.Tooltip(RecordTooltip);
 
             // NB: positioning everything outright leaves the parent's content extent where it was, so
             // the whole laid-out area is claimed in one go. It goes last, so that the cursor ends below
@@ -375,12 +375,12 @@ namespace OpenEphys.EphysVisualization.Design
             ImGui.InputDouble(label, ref editValue, "%g");
             if (changed = ImGui.IsItemDeactivatedAfterEdit())
                 value = editValue;
-            ImGuiControls.Tooltip(tooltip);
+            ImGuiWidgets.Tooltip(tooltip);
             ImGui.SameLine(0, 0);
 
             var comboFlags = ImGuiComboFlags.NoPreview | ImGuiComboFlags.PopupAlignLeft;
             var open = ImGui.BeginCombo(label + "C", string.Empty, comboFlags);
-            ImGuiControls.Tooltip(tooltip);
+            ImGuiWidgets.Tooltip(tooltip);
             if (open)
             {
                 for (int i = 0; i < comboItems.Count; i++)
@@ -404,7 +404,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             var preview = panel.Colors.Palette == ColorPalette.OpenEphysGui ? "Open Ephys GUI" : "Custom";
             var open = ImGui.BeginCombo("##palette", preview);
-            ImGuiControls.Tooltip("Colors the channels are drawn in: the Open Ephys GUI's, or shades of one color you " +
+            ImGuiWidgets.Tooltip("Colors the channels are drawn in: the Open Ephys GUI's, or shades of one color you " +
                 "choose.");
             if (open)
             {
@@ -430,7 +430,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (ImGui.Button("Pause", buttonSize))
                 panel.Paused = !paused;
-            ImGuiControls.Tooltip("Freeze the display to study it. While paused, scroll back through the recent signal " +
+            ImGuiWidgets.Tooltip("Freeze the display to study it. While paused, scroll back through the recent signal " +
                 "and zoom in on it. Recording is not affected.\nKey: Space");
 
             if (paused)

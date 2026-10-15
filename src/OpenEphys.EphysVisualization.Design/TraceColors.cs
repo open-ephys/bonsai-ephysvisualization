@@ -105,7 +105,7 @@ namespace OpenEphys.EphysVisualization.Design
         Vector4 Group(int group)
         {
             if (Palette == ColorPalette.OpenEphysGui)
-                return ImGui.ColorConvertU32ToFloat4(ImGuiPalette.OpenEphysGuiLfp[group % ImGuiPalette.OpenEphysGuiLfp.Length]);
+                return ImGui.ColorConvertU32ToFloat4(ImGuiPalette.OpenEphysGuiLfp[group % ImGuiPalette.OpenEphysGuiLfp.Count]);
 
             float hue = 0, saturation = 0, value = 0;
             ImGui.ColorConvertRGBtoHSV(CustomColor.X, CustomColor.Y, CustomColor.Z, ref hue, ref saturation, ref value);

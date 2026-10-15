@@ -66,6 +66,20 @@ jobs:
         with:
           submodules: recursive
 
+      # ----------------------------------------------------------------------- Check public API is shipped
+      # NB: a release must move PublicAPI.Unshipped.txt into PublicAPI.Shipped.txt, so that a later change to API
+      # that has been released is caught as a breaking change rather than taken for an edit to new API.
+      - name: Check public API is shipped
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          unshipped=$(cat src/*/PublicAPI.Unshipped.txt | tr -d '\r' | grep -v -e '^#nullable enable$' -e '^[[:space:]]*$' || true)
+          if [ -n "$unshipped" ]; then
+            echo "::error::PublicAPI.Unshipped.txt still lists API. Move it into PublicAPI.Shipped.txt before releasing."
+            echo "$unshipped"
+            exit 1
+          fi
+
       # ----------------------------------------------------------------------- Set up tools
       - name: Set up .NET
         uses: actions/setup-dotnet@v5

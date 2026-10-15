@@ -12,7 +12,16 @@ using System.Windows.Forms;
 
 namespace OpenEphys.EphysVisualization.Design.WinForms
 {
-    internal class ImGuiGLControl : GLControl, IGLContext
+    /// <summary>
+    /// Provides a WinForms control that hosts a Dear ImGui context drawn with OpenGL, raising <see
+    /// cref="Render"/> once per paint between the frame's start and its drawing.
+    /// </summary>
+    /// <remarks>
+    /// Each <see cref="ImGuiGLControl"/> owns its ImGui context and makes it current around its own frames
+    /// and messages, so several can live in one process. Call <see cref="Control.Invalidate()"/> on an <see
+    /// cref="ImGuiGLControl"/> instance once for each frame to be drawn.
+    /// </remarks>
+    public class ImGuiGLControl : GLControl, IGLContext
     {
         static readonly object RenderEvent = new();
 #if DEBUG
@@ -24,23 +33,38 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         bool initialized;
         int renderDepth;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ImGuiGLControl"/> class.
+        /// </summary>
+        /// <remarks>
+        /// Turns off OpenTK's sharing of GL resources between contexts, for the whole process, since each control's
+        /// ImGui backend creates its own.
+        /// </remarks>
         public ImGuiGLControl()
         {
             GraphicsContext.ShareContexts = false;
             Size = new Size(640, 480);
         }
 
+        /// <summary>
+        /// Occurs once per frame, with this control's ImGui context current, for the handler to draw with ImGui.
+        /// </summary>
         public event EventHandler Render
         {
             add    { Events.AddHandler(RenderEvent, value); }
             remove { Events.RemoveHandler(RenderEvent, value); }
         }
 
+        /// <summary>
+        /// Raises the <see cref="Render"/> event.
+        /// </summary>
+        /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnRender(EventArgs e)
         {
             if (Events[RenderEvent] is EventHandler h) h(this, e);
         }
 
+        /// <inheritdoc/>
         protected unsafe override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
@@ -49,7 +73,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             var form = FindForm();
             form.ResizeBegin += (_, _) => resizing = true;
             form.ResizeEnd += (_, _) => resizing = false;
-            form.FormClosing += (_, _) => MakeCurrent();
+            form.FormClosing += (_, _) => MakeContextsCurrent();
 
             imGuiCtx = ImGui.CreateContext(null);
             ImGui.SetCurrentContext(imGuiCtx);
@@ -71,7 +95,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             initialized = true;
         }
 
-        public new virtual void MakeCurrent()
+        void MakeContextsCurrent()
         {
             base.MakeCurrent();
             ImGui.SetCurrentContext(imGuiCtx);
@@ -79,6 +103,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             ImGuiImplOpenGL3.SetCurrentContext(imGuiCtx);
         }
 
+        /// <inheritdoc/>
         protected override void OnPaint(PaintEventArgs e)
         {
             if (initialized && renderDepth == 0 && !DesignMode && HasValidContext && !resizing)
@@ -86,7 +111,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                 renderDepth++;
                 try
                 {
-                    MakeCurrent();
+                    MakeContextsCurrent();
 
                     // NB: the Win32 and OpenGL3 backends share one current-context global inside
                     // ImGuiImpl.dll, and WndProc on any ImGuiGLControl repoints it. A message for another
@@ -160,11 +185,13 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
 
         // NB: WinForms takes the arrows for moving focus between controls, and drops the message, unless the
         // control claims them as input. ImGui needs them for the caret in text fields and for keyboard navigation.
+        /// <inheritdoc/>
         protected override bool IsInputKey(Keys keyData) =>
             (keyData & Keys.KeyCode) is Keys.Up or Keys.Down or Keys.Left or Keys.Right || base.IsInputKey(keyData);
 
         // NB: Bonsai's visualizer window closes on Escape, which ImGui uses to cancel an edit or a selection. A key
         // taken here is taken ahead of the window, but is then never dispatched, so it is handed to ImGui directly.
+        /// <inheritdoc/>
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == Keys.Escape && initialized && !disposed)
@@ -177,6 +204,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
+        /// <inheritdoc/>
         protected override void WndProc(ref Message m)
         {
             if (initialized && !disposed)
@@ -203,6 +231,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         const int WM_SYSCHAR = 0x0106;
         const int VK_MENU = 0x12;
 
+        /// <inheritdoc/>
         protected override void OnHandleDestroyed(EventArgs e)
         {
             initialized = false;

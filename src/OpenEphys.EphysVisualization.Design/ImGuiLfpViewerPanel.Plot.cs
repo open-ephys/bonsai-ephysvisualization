@@ -11,16 +11,16 @@ namespace OpenEphys.EphysVisualization.Design
         const int TimeDivisions = 10;
 
         // visual constants
-        const uint ColSweepCursor = ImGuiPalette.Yellow;
+        static readonly uint ColSweepCursor = ImGuiPalette.Yellow;
         const float SweepCursorWeight = 1;
-        const uint ColGraticule = ImGuiPalette.Grey0x88;
+        static readonly uint ColGraticule = ImGuiPalette.Grey0x88;
         const float GraticuleWeight = 1;
         const int AmplitudeDivisions = 10;
-        const uint ColDivision = ImGuiPalette.Grey0x55;
+        static readonly uint ColDivision = ImGuiPalette.Grey0x55;
         const float DivisionDotGap = 3;
         const float HoverLineWeight = 3;
-        const uint ColHoveredRow = ImGuiPalette.Grey0x99;
-        const uint ColClipping = ImGuiPalette.Red;
+        static readonly uint ColHoveredRow = ImGuiPalette.Grey0x99;
+        static readonly uint ColClipping = ImGuiPalette.Red;
         static readonly uint ColSelectedRow = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0x20);
 
         static readonly uint ColFrozenTail = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0x80);
@@ -28,7 +28,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Color and weight of the plot's frame, for the control strip's divider to match.
         /// </summary>
-        public const uint FrameColor = ColGraticule;
+        public static readonly uint FrameColor = ColGraticule;
         public const float FrameWeight = GraticuleWeight;
         const float HoverFillAlpha = 0.65f;
 
@@ -266,7 +266,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             ImGui.SetCursorScreenPos(new Vector2(left, top));
             ImGui.InvisibleButton("##timescroll", new Vector2(width, height));
-            ImGuiControls.Tooltip("Drag to move back and forth through the recent signal while paused.\n" +
+            ImGuiWidgets.Tooltip("Drag to move back and forth through the recent signal while paused.\n" +
                 "Keys: A and D\nOn the plot: Shift+Wheel, or drag with the middle button");
 
             if (ImGui.IsItemActive() && travel > 0 && slack > 0)
@@ -530,7 +530,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (ImGui.InvisibleButton("##maximize", new Vector2(side)))
                 Maximized = !Maximized;
             var hovered = ImGui.IsItemHovered();
-            ImGuiControls.Tooltip(Maximized ? "Restore the layout\nKey: M" : "Give the plot the whole window\nKey: M");
+            ImGuiWidgets.Tooltip(Maximized ? "Restore the layout\nKey: M" : "Give the plot the whole window\nKey: M");
 
             if (hovered)
                 draw.AddRectFilled(min, max, ImGui.GetColorU32(ImGuiCol.ButtonHovered), ImGui.GetStyle().ChildRounding);
@@ -579,7 +579,7 @@ namespace OpenEphys.EphysVisualization.Design
             ImGui.SetCursorScreenPos(corner - pad);
             if (ImGui.InvisibleButton("##clipping", size + 2 * pad))
                 ShowChannel(first, frame.Layout);
-            ImGuiControls.Tooltip("Some channels are clipping: their signal reaches the limit of the amplifier's range. " +
+            ImGuiWidgets.Tooltip("Some channels are clipping: their signal reaches the limit of the amplifier's range. " +
                 "Click to bring the first one into view.");
 
             var rounding = ImGui.GetStyle().ChildRounding;

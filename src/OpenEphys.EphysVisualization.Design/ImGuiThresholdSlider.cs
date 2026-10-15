@@ -14,9 +14,9 @@ namespace OpenEphys.EphysVisualization.Design
         const float HandleVisualWidth = 3f;
         const float HandleOverbitePx = 3f;
         const float LabelGapPx = 2f;
-        const uint ColorHandle = ImGuiPalette.White;
-        const uint ColorHandleActive = ImGuiPalette.BrightFern;
-        const uint ColorText = ImGuiPalette.White;
+        static readonly uint ColorHandle = ImGuiPalette.White;
+        static readonly uint ColorHandleActive = ImGuiPalette.BrightFern;
+        static readonly uint ColorText = ImGuiPalette.White;
 
         /// <summary>
         /// Draws the bar and handles dragging it. Must be called once per frame.

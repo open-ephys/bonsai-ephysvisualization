@@ -277,7 +277,7 @@ namespace OpenEphys.EphysVisualization.Design
                 var enabled = node.ColorGroupingEnabled;
                 if (ImGui.Checkbox("##colorGroupingEnabled", ref enabled))
                     node.ColorGroupingEnabled = enabled;
-                ImGuiControls.Tooltip("Color neighboring channels alike, in groups of the size beside it, to tell " +
+                ImGuiWidgets.Tooltip("Color neighboring channels alike, in groups of the size beside it, to tell " +
                     "groups of channels apart.");
 
                 ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
@@ -286,7 +286,7 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.SetNextItemWidth(width - ImGui.GetFrameHeight() - ImGui.GetStyle().ItemInnerSpacing.X);
                 if (ImGui.InputInt("##colorGrouping", ref grouping, 1))
                     node.ColorGrouping = Math.Max(1, grouping);
-                ImGuiControls.Tooltip("How many neighboring channels share a color.",
+                ImGuiWidgets.Tooltip("How many neighboring channels share a color.",
                     "Check the box beside it to color channels in groups.");
                 ImGui.EndDisabled();
             }

@@ -1,0 +1,106 @@
+#nullable enable
+OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.ColorPalette.Custom = 1 -> OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.ColorPalette.OpenEphysGui = 0 -> OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.LfpViewer
+OpenEphys.EphysVisualization.Design.LfpViewer.ColorGrouping.get -> int
+OpenEphys.EphysVisualization.Design.LfpViewer.ColorGrouping.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.ColorGroupingEnabled.get -> bool
+OpenEphys.EphysVisualization.Design.LfpViewer.ColorGroupingEnabled.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.HistorySize.get -> int
+OpenEphys.EphysVisualization.Design.LfpViewer.HistorySize.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.LfpViewer() -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.Offset.get -> double
+OpenEphys.EphysVisualization.Design.LfpViewer.Offset.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.SampleRate.get -> int
+OpenEphys.EphysVisualization.Design.LfpViewer.SampleRate.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.SaturationHigh.get -> double?
+OpenEphys.EphysVisualization.Design.LfpViewer.SaturationHigh.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.SaturationLow.get -> double?
+OpenEphys.EphysVisualization.Design.LfpViewer.SaturationLow.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewer.Scale.get -> double
+OpenEphys.EphysVisualization.Design.LfpViewer.Scale.set -> void
+OpenEphys.EphysVisualization.Design.LfpViewerVisualizer
+OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.LfpViewerVisualizer() -> void
+OpenEphys.EphysVisualization.Design.WaveformScope
+OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.get -> float
+OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.ColorThreshold.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScope.ColorThreshold.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.CustomColor.get -> System.Drawing.Color
+OpenEphys.EphysVisualization.Design.WaveformScope.CustomColor.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.CustomColorHtml.get -> string!
+OpenEphys.EphysVisualization.Design.WaveformScope.CustomColorHtml.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.FitChannels.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScope.FitChannels.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.HiddenChannels.get -> int[]?
+OpenEphys.EphysVisualization.Design.WaveformScope.HiddenChannels.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.Maximized.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScope.Maximized.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.Palette.get -> OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.WaveformScope.Palette.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.Timebase.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScope.Timebase.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.WaveformScope() -> void
+override OpenEphys.EphysVisualization.Design.LfpViewer.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
+override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Load(System.IServiceProvider! provider) -> void
+override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Show(object! value) -> void
+override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Unload() -> void
+override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
+OpenEphys.EphysVisualization.Design.ImGuiColormapRangeSlider
+OpenEphys.EphysVisualization.Design.ImGuiWidgets
+OpenEphys.EphysVisualization.Design.ImGuiPalette
+OpenEphys.EphysVisualization.Design.ModalChoice
+OpenEphys.EphysVisualization.Design.ModalChoice.Accepted = 1 -> OpenEphys.EphysVisualization.Design.ModalChoice
+OpenEphys.EphysVisualization.Design.ModalChoice.Declined = 2 -> OpenEphys.EphysVisualization.Design.ModalChoice
+OpenEphys.EphysVisualization.Design.ModalChoice.Pending = 0 -> OpenEphys.EphysVisualization.Design.ModalChoice
+OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl
+OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.ImGuiGLControl() -> void
+OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.Render -> System.EventHandler!
+override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnHandleCreated(System.EventArgs! e) -> void
+override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnHandleDestroyed(System.EventArgs! e) -> void
+override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.ProcessCmdKey(ref System.Windows.Forms.Message msg, System.Windows.Forms.Keys keyData) -> bool
+override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.WndProc(ref System.Windows.Forms.Message m) -> void
+static OpenEphys.EphysVisualization.Design.ImGuiColormapRangeSlider.Draw(string! id, System.Collections.Generic.IReadOnlyList<uint>! colormap, float domainMin, float domainMax, ref float rangeMin, ref float rangeMax, float width = -1, float height = -1, string! valueFormat = "F1", string? minHandleTooltip = null, string? maxHandleTooltip = null) -> bool
+static OpenEphys.EphysVisualization.Design.ImGuiWidgets.ConfirmModal(string! id, string! message, string! acceptLabel = "Continue", string! declineLabel = "Cancel") -> OpenEphys.EphysVisualization.Design.ModalChoice
+static OpenEphys.EphysVisualization.Design.ImGuiWidgets.InfoRow(string! label, string! value) -> void
+static OpenEphys.EphysVisualization.Design.ImGuiWidgets.StackedLabel(string! text) -> void
+static OpenEphys.EphysVisualization.Design.ImGuiWidgets.Tooltip(string! text, string? disabledHint = null) -> void
+static OpenEphys.EphysVisualization.Design.ImGuiPalette.OpenEphysGuiLfp.get -> System.Collections.Generic.IReadOnlyList<uint>!
+static OpenEphys.EphysVisualization.Design.ImGuiPalette.WithAlpha(uint color, byte alpha) -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Black -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.White -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Red -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Green -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Blue -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Yellow -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.VibrantCoral -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.GoldenPollen -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.YellowGreen -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.SteelBlue -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.DustyGrape -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.AmberGold -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.BlazeOrange -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.NeonPink -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.BlueViolet -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.AzureBlue -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.RoyalAzure -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.CobaltBlue -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.BrightFern -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x30 -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x4D -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x55 -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x77 -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x80 -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x88 -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x99 -> uint
+static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0xCC -> uint
+virtual OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnRender(System.EventArgs! e) -> void
