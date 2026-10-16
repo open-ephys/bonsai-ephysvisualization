@@ -27,7 +27,7 @@
     /// <param name="ColorThreshold">Magnitude at or below which a row of color is black.</param>
     internal readonly record struct PlotFrame(
         Envelope Envelope,
-        ImGuiLfpViewerPanel.RowLayout Layout, PixelAxis Axis, float Top, float Bottom, int SampleRate,
+        ImGuiWaveformPanel.RowLayout Layout, PixelAxis Axis, float Top, float Bottom, int SampleRate,
         bool Paused, long PauseOrigin, double Timebase, double PausedTimebase,
         double Range, double Center, string Unit,
         bool[] Hidden, int Expanded, int Selected, bool Heatmap, double ColorThreshold)

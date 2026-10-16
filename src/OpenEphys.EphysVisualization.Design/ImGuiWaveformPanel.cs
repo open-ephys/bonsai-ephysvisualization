@@ -24,7 +24,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// Ported from <c>Bonsai.Ephys.Design.WaveformVisualizer</c>.
     /// </para>
     /// </remarks>
-    internal sealed partial class ImGuiLfpViewerPanel : IDisposable
+    internal sealed partial class ImGuiWaveformPanel : IDisposable
     {
         readonly WaveformScope settings;
         readonly long historyBytes;
@@ -42,7 +42,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="historyBytes"/> is not positive, or <paramref name="maxColumns"/> is less than one.
         /// </exception>
-        public ImGuiLfpViewerPanel(WaveformScope settings, long historyBytes, int maxColumns)
+        public ImGuiWaveformPanel(WaveformScope settings, long historyBytes, int maxColumns)
         {
             if (historyBytes <= 0)
                 throw new ArgumentOutOfRangeException(nameof(historyBytes));

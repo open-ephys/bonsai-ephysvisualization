@@ -130,7 +130,7 @@ namespace OpenEphys.EphysVisualization.Design
                 if (near >= 0)
                 {
                     ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEw);
-                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGuiLfpViewerPanel.Modifiers())
+                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGuiWaveformPanel.Modifiers())
                         grabbed = near;
                 }
             }
@@ -353,7 +353,7 @@ namespace OpenEphys.EphysVisualization.Design
                 return false;
 
             var pad = ImGui.GetStyle().FramePadding;
-            text = $"C{i}: {FormatSeconds(frame, ImGuiLfpViewerPanel.SecondsAt(frame, positions[i]))} s";
+            text = $"C{i}: {FormatSeconds(frame, ImGuiWaveformPanel.SecondsAt(frame, positions[i]))} s";
             size = ImGui.CalcTextSize(text);
             corner = new Vector2(
                 Math.Max(frame.Left + pad.X, Math.Min(frame.Left + frame.Width - pad.X - size.X, x - size.X / 2)), labelY);
@@ -435,7 +435,7 @@ namespace OpenEphys.EphysVisualization.Design
                             ImGui.PopStyleColor(2);
                         ImGui.EndDisabled();
 
-                        Cell(FormatSeconds(frame, ImGuiLfpViewerPanel.SecondsAt(frame, positions[i])));
+                        Cell(FormatSeconds(frame, ImGuiWaveformPanel.SecondsAt(frame, positions[i])));
                         Cell(measured ? $"{PlotText.Significant(samples * 1000.0 / sampleRate)}" : "");
                         Cell(measured && samples != 0 ? $"{PlotText.Significant(sampleRate / (double)Math.Abs(samples))}" : "");
                         Cell(read ? $"{PlotText.Significant(min)}" : "");

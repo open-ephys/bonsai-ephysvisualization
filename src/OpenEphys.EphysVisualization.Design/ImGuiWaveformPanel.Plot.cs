@@ -6,7 +6,7 @@ using OpenCV.Net;
 
 namespace OpenEphys.EphysVisualization.Design
 {
-    partial class ImGuiLfpViewerPanel
+    partial class ImGuiWaveformPanel
     {
         const int TimeDivisions = 10;
 

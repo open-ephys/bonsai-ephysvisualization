@@ -17,7 +17,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// Two positions can therefore show the same sample, so the view is moved by position, never by sample.
     /// </para>
     /// </remarks>
-    partial class ImGuiLfpViewerPanel
+    partial class ImGuiWaveformPanel
     {
         Envelope? pausedEnvelope;
 

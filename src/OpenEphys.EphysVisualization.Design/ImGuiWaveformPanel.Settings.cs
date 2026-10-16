@@ -5,7 +5,7 @@ using Hexa.NET.ImGui;
 
 namespace OpenEphys.EphysVisualization.Design
 {
-    partial class ImGuiLfpViewerPanel
+    partial class ImGuiWaveformPanel
     {
         /// <summary>
         /// Smallest amplitude a channel's row may span.

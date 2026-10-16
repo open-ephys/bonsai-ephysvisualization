@@ -5,7 +5,7 @@ using Hexa.NET.ImGui;
 
 namespace OpenEphys.EphysVisualization.Design
 {
-    partial class ImGuiLfpViewerPanel
+    partial class ImGuiWaveformPanel
     {
         /// <summary>
         /// How much of a window, or of the channels on screen, a coarse step covers.
