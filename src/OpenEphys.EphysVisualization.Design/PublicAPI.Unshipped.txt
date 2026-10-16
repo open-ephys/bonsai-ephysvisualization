@@ -104,3 +104,58 @@ static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x88 -> uin
 static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0x99 -> uint
 static readonly OpenEphys.EphysVisualization.Design.ImGuiPalette.Grey0xCC -> uint
 virtual OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnRender(System.EventArgs! e) -> void
+OpenEphys.EphysVisualization.Design.ContactState
+OpenEphys.EphysVisualization.Design.ContactState.ContactState() -> void
+OpenEphys.EphysVisualization.Design.ContactState.ContactState(bool Selected, bool Inspected, bool InDragBox) -> void
+OpenEphys.EphysVisualization.Design.ContactState.InDragBox.get -> bool
+OpenEphys.EphysVisualization.Design.ContactState.InDragBox.init -> void
+OpenEphys.EphysVisualization.Design.ContactState.Inspected.get -> bool
+OpenEphys.EphysVisualization.Design.ContactState.Inspected.init -> void
+OpenEphys.EphysVisualization.Design.ContactState.Selected.get -> bool
+OpenEphys.EphysVisualization.Design.ContactState.Selected.init -> void
+OpenEphys.EphysVisualization.Design.DragSelectIntent
+OpenEphys.EphysVisualization.Design.DragSelectIntent.Add = 1 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
+OpenEphys.EphysVisualization.Design.DragSelectIntent.Idle = 0 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
+OpenEphys.EphysVisualization.Design.DragSelectIntent.Remove = 2 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
+OpenEphys.EphysVisualization.Design.LegendEntry
+OpenEphys.EphysVisualization.Design.LegendEntry.Color.get -> uint
+OpenEphys.EphysVisualization.Design.LegendEntry.Color.init -> void
+OpenEphys.EphysVisualization.Design.LegendEntry.DottedOutline.get -> bool
+OpenEphys.EphysVisualization.Design.LegendEntry.DottedOutline.init -> void
+OpenEphys.EphysVisualization.Design.LegendEntry.Label.get -> string!
+OpenEphys.EphysVisualization.Design.LegendEntry.Label.init -> void
+OpenEphys.EphysVisualization.Design.LegendEntry.LegendEntry() -> void
+OpenEphys.EphysVisualization.Design.LegendEntry.LegendEntry(uint Color, string! Label, bool DottedOutline = false, bool OutlineOnly = false) -> void
+OpenEphys.EphysVisualization.Design.LegendEntry.OutlineOnly.get -> bool
+OpenEphys.EphysVisualization.Design.LegendEntry.OutlineOnly.init -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Blocked.get -> System.Func<int, bool>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Blocked.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ClearSelection() -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Contacts.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.ContactState>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DragIntent.get -> OpenEphys.EphysVisualization.Design.DragSelectIntent
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawMinimap() -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawZoomedView(bool selectionEnabled) -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.get -> System.Func<int, uint>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColorOverridesBlocked.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColorOverridesBlocked.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hotkeys.get -> System.Collections.Generic.IEnumerable<Hexa.NET.ImGui.ImGuiKey>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.HoveredContactIndex.get -> int
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ImGuiProbeSelector(float? zoomWindow = null, float zoomWindowFraction = 0.1, float? scrollX = null, float? scrollY = null) -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.LegendEntry>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.MinimapWidth(float height, float availableWidth) -> float
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ModeLabel.get -> string!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ModeLabel.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Refresh(OpenEphys.ProbeInterface.NET.SingleProbeGroup? probeGroup) -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionChanged -> System.EventHandler?
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowCoordinateReadout.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowCoordinateReadout.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowGrid.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowGrid.set -> void
+static OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.BlockedFillColor.get -> uint
+static OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.InspectionBorderColor.get -> uint
+static OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionBorderColor.get -> uint
