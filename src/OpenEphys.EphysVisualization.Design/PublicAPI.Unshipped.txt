@@ -48,7 +48,6 @@ OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScope.Timebase.get -> double
 OpenEphys.EphysVisualization.Design.WaveformScope.Timebase.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScope.WaveformScope() -> void
-override OpenEphys.EphysVisualization.Design.LfpViewer.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
 override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Load(System.IServiceProvider! provider) -> void
 override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
 OpenEphys.EphysVisualization.Design.ImGuiColormapRangeSlider
@@ -197,3 +196,6 @@ OpenEphys.EphysVisualization.Design.StandardColumns.Timebase.get -> OpenEphys.Ep
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.DrawControlStrip(System.Collections.Generic.IEnumerable<OpenEphys.EphysVisualization.Design.ControlStripColumn>! columns) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.StandardColumns.get -> OpenEphys.EphysVisualization.Design.StandardColumns!
 override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.DrawFrame() -> void
+OpenEphys.EphysVisualization.Design.WaveformScope<TSource>
+OpenEphys.EphysVisualization.Design.WaveformScope<TSource>.WaveformScope() -> void
+override OpenEphys.EphysVisualization.Design.WaveformScope<TSource>.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!

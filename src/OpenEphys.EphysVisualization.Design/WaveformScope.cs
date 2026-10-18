@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Xml.Serialization;
 using Bonsai;
 using Bonsai.Expressions;
@@ -113,5 +117,29 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         [Description("The channels not drawn, by index.")]
         public int[]? HiddenChannels { get; set; }
+    }
+
+    /// <summary>
+    /// Provides the pass-through node a waveform viewer opens on, for a sequence of a single element type.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements the node passes through and the viewer shows.</typeparam>
+    public abstract class WaveformScope<TSource> : WaveformScope
+    {
+        /// <inheritdoc/>
+        /// <exception cref="InvalidOperationException">
+        /// The source is not a sequence of <typeparamref name="TSource"/>.
+        /// </exception>
+        public override Expression Build(IEnumerable<Expression> arguments)
+        {
+            var source = arguments.First();
+            if (source.Type != typeof(IObservable<TSource>))
+                throw new InvalidOperationException($"{GetType().Name} displays a sequence of {typeof(TSource).Name}.");
+
+            // NB: through a call of its own rather than returning the source, which the editor would take for the
+            // upstream node's output and offer that node's visualizers instead of this one's.
+            return Expression.Call(Expression.Constant(this, typeof(WaveformScope<TSource>)), nameof(Process), null, source);
+        }
+
+        IObservable<TSource> Process(IObservable<TSource> source) => source;
     }
 }

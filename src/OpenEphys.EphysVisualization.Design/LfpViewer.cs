@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Linq.Expressions;
 using Bonsai;
 using OpenCV.Net;
 
@@ -18,7 +15,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// </remarks>
     [TypeVisualizer(typeof(LfpViewerVisualizer))]
     [Description("Displays a sequence of channel-by-sample matrices as live waveforms.")]
-    public class LfpViewer : WaveformScope
+    public class LfpViewer : WaveformScope<Mat>
     {
         /// <summary>
         /// Gets or sets the rate, in Hz, at which each channel is sampled.
@@ -95,19 +92,5 @@ namespace OpenEphys.EphysVisualization.Design
         public int ColorGrouping { get; set; } = 1;
 
         internal long HistoryBytes => (long)Math.Max(1, HistorySize) * 1024 * 1024;
-
-        /// <inheritdoc/>
-        public override Expression Build(IEnumerable<Expression> arguments)
-        {
-            var source = arguments.First();
-            if (source.Type != typeof(IObservable<Mat>))
-                throw new InvalidOperationException($"{GetType().Name} displays a sequence of {nameof(Mat)}.");
-
-            // NB: through a call of its own rather than returning the source, which the editor would take for the
-            // upstream node's output and offer that node's visualizers instead of this one's.
-            return Expression.Call(Expression.Constant(this, typeof(LfpViewer)), nameof(Process), null, source);
-        }
-
-        IObservable<Mat> Process(IObservable<Mat> source) => source;
     }
 }

@@ -22,10 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="OpenEphys.Onix1.Design" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Shaders\*" LogicalName="OpenEphys.EphysVisualization.Design.Shaders.%(Filename)%(Extension)" />
   </ItemGroup>
 
