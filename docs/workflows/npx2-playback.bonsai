@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.9.1"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
+                 xmlns:ephysviz="clr-namespace:OpenEphys.EphysVisualization.Design;assembly=OpenEphys.EphysVisualization.Design"
+                 xmlns:rx="clr-namespace:Bonsai.Reactive;assembly=Bonsai.Core"
+                 xmlns="https://bonsai-rx.org/2018/workflow">
+  <Workflow>
+    <Nodes>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="dsp:MatrixReader">
+          <dsp:Path>continuous.dat</dsp:Path>
+          <dsp:Offset>0</dsp:Offset>
+          <dsp:SampleRate>30000</dsp:SampleRate>
+          <dsp:ChannelCount>384</dsp:ChannelCount>
+          <dsp:BufferLength>300</dsp:BufferLength>
+          <dsp:Depth>S16</dsp:Depth>
+          <dsp:Layout>ColumnMajor</dsp:Layout>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="ephysviz:LfpViewer">
+        <ephysviz:Timebase>5</ephysviz:Timebase>
+        <ephysviz:RangeAmplitude>250</ephysviz:RangeAmplitude>
+        <ephysviz:ChannelHeight>30</ephysviz:ChannelHeight>
+        <ephysviz:Scale>0.195</ephysviz:Scale>
+        <ephysviz:SaturationLow xsi:nil="true" />
+        <ephysviz:SaturationHigh xsi:nil="true" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:Repeat" />
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge From="0" To="1" Label="Source1" />
+      <Edge From="1" To="2" Label="Source1" />
+    </Edges>
+  </Workflow>
+</WorkflowBuilder>

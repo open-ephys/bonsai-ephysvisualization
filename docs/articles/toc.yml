@@ -1,1 +1,4 @@
-- href: ../index.md
+- name: Home
+  href: ../index.md
+- name: LFP Viewer
+  href: lfp-viewer.md

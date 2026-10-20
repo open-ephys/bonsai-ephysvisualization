@@ -1,1 +1,115 @@
 @import "bonsai.css";
+
+/* NB: the size bonsai-docfx's logo.svg declares for itself, which a PNG logo has no way to say. */
+#logo {
+    width: 38pt;
+    height: 38pt;
+}
+
+/* NB: centered on the line as the links are, the title's larger text sits 2px lower than theirs, so it is raised to
+   share their baseline. */
+.navbar-brand {
+    gap: 0.6rem;
+    position: relative;
+    top: -0.125rem;
+}
+
+/* The look shared with the other Open Ephys docs sites. */
+
+/* Bluesky icon. Not yet in the Bootstrap Icons version bundled with DocFX.
+   mask preserves currentColor so navbar hover effects still apply. */
+.bi-bluesky::before {
+  --bsky: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.468 1.948C5.303 3.325 7.276 6.118 8 7.616c.725-1.498 2.698-4.29 4.532-5.668C13.855.955 16 .186 16 2.632c0 .489-.28 4.105-.444 4.692-.572 2.04-2.653 2.561-4.504 2.246 3.236.551 4.06 2.375 2.281 4.2-3.376 3.464-4.852-.87-5.23-1.98-.07-.204-.103-.3-.103-.218 0-.081-.033.014-.102.218-.379 1.11-1.855 5.444-5.231 1.98-1.778-1.825-.955-3.65 2.28-4.2-1.85.315-3.932-.205-4.503-2.246C.28 6.737 0 3.12 0 2.632 0 .186 2.145.955 3.468 1.948'/%3E%3C/svg%3E");
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask: var(--bsky) 0 0 / 100% 100%;
+  mask: var(--bsky) 0 0 / 100% 100%;
+  vertical-align: -0.125em;
+}
+
+/* Figures read as one unit: the caption sits directly under its image, as wide as the image. */
+
+article figure {
+  display: table;
+  margin: 1.5rem 0;
+}
+
+/* NB: Markdig wraps the image in a paragraph, whose margin would part it from its caption. */
+article figure > p {
+  margin: 0;
+}
+
+article figure img,
+article figure video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--bs-border-color);
+}
+
+article figure figcaption {
+  display: table-caption;
+  caption-side: bottom;
+  margin-top: 0.4rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--bs-secondary-color);
+}
+
+article figure .figure-label {
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+
+/* Tables use thin horizontal rules only, in place of the full grid Bootstrap's table-bordered draws. */
+
+article table.table,
+article table.table > :not(caption) > *,
+article table.table > :not(caption) > * > * {
+  border-width: 0;
+}
+
+article table.table > :not(caption) > * > * {
+  border-bottom: 1px solid var(--bs-border-color);
+  padding: 0.5rem 0.75rem;
+}
+
+article table.table > thead > * > * {
+  border-bottom: 2px solid var(--bs-secondary-color);
+  font-weight: 600;
+}
+
+/* Indent h3-level entries in the "In this article" sidebar */
+
+#affix li:has(.link-secondary) {
+  padding-left: 0.32rem;
+  font-size: 0.8rem;
+}
+
+/* Heading size hierarchy within article content */
+
+article h2 {
+  font-size: 1.75rem;
+}
+
+article h3 {
+  font-size: 1.5rem;
+}
+
+article h4 {
+  font-size: 1.3rem;
+  color: var(--bs-secondary-color);
+}
+
+article h5 {
+  font-size: 1.1rem;
+  color: var(--bs-secondary-color);
+}
+
+article h6 {
+  font-size: 1rem;
+  color: var(--bs-secondary-color);
+}

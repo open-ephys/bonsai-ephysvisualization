@@ -56,11 +56,11 @@
       "template"
     ],
     "globalMetadata": {
-      "_appName": "bonsai-ephysvisualization",
-      "_appTitle": "bonsai-ephysvisualization",
-      "_appFooter": "Made with <a href=\"https://dotnet.github.io/docfx\">docfx</a>",
-      "_appLogoPath": "logo.svg",
-      "_appFaviconPath": "icon.png",
+      "_appName": "OpenEphys.EphysVisualization",
+      "_appTitle": "OpenEphys.EphysVisualization",
+      "_appFooter": "&copy; Open Ephys and Contributors. Made with <a href=\"https://dotnet.github.io/docfx\">docfx</a>",
+      "_appLogoPath": "images/logo.png",
+      "_appFaviconPath": "images/favicon.png",
       "_enableNewTab": true,
       "_enableSearch": true,
       "_gitContribute": {
@@ -70,7 +70,8 @@
     "markdownEngineProperties": {
       "markdigExtensions": [
         "attributes",
-        "customcontainers"
+        "customcontainers",
+        "figures"
       ]
     },
     "xref": [
