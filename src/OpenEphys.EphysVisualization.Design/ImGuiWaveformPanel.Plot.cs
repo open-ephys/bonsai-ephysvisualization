@@ -81,7 +81,7 @@ namespace OpenEphys.EphysVisualization.Design
             // table that scrolled them before had none.
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
             var rowsOpen = ImGui.BeginChild("##rows", new Vector2(-1, tableHeight), ImGuiChildFlags.None,
-                ImGuiWindowFlags.NoScrollWithMouse);
+                ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);
             ImGui.PopStyleVar();
 
             if (rowsOpen && ImGui.BeginTable("##table", 2, ImGuiTableFlags.NoSavedSettings))

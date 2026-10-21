@@ -32,6 +32,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         readonly List<long> positions = new(MaxCursors);
         int reference;
+        int active;
         int grabbed = -1;
         Vector2 tableSize;
 
@@ -85,6 +86,40 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
+        /// Places the cursors outside <paramref name="first"/> to <paramref name="last"/>, the positions the view can
+        /// reach, evenly across the window <paramref name="axis"/> shows, leaving the rest where they are.
+        /// </summary>
+        public void PlaceUnreachable(long first, long last, in PixelAxis axis)
+        {
+            var unreachable = new List<int>();
+            for (int i = 0; i < positions.Count; i++)
+            {
+                if (positions[i] < first || positions[i] >= last)
+                    unreachable.Add(i);
+            }
+
+            var window = axis.Window;
+            for (int k = 0; k < unreachable.Count; k++)
+                positions[unreachable[k]] = axis.Snap(window.Start + window.Span * (k + 1) / (unreachable.Count + 1));
+        }
+
+        /// <summary>
+        /// Moves the active cursor, the one last dragged, picked or added, by <paramref name="cells"/> cells: a pixel
+        /// column each, or a column of samples where the window has fewer columns than the plot has pixels, which is
+        /// a sample once the view is zoomed in that far. It stops at the plot's edges.
+        /// </summary>
+        public void Step(int cells, in PixelAxis axis)
+        {
+            if (!Show || positions.Count == 0)
+                return;
+
+            var position = positions[active];
+            positions[active] = axis.Combines
+                ? axis.PositionAt(axis.X(position) + cells + 0.5f)
+                : axis.Snap(position + cells * axis.Window.Step);
+        }
+
+        /// <summary>
         /// Moves a cursor by dragging its line, and draws the cursors.
         /// </summary>
         public void Draw(ImDrawListPtr draw, in PlotFrame frame)
@@ -131,7 +166,7 @@ namespace OpenEphys.EphysVisualization.Design
                 {
                     ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEw);
                     if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGuiWaveformPanel.Modifiers())
-                        grabbed = near;
+                        grabbed = active = near;
                 }
             }
 
@@ -141,11 +176,13 @@ namespace OpenEphys.EphysVisualization.Design
                 if (x < left || x > left + width)
                     continue;
 
-                // NB: the reference solid and the rest dotted, as on a scope.
+                // NB: the reference solid and the rest dotted, as on a scope, and the active cursor heavier where there
+                // is more than one to tell it from.
+                var weight = i == active && positions.Count > 1 ? 2 * LineWeight : LineWeight;
                 if (i == reference)
-                    draw.AddRectFilled(new Vector2(MathF.Floor(x), top), new Vector2(MathF.Floor(x) + LineWeight, bottom), Color);
+                    draw.AddRectFilled(new Vector2(MathF.Floor(x), top), new Vector2(MathF.Floor(x) + weight, bottom), Color);
                 else
-                    DottedLine(draw, x, top, bottom);
+                    DottedLine(draw, x, top, bottom, weight);
 
                 if (TryRead(frame, positions[i], out var min, out var max))
                     Values(draw, frame, min, max, x);
@@ -321,9 +358,10 @@ namespace OpenEphys.EphysVisualization.Design
             }
 
             if (hovered >= 0 && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-                reference = hovered;
+                reference = active = hovered;
             if (hovered >= 0)
-                ImGui.SetTooltip("Click to measure the other cursors from this one. Drag its line on the plot to move it.");
+                ImGui.SetTooltip("Click to measure the other cursors from this one, and to make it the one the Left and Right keys move. " +
+                    "Drag its line on the plot to move it.");
 
             var margin = new Vector2(pad.X + ImGui.GetStyle().ItemSpacing.X, pad.Y);
             var background = ImGui.GetColorU32(ImGuiCol.WindowBg);
@@ -419,9 +457,18 @@ namespace OpenEphys.EphysVisualization.Design
 
                         ImGui.TableNextRow();
 
+                        // NB: under the row's buttons, so that a click anywhere else on the row picks its cursor as the
+                        // active one, which the row's highlight then shows.
+                        ImGui.TableNextColumn();
+                        var rowStart = ImGui.GetCursorScreenPos();
+                        if (ImGui.Selectable($"##active{i}", i == active,
+                            ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowOverlap))
+                            active = i;
+                        ImGuiWidgets.Tooltip("Click to make this the active cursor, which the Left and Right keys move.");
+                        ImGui.SetCursorScreenPos(rowStart);
+
                         // NB: only paused, since live the window does not move. The reference's button filled, as
                         // its time label is, so that both mark it alike.
-                        ImGui.TableNextColumn();
                         ImGui.BeginDisabled(!frame.Paused);
                         if (!measured)
                         {
@@ -464,11 +511,20 @@ namespace OpenEphys.EphysVisualization.Design
                     positions.RemoveAt(remove);
                     if (remove < reference)
                         reference--;
+
+                    // NB: removing the active cursor hands the arrows to the reference, which cannot be removed.
+                    if (remove == active)
+                        active = reference;
+                    else if (remove < active)
+                        active--;
                 }
 
                 ImGui.BeginDisabled(positions.Count >= MaxCursors);
                 if (ImGui.SmallButton("+ Add cursor"))
+                {
                     positions.Add(frame.Axis.Snap(window.Start + window.Span / 2));
+                    active = positions.Count - 1;
+                }
                 ImGuiWidgets.Tooltip("Add a cursor in the middle of the view.", "Four cursors at most.");
                 ImGui.EndDisabled();
 
@@ -494,11 +550,11 @@ namespace OpenEphys.EphysVisualization.Design
         // NB: an expanded channel is drawn as a trace in either view.
         static bool Heatmap(in PlotFrame frame) => frame.Heatmap && frame.Expanded < 0;
 
-        static void DottedLine(ImDrawListPtr draw, float x, float top, float bottom)
+        static void DottedLine(ImDrawListPtr draw, float x, float top, float bottom, float weight)
         {
             x = MathF.Floor(x);
             for (var y = MathF.Floor(top); y < bottom; y += 2 * Dot)
-                draw.AddRectFilled(new Vector2(x, y), new Vector2(x + LineWeight, Math.Min(y + Dot, bottom)), Color);
+                draw.AddRectFilled(new Vector2(x, y), new Vector2(x + weight, Math.Min(y + Dot, bottom)), Color);
         }
     }
 }

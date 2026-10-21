@@ -239,9 +239,10 @@ namespace OpenEphys.EphysVisualization.Design
 
             ImGui.SetNextWindowPos(Vector2.Zero);
             ImGui.SetNextWindowSize(io.DisplaySize);
+            // NB: no keyboard navigation, which would take the arrows that step the cursors.
             ImGui.Begin("##waveformScope",
                 ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove |
-                ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+                ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);
             DrawFrame();
             ImGui.End();
         }

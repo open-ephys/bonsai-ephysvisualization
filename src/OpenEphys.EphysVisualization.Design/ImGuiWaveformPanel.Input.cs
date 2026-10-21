@@ -145,6 +145,8 @@ namespace OpenEphys.EphysVisualization.Design
             (ImGuiKey.Escape, false, () => selectedChannel = -1),
             (ImGuiKey.A, true, () => TimeKey(-1)),
             (ImGuiKey.D, true, () => TimeKey(1)),
+            (ImGuiKey.LeftArrow, true, () => CursorKey(-1)),
+            (ImGuiKey.RightArrow, true, () => CursorKey(1)),
         };
 
         // NB: these scroll the channels, which ImGui does to the window current when asked, so they are answered
@@ -302,6 +304,16 @@ namespace OpenEphys.EphysVisualization.Design
             else if (Modifiers(ctrl: true))
                 StepTimebase(-direction, plotLeft + plotSpan / 2);
         }
+
+        // NB: Shift steps ten cells, as it makes the other moves larger.
+        void CursorKey(int direction)
+        {
+            var cells = Modifiers() ? 1 : Modifiers(shift: true) ? CursorCoarseStep : 0;
+            if (cells > 0)
+                cursors.Step(direction * cells, Axis);
+        }
+
+        const int CursorCoarseStep = 10;
 
         // NB: the modifier wheels and drags set the plot's scales, so they start on the plot only. The channel labels
         // have gestures of their own, and the plain wheel scrolls the channels anywhere, as ImGui does.

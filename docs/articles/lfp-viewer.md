@@ -99,6 +99,8 @@ Each key has a single owner in the window, so a key does the same thing wherever
 | Shift+A / Shift+D | Move back or forward in time by most of a screen | Paused |
 | Ctrl+A / Ctrl+D | Lengthen or shorten the timebase, through its presets, about the middle of the plot | Always |
 | C | Show or hide the cursors | Always |
+| Left / Right | Step the active cursor back or forward by one pixel column | Cursors shown |
+| Shift+Left / Shift+Right | Step the active cursor by ten pixel columns | Cursors shown |
 | H | Switch between traces and the heatmap | More than one channel |
 | F | Turn Fit on or off (see Chan. Height) | More than one channel |
 | M | Give the plot the whole window, or restore the layout | Always |
@@ -234,17 +236,34 @@ Up to four cursors measure time and amplitude on the selected channel ([](#fig-c
 ![Cursors on an expanded channel](~/images/lfp-viewer/npx2_cursors.png){#fig-cursors}
 ^^^ Four cursors sit on successive spikes of channel 131, each measured from C0, the reference. Their dimensions are drawn above, and the cursor table below.
 
+[](#fig-cursors-video) places cursors on the spikes of one channel and steps them onto their peaks, in this order:
+
+1. The viewer starts live in the stacked view, at a 10 s timebase and a 30 px channel height. It is paused, and channel 16 is selected for the cursors to read.
+2. C shows the cursors. The first cursor starts outside the view, so Home brings it in.
+3. The cursor is dragged roughly onto a spike, and two more are added and dragged roughly onto other spikes of channel 16.
+4. The Left and Right keys step each cursor onto the peak of its spike.
+5. Channel 16 is expanded.
+6. Clicking a cursor's button in the cursor table centers the view on that cursor.
+7. Clicking a cursor's time label above the plot makes it the reference, which the others are then measured from.
+8. The view is centered on C1 and the timebase is shortened, which shows that C1 sits slightly off its peak. The arrow keys move it onto the peak.
+9. Q and E step through the channels, showing where the cursors fall on each of them.
+
+^^^
+<video id="fig-cursors-video" controls preload="metadata" src="../images/lfp-viewer/npx2_cursors.webm"></video>
+^^^ Cursors are placed and stepped onto spikes of a NeuropixelsV2 recording, with the keys and buttons pressed shown as they are used.
+
 | Element | Description |
 |---|---|
 | C0 to C3 | There can be up to four cursors, C0 to C3. C0 is always present while cursors are shown, and the others are added from the cursor table. |
 | Reference | The reference is the cursor the others are measured from, C0 to begin with. It is drawn as a solid line with a filled time label, where the others are dotted and outlined. Clicking a cursor's time label makes it the reference. The reference cannot be removed. |
-| Time label | Each cursor's time label sits in the row of time labels, over any it would collide with, and gives the cursor's name and time. Clicking it makes that cursor the reference; where labels overlap, the one on top takes the click. |
+| Active cursor | The active cursor is the one the Left and Right keys move, one pixel column at a time, or ten with Shift. A pixel column is one sample once the view is zoomed in to a sample per pixel, so a cursor can be stepped onto the tip of a spike. The active cursor is the one last dragged, picked by clicking its time label or its row in the cursor table, or added. Its row in the cursor table is highlighted, and where there is more than one cursor its line is drawn heavier. Removing the active cursor makes the reference active. |
+| Time label | Each cursor's time label sits in the row of time labels, over any it would collide with, and gives the cursor's name and time. Clicking it makes that cursor the reference and the active cursor; where labels overlap, the one on top takes the click. |
 | Selected channel | The cursors read the selected channel, which is chosen by clicking its trace or label, or with Q and E. Its label is boxed, and a faint band lies behind its row; in the heatmap, which would cover the band, white lines lie just above and below the row instead. With none selected, turning the cursors on or pressing X selects the first shown channel in view. Escape clears the selection, as does hiding the channel. |
 | Markers and values | Where each cursor crosses the selected channel's trace, markers show the maximum above and the minimum below of what the pixel there is drawn from, or the single sample when the pixel holds one. In the heatmap there is no marker, and the one value the color shows is labeled level with the middle of the row. |
 | Dimensions | Near the top of the plot, each cursor has a dimension line from the reference to it, with an arrowhead at the cursor. The line is broken around the time between them and its inverse in Hz, which sit on a dark fill so that they read over lines and graticules. |
 | Cursor table | The cursor table, in the lower left, lists the selected channel and, for each cursor, its time, the time from the reference (negative before it) and its inverse, the minimum and maximum, and dy min and dy max. At one sample per pixel, and always in the heatmap, it shows a single value y and its difference from the reference, dy, instead. |
 | dy min, dy max | These bound how far the signal at a cursor may differ from the signal at the reference. A cursor reads what its pixel is drawn from, which spans the signal's minimum to maximum over the samples it covers, so the true difference between the two cursors lies somewhere from dy min (this cursor's minimum less the reference's maximum) to dy max (this cursor's maximum less the reference's minimum). The range narrows as zooming in puts fewer samples in each pixel. At one sample per pixel the two are equal, and the table shows the single value y and its difference dy. |
-| + Add cursor | This button adds a cursor in the middle of the screen. It is disabled at four cursors. |
+| + Add cursor | This button adds a cursor in the middle of the screen and makes it the active cursor. It is disabled at four cursors. |
 | Home | Home brings the cursors to the middle of the screen, keeping their spacing, or spreads them evenly if they span more than the screen. |
 | C0 to C3 buttons | While the display is paused, each cursor's button in the cursor table centers the screen on that cursor, which reaches a cursor that is off the screen. The reference's button is filled, as its time label is. |
 | x | The x button removes that cursor. |

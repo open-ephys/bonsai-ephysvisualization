@@ -98,6 +98,8 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                 Keys.Space => ImGuiKey.Space,
                 Keys.Escape => ImGuiKey.Escape,
                 Keys.Delete => ImGuiKey.Delete,
+                Keys.Left => ImGuiKey.LeftArrow,
+                Keys.Right => ImGuiKey.RightArrow,
                 >= Keys.A and <= Keys.Z => ImGuiKey.A + (key - Keys.A),
                 _ => ImGuiKey.None,
             };

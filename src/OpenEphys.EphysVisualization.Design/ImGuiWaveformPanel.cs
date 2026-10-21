@@ -69,10 +69,25 @@ namespace OpenEphys.EphysVisualization.Design
             get => cursors.Show;
             set
             {
+                // NB: only the cursors the view can no longer reach, as after the record they were placed in has
+                // been dropped or cleared, which could not otherwise be shown or centered on. Any other cursor keeps
+                // its place however often the cursors are hidden and shown.
+                if (value && !cursors.Show)
+                {
+                    var (first, last) = ReachablePositions;
+                    cursors.PlaceUnreachable(first, last, Axis);
+                }
+
                 selectOnShow |= value && !cursors.Show;
                 cursors.Show = value;
             }
         }
+
+        /// <summary>
+        /// The positions the view can show: the frame live, and paused, as far back as the record serves.
+        /// </summary>
+        (long First, long Last) ReachablePositions =>
+            CanPan && history is not null ? (AxisFirst(history), AxisLast) : (window.Start, window.End);
 
         // NB: once, as the cursors are shown, rather than whenever there is no selection, so that clearing the
         // selection with the cursors shown leaves it clear.
@@ -461,7 +476,7 @@ namespace OpenEphys.EphysVisualization.Design
                 // be lined up with whatever the owner puts beside it.
                 var padding = ImGui.GetStyle().WindowPadding;
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(padding.X, 0));
-                ImGui.BeginChild("##data", Vector2.Zero, ImGuiChildFlags.None, ImGuiWindowFlags.NoScrollWithMouse);
+                ImGui.BeginChild("##data", Vector2.Zero, ImGuiChildFlags.None, ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);
                 var (envelope, shown) = DisplayEnvelope(decimator);
                 WaveformPlot(envelope, shown);
                 ImGui.EndChild();
