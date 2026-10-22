@@ -241,11 +241,11 @@ Up to four cursors measure time and amplitude on the selected channel ([](#fig-c
 1. The viewer starts live in the stacked view, at a 10 s timebase and a 30 px channel height. It is paused, and channel 16 is selected for the cursors to read.
 2. C shows the cursors. The first cursor starts outside the view, so Home brings it in.
 3. The cursor is dragged roughly onto a spike, and two more are added and dragged roughly onto other spikes of channel 16.
-4. The Left and Right keys step each cursor onto the peak of its spike.
+4. The Left and Right keys step each cursor onto its spike. At the 10 s timebase each pixel column holds many samples, so each cursor reads two values, the maximum and the minimum of the samples in its column, which span the spike's full swing. The cursor can only be placed on the column that holds the peak, not on the peak sample itself.
 5. Channel 16 is expanded.
 6. Clicking a cursor's button in the cursor table centers the view on that cursor.
 7. Clicking a cursor's time label above the plot makes it the reference, which the others are then measured from.
-8. The view is centered on C1 and the timebase is shortened, which shows that C1 sits slightly off its peak. The arrow keys move it onto the peak.
+8. The view is centered on C1 and the timebase is shortened until each pixel column holds a single sample. C1 now reads one value instead of a minimum and maximum, which shows that it sits slightly off the peak within the column it was placed on in step 4. The Left and Right keys move it one sample at a time onto the exact peak.
 9. Q and E step through the channels, showing where the cursors fall on each of them.
 
 ^^^

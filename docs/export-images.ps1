@@ -12,7 +12,7 @@ if ($OutputFolder) {
 
 function Export-Workflow-Collection([string[]]$libPath, [string]$workflowPath, [string]$environmentPath) {
     $bootstrapperPath = (Join-Path $environmentPath 'Bonsai.exe')
-    .\bonsai-docfx\modules\Export-Image.ps1 -libPath $libPath -workflowPath $workflowPath -bootstrapperPath $bootstrapperPath -outputFolder $OutputFolder -documentationRoot $PSScriptRoot
+    .\bonsai-docfx\scripts\Export-Image.ps1 -libPath $libPath -workflowPath $workflowPath -bootstrapperPath $bootstrapperPath -outputFolder $OutputFolder -documentationRoot $PSScriptRoot
 }
 
 Push-Location $PSScriptRoot
