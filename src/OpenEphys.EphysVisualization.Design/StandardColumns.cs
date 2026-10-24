@@ -109,8 +109,8 @@ namespace OpenEphys.EphysVisualization.Design
             if (InputDoubleCombo("##timebase", ref timebase, panel.StandardTimeBases, width,
                 "During live display, the time one sweep takes to cross the plot, in seconds. When paused, the time " +
                 "the plot window shows from record history. A shorter time shows faster events in more detail.\n" +
-                "Keys: Ctrl+A longer, Ctrl+D shorter\n" +
-                "On the plot: Ctrl+Shift+Wheel, or Ctrl+Drag left and right while paused"))
+                "Keys: Ctrl+A longer, Ctrl+D shorter, T longest\n" +
+                "On the plot: Ctrl+Shift+Wheel, or Ctrl+Drag left and right or right-drag a box while paused"))
                 panel.Timebase = timebase;
         }
 
@@ -137,7 +137,7 @@ namespace OpenEphys.EphysVisualization.Design
             }
             ImGuiWidgets.Tooltip("Height of each channel's row, in pixels.\n" +
                 "Keys: Ctrl+W taller, Ctrl+S shorter\n" +
-                "On the plot: Ctrl+Wheel, or Ctrl+Drag up and down while paused",
+                "On the plot: Ctrl+Wheel, or Ctrl+Drag up and down or right-drag a box while paused",
                 single ? SingleChannelHint : "Turn Fit off to set the height yourself.");
             ImGui.EndDisabled();
             ImGui.SameLine(0, inner);

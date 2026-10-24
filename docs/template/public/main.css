@@ -37,6 +37,10 @@ article figure {
   margin: 1.5rem 0;
 }
 
+article figure:has(img.centered) {
+  margin-inline: auto;
+}
+
 /* NB: Markdig wraps the image in a paragraph, whose margin would part it from its caption. */
 article figure > p {
   margin: 0;

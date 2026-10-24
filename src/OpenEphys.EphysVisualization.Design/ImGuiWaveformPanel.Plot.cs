@@ -24,6 +24,8 @@ namespace OpenEphys.EphysVisualization.Design
         static readonly uint ColSelectedRow = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0x20);
 
         static readonly uint ColFrozenTail = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0x80);
+        static readonly uint ColZoomBox = ImGuiPalette.Grey0x99;
+        static readonly uint ColZoomBoxFill = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0x18);
 
         /// <summary>
         /// Color and weight of the plot's frame, for the control strip's divider to match.
@@ -88,7 +90,7 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, LabelColumnWidth(labelDigits));
                 ImGui.TableSetupColumn(string.Empty);
-                RestoreScrollIfPending();
+                ScrollIfPending();
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
@@ -109,6 +111,7 @@ namespace OpenEphys.EphysVisualization.Design
                 AnswerTableKeys(layout);
                 HandleWheel(layout);
                 HandleDrags(layout);
+                HandleZoomBox(layout);
 
                 ImGui.TableNextColumn();
                 plotX = ImGui.GetCursorScreenPos().X;
@@ -156,6 +159,7 @@ namespace OpenEphys.EphysVisualization.Design
                 var cornerTaken = DrawMaximize(draw, frame);
                 DrawClipping(draw, frame, cornerTaken);
                 cursors.Draw(draw, frame);
+                DrawZoomBox(draw, frame);
                 SelectClicked(frame, hovered);
                 DrawFrame(draw, plotX, plotWidth, plotTop, plotBottom);
                 DrawReadout(draw, frame, hovered);
@@ -494,6 +498,26 @@ namespace OpenEphys.EphysVisualization.Design
                 new Vector2(frame.Left + frame.Width, top + frame.Layout.RowHeight), ColSelectedRow);
         }
 
+        /// <summary>
+        /// Draws the box a right-drag is zooming to, while it is held.
+        /// </summary>
+        /// <remarks>
+        /// An axis the box is too short along to zoom is drawn across the whole plot, since the zoom leaves it as it
+        /// is, so the box shows what letting go will do.
+        /// </remarks>
+        void DrawZoomBox(ImDrawListPtr draw, in PlotFrame frame)
+        {
+            var plotMin = PlotMin(frame.Top);
+            var plotMax = PlotMax(frame.Bottom);
+            if (zoomBox.Current(plotMin, plotMax) is not { } box || !box.Wide && !box.Tall)
+                return;
+
+            var min = new Vector2(box.Wide ? box.Min.X : plotMin.X, box.Tall ? box.Min.Y : plotMin.Y);
+            var max = new Vector2(box.Wide ? box.Max.X : plotMax.X, box.Tall ? box.Max.Y : plotMax.Y);
+            PixelRect.Fill(draw, min, max, ColZoomBoxFill);
+            PixelRect.Outline(draw, min, max, ColZoomBox);
+        }
+
         // NB: after the cursors, so that a click that grabs a cursor's line does not also select.
         void SelectClicked(in PlotFrame frame, int hovered)
         {
@@ -615,20 +639,10 @@ namespace OpenEphys.EphysVisualization.Design
             draw.AddRectFilled(new Vector2(frame.Left, bottom), new Vector2(right, bottom + 1), color);
         }
 
-        // NB: filled rects on whole pixels, here and in DrawGraticules and BracketRow. AddRect and AddLine draw
-        // half a pixel off and anti-alias, which blurs a 1 px line.
-        static void DrawFrame(ImDrawListPtr draw, float left, float width, float top, float bottom)
-        {
-            var l = MathF.Floor(left);
-            var r = MathF.Floor(left + width);
-            var t = MathF.Floor(top);
-            var b = MathF.Floor(bottom);
-            var w = GraticuleWeight;
-            draw.AddRectFilled(new Vector2(l, t), new Vector2(r, t + w), ColGraticule);
-            draw.AddRectFilled(new Vector2(l, b - w), new Vector2(r, b), ColGraticule);
-            draw.AddRectFilled(new Vector2(l, t), new Vector2(l + w, b), ColGraticule);
-            draw.AddRectFilled(new Vector2(r - w, t), new Vector2(r, b), ColGraticule);
-        }
+        // NB: filled rects on whole pixels, as PixelRect draws, here and in DrawGraticules and BracketRow.
+        static void DrawFrame(ImDrawListPtr draw, float left, float width, float top, float bottom) =>
+            PixelRect.Outline(draw, new Vector2(left, top), new Vector2(left + width, bottom), ColGraticule,
+                GraticuleWeight);
 
         /// <summary>
         /// Draws the time divisions and their labels.

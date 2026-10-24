@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Hexa.NET.ImGui;
 
 namespace OpenEphys.EphysVisualization.Design
@@ -43,11 +44,13 @@ namespace OpenEphys.EphysVisualization.Design
         (double Value, float X, long Anchor, double Fraction)? timebaseDrag;
         bool grabbing;
 
+        readonly DragBox zoomBox = new(ImGuiMouseButton.Right);
+
         // NB: wheel movement not yet a whole step, which a touchpad sends in fractions of a notch.
         float wheelSteps;
 
         float collapsedScroll;
-        bool restoreScroll;
+        float? pendingScroll;
 
         // NB: the channel under the mouse is found from its y anywhere across the label column and
         // the plot, so a trace can be acted on where it is looked at.
@@ -70,14 +73,15 @@ namespace OpenEphys.EphysVisualization.Design
             return channel >= layout.FirstRow && channel < layout.LastRow ? channel : -1;
         }
 
-        // NB: the scroll clamps to zero while one channel fills the table, so the one from before the expand is
-        // put back once the rows are back.
-        void RestoreScrollIfPending()
+        // NB: the scroll clamps to the rows as they were the frame before, which for a collapse is one channel
+        // filling the table and for a box zoom rows of the old height, so a scroll for rows that change is set once
+        // they have.
+        void ScrollIfPending()
         {
-            if (restoreScroll)
+            if (pendingScroll is float scroll)
             {
-                ImGui.SetScrollY(collapsedScroll);
-                restoreScroll = false;
+                ImGui.SetScrollY(scroll);
+                pendingScroll = null;
             }
         }
 
@@ -141,8 +145,9 @@ namespace OpenEphys.EphysVisualization.Design
             (ImGuiKey.C, false, () => ShowCursors = !ShowCursors),
             (ImGuiKey.H, false, () => ShowHeatmap = !ShowHeatmap),
             (ImGuiKey.F, false, () => FitChannels = !FitChannels),
+            (ImGuiKey.T, false, LongestTimebase),
             (ImGuiKey.M, false, () => Maximized = !Maximized),
-            (ImGuiKey.Escape, false, () => selectedChannel = -1),
+            (ImGuiKey.Escape, false, Escape),
             (ImGuiKey.A, true, () => TimeKey(-1)),
             (ImGuiKey.D, true, () => TimeKey(1)),
             (ImGuiKey.LeftArrow, true, () => CursorKey(-1)),
@@ -305,6 +310,14 @@ namespace OpenEphys.EphysVisualization.Design
                 StepTimebase(-direction, plotLeft + plotSpan / 2);
         }
 
+        // NB: a zoom box being dragged is cancelled alone, leaving the selection, so that backing out of one gesture
+        // does not undo another.
+        void Escape()
+        {
+            if (zoomBox.Dragging) zoomBox.Cancel();
+            else selectedChannel = -1;
+        }
+
         // NB: Shift steps ten cells, as it makes the other moves larger.
         void CursorKey(int direction)
         {
@@ -398,6 +411,64 @@ namespace OpenEphys.EphysVisualization.Design
                 SetChannelHeight(height.Value + delta, height.Value, height.Pivot, height.Scroll, layout);
             }
         }
+
+        /// <summary>
+        /// Right click and drag a zoom box. Paused only, as Ctrl+Drag is. A double-click zooms all the way
+        /// out, which a live view can do too.
+        /// </summary>
+        void HandleZoomBox(in RowLayout layout)
+        {
+            var mouse = ImGui.GetMousePos();
+            var onPlot = ImGui.IsWindowHovered() && OverPlot(mouse.X) && Modifiers();
+            if (onPlot && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
+            {
+                zoomBox.Cancel();
+                ZoomAll();
+            }
+            else if (onPlot && Paused && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                zoomBox.Begin();
+
+            if (!zoomBox.Released(PlotMin(layout.Top), PlotMax(layout.Bottom), out var box) || !Paused)
+                return;
+
+            if (box.Wide)
+            {
+                var longest = standardTimeBases[ServableTimeBases - 1];
+                var value = Significant(Timebase * (box.Max.X - box.Min.X) / plotSpan);
+                SetTimebase(Math.Max(ShortestTimeBase, Math.Min(longest, value)), Axis.PositionAt(box.Min.X), 0);
+            }
+
+            if (box.Tall && expandedChannel >= 0)
+            {
+                var (center, span) = AmplitudeView;
+                SetAmplitudeView(center + RowFraction(layout, (box.Min.Y + box.Max.Y) / 2) * span, 0,
+                    Significant(span * (box.Max.Y - box.Min.Y) / layout.RowHeight));
+            }
+            else if (box.Tall)
+            {
+                var first = Math.Max(layout.FirstRow, layout.ChannelAt(box.Min.Y));
+                var last = Math.Min(layout.LastRow - 1, layout.ChannelAt(box.Max.Y - 1));
+                ChannelHeight = Math.Min(layout.Bottom - layout.Top, MathF.Floor(visibleHeight / (last - first + 1)));
+                pendingScroll = first * ChannelHeight;
+            }
+        }
+
+        Vector2 PlotMin(float top) => new(plotLeft, top);
+        Vector2 PlotMax(float bottom) => new(plotLeft + plotSpan, bottom);
+
+        /// <summary>
+        /// Shows everything: the longest timebase, every channel fitted to the plot, and an expanded channel's
+        /// whole range.
+        /// </summary>
+        void ZoomAll()
+        {
+            LongestTimebase();
+            FitChannels = true;
+            amplitudeView.Channel = -1;
+        }
+
+        // NB: while paused, the longest the record can fill, so the whole record is in view.
+        void LongestTimebase() => SetTimebaseAt(standardTimeBases[ServableTimeBases - 1], plotLeft + plotSpan / 2);
 
         /// <summary>
         /// How far <paramref name="y"/> lies above the middle of the expanded channel's row, in rows.
@@ -548,7 +619,7 @@ namespace OpenEphys.EphysVisualization.Design
                 collapsedScroll = rowTop + height - visibleHeight;
 
             expandedChannel = -1;
-            restoreScroll = true;
+            pendingScroll = collapsedScroll;
         }
     }
 }

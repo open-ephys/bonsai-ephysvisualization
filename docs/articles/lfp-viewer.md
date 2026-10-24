@@ -1,10 +1,6 @@
 # LFP Viewer
 
-The [LfpViewer](xref:OpenEphys.EphysVisualization.Design.LfpViewer) node shows a sequence of matrices as a live multichannel waveform display ([](#fig-overview)). Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
-
-^^^
-![LfpViewer heatmap of a NeuropixelsV2 recording](~/images/lfp-viewer/npx2_overview.png){#fig-overview}
-^^^ All 384 channels of a NeuropixelsV2 recording are fitted to the window and shown as a heatmap.
+The [LfpViewer](xref:OpenEphys.EphysVisualization.Design.LfpViewer) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
 
 ## Getting started
 
@@ -70,19 +66,11 @@ The keys and the mouse follow one scheme:
 
 Every key and gesture acts on a setting that a control in the control panel shows, so its effect is always in view and can also be set by hand there.
 
-[](#fig-stacked-gestures) runs through them in this order:
-
-1. The wheel, then W and S, move through the channels.
-2. Shift+W and Shift+S move through the channels most of a screen at a time.
-3. Ctrl+Wheel, then Ctrl+W and Ctrl+S, set the channel height.
-4. Alt+Wheel, then Alt+W and Alt+S, set the gain.
-5. Space pauses the display. Then Shift+Wheel, A and D, and Shift+A and Shift+D move back and forth through time.
-6. A middle-drag moves through the channels and time at once.
-7. A Ctrl+drag zooms in on a pair of large spikes.
+[](#fig-stacked-gestures) runs through them on a recording.
 
 ^^^
 <video id="fig-stacked-gestures" controls preload="metadata" src="../images/lfp-viewer/npx2_stacked-view-gestures.webm"></video>
-^^^ The keys and mouse are used on a NeuropixelsV2 recording, with the keys and buttons pressed shown as they are used.
+^^^ The keys and mouse are used on a NeuropixelsV2 recording. The wheel, then W and S, move through the channels, and Shift+W and Shift+S move most of a screen at a time. Ctrl+Wheel, then Ctrl+W and Ctrl+S, set the channel height, and Alt+Wheel, then Alt+W and Alt+S, set the gain. Space pauses the display, and Shift+Wheel, A and D, and Shift+A and Shift+D move back and forth through time. A middle-drag moves through the channels and time at once, and a Ctrl+drag zooms in on a pair of large spikes. The keys and buttons pressed are shown as they are used.
 
 ### Keys
 
@@ -103,9 +91,10 @@ Each key has a single owner in the window, so a key does the same thing wherever
 | Shift+Left / Shift+Right | Step the active cursor by ten pixel columns | Cursors shown |
 | H | Switch between traces and the heatmap | More than one channel |
 | F | Turn Fit on or off (see Chan. Height) | More than one channel |
+| T | Set the longest timebase. While paused, that is the longest the record can fill, so the whole record is in view | Always |
 | M | Give the plot the whole window, or restore the layout | Always |
 | Q / E | Select the previous or next channel, skipping hidden channels. With a channel expanded, expand that one instead | Always |
-| Escape | Clear the selection | Always |
+| Escape | Clear the selection, or cancel a zoom box being dragged, leaving the selection | Always |
 | X | Expand the selected channel, selecting the first shown channel in view if none is, or collapse the expanded one, returning to the view from before the expand, moved only as far as brings the channel into view | More than one channel |
 
 ### Mouse
@@ -121,6 +110,8 @@ Dragged zooms and gain round to three significant figures, and an axis answers o
 | Alt+Wheel | Plot | Narrow or widen the range through its presets | Always |
 | Ctrl+Drag | Plot | Drag up or down to make the channels taller or shorter, keeping the channel pressed on in place, or on an expanded channel to magnify or shrink its amplitude, keeping the value pressed on in place. Drag right or left to shorten or lengthen the timebase, keeping the time pressed on in place. A diagonal drag does both | Paused |
 | Alt+Drag (vertical) | Plot | Narrow the range upward, widen it downward | Always |
+| Right-drag | Plot | Zoom to the box dragged: the timebase to its width, starting at its left edge, and the channels it touches to fill the plot, or on an expanded channel the amplitude to its height. A box no wider than a few pixels leaves the timebase as it is, and one no taller leaves the channels or amplitude, so a flat or narrow box zooms one axis alone. While it is dragged, the box is drawn as it will zoom, across the whole plot along an axis it leaves. Escape cancels it | Paused |
+| Right double-click | Plot | Zoom all the way out: the longest timebase, Fit on, and on an expanded channel its whole range | Always |
 | Middle-drag | Plot or channel labels | Grab the plot and move it with the pointer: through the channels, or an expanded channel's amplitudes, and through time while paused | Always |
 | Double-click | A channel | Expand the channel to fill the plot, or collapse it, returning to the view from before the expand, moved only as far as brings the channel into view | More than one channel |
 | Click / Drag (vertical) | Channel labels | Show the channel, or every channel dragged across, whether hidden or not. A click also selects the channel | No channel expanded |
@@ -157,7 +148,7 @@ The control panel is the row of controls under the plot ([](#fig-control-panel))
 
 ## Reading the plot
 
-The plot shows each channel as a trace, or as a row of color in the heatmap, against time. Everything drawn in and around it is described below, grouped by what it tells you.
+The plot shows each channel as a trace, or as a row of color in the heatmap, against time. What is drawn in and around it in every view is described below, grouped by what it tells you. The expanded channel and the heatmap have sections of their own, [Expanded channel](#expanded-channel) and [Heatmap](#heatmap).
 
 ### Live and paused
 
@@ -184,30 +175,6 @@ Each channel has a row, labeled on its left. A channel can be hidden, selected f
 | Channel labels | The channel labels run down the left of the plot. The labels of hidden channels are dimmed ([](#fig-paused)). The hovered channel's label is filled in its trace color, and the label of the channel the cursors read is filled the same way and boxed. On rows shorter than the text, only every 2nd, 5th or 10th channel is labeled, but the hovered channel and the one the cursors read always are. |
 | Readout | While the pointer is over a channel, the readout in the lower right shows the channel, the time, and the amplitude at the pointer. The channel is left out while a channel is expanded, since it is named in the top left. |
 
-### Heatmap
-
-The heatmap draws each channel's row as a strip of color instead of a trace, which brings out activity spread across many channels. H, or the Heatmap checkbox, switches to it and back.
-
-<!-- VIDEO: images/lfp-viewer/npx2_fit-heatmap.webm — fitting and the heatmap (see TODO item 3). -->
-
-| Element | Description |
-|---|---|
-| Colors | At each pixel of a row, the color shows whichever of the minimum and maximum lies further from zero, on the icefire colormap. The colormap is black at zero and brightens toward blue below and yellow above, with its ends at plus and minus the range. |
-| Threshold | Magnitudes at or below the threshold are black, and those above it keep their usual color, so that only larger activity shows (see Color in [Control panel](#control-panel)). |
-| Rows | Rows sit exactly where the traces do, so switching views keeps every channel in place. Double-click a row to read it as a trace, and double-click again to return. |
-| Offsets | A channel's offset shows as solid color, so remove it upstream, or with Offset where it is the same on every channel. |
-
-### Expanded channel
-
-An expanded channel fills the plot on its own, with an amplitude axis, so that one channel can be studied closely. Double-click a channel, or select it and press X, to expand it, and do the same to return.
-
-<!-- VIDEO: images/lfp-viewer/npx2_selection-expansion.webm — selecting and expanding channels (see TODO item 3). -->
-
-| Element | Description |
-|---|---|
-| Amplitude labels | Labels down the left of the plot give the amplitude of each division. An expanded channel can be magnified and moved up and down its amplitudes (see [Mouse](#mouse)), so that, for example, a peak can be dragged to the middle of the plot and magnified there, but it never shows more than the range. The zoom belongs to the view, not the channel, so expanding another channel, collapsing, or changing the range starts it over. |
-| Channel name | The channel name in the top left of the plot gives the channel, the amplitude per division and the time per division. |
-
 ### Clipping
 
 A channel clips when a sample reaches the node's saturation limits (see [Input](#input)). While any channel has clipped within the last second of data, CLIPPING flashes in the plot's top right corner, beside the maximize button, and that channel's label flashes red in step with it, written even where labels are thinned out ([](#fig-clipping)). Clicking CLIPPING brings the first clipping channel to the middle of the plot, or expands it where a channel is expanded ([](#fig-clipping-expanded)).
@@ -228,6 +195,36 @@ The examples below come from a live NeuropixelsV1 probe left floating, out of ti
 
 The maximize button, in the plot's top right corner and faint until hovered, gives the plot the whole window, hiding the control panel. While the plot is maximized, the button shows the restore glyph, which brings the layout back. M does the same.
 
+## Expanded channel
+
+An expanded channel fills the plot on its own, with an amplitude axis, so that one channel can be studied closely. Double-click a channel, or select it and press X, to expand it, and do the same to collapse it, which returns to the view from before the expand. While a channel is expanded, Q and E expand the previous or next channel in its place.
+
+The expanded channel's row spans the range, as each row of the stacked view does, so a range set in one view holds in the other. Within the range, the view can be magnified and moved: the wheel moves it up and down the channel's amplitudes, Ctrl+Wheel magnifies it about the pointer, a right-drag zooms to a box, and a right double-click zooms all the way out (see [Mouse](#mouse)). The view never shows more than the range. It belongs to the channel at that range, so expanding another channel, collapsing, or changing the range starts it over.
+
+[](#fig-selection-expansion) selects channels, expands them and zooms in on their spikes.
+
+^^^
+<video id="fig-selection-expansion" controls preload="metadata" src="../images/lfp-viewer/npx2_selection-expansion.webm"></video>
+^^^ A few channels of a NeuropixelsV2 recording are selected by clicking, the selection is cleared with Escape and stepped with Q and E, and channel 8 is expanded with a double-click. Alt+Wheel fits its spikes to the range, which still holds when the channel is collapsed and expanded again with X. The display is paused, A and D move back to a prominent spike, and the wheel moves the channel up and down its amplitudes. Two right-drags zoom in on the spike, and Q and E show it on neighboring channels. A right double-click zooms back out. On channel 12, a flat right-drag zooms in time alone, a tall one in amplitude alone, and another flat one further in time, before Q and E show this spike on other channels. X collapses to the stacked view, fitted at the short timebase, F turns Fit off, and T brings back the longest timebase. The keys and buttons pressed are shown as they are used.
+
+| Element | Description |
+|---|---|
+| Amplitude labels | Labels down the left of the plot give the amplitude of each division. |
+| Channel name | The channel name in the top left of the plot gives the channel, the amplitude per division and the time per division. |
+
+## Heatmap
+
+The heatmap draws each channel's row as a strip of color instead of a trace, which brings out activity spread across many channels. H, or the Heatmap checkbox, switches to it and back. In the heatmap, Color replaces Range in the control panel, and its bar also sets the threshold below which magnitudes are drawn black (see Color in [Control panel](#control-panel)). Double-click a row to read it as a trace, and double-click again to return.
+
+<!-- VIDEO: images/lfp-viewer/npx2_fit-heatmap.webm — fitting and the heatmap (see TODO item 3). -->
+
+| Element | Description |
+|---|---|
+| Colors | At each pixel of a row, the color shows whichever of the minimum and maximum lies further from zero, on the icefire colormap. The colormap is black at zero and brightens toward blue below and yellow above, with its ends at plus and minus the range. |
+| Threshold | Magnitudes at or below the threshold are black, and those above it keep their usual color, so that only larger activity shows. |
+| Rows | Rows sit exactly where the traces do, so switching views keeps every channel in place. |
+| Offsets | A channel's offset shows as solid color, so remove it upstream, or with Offset where it is the same on every channel. |
+
 ## Cursors
 
 Up to four cursors measure time and amplitude on the selected channel ([](#fig-cursors)).
@@ -236,21 +233,11 @@ Up to four cursors measure time and amplitude on the selected channel ([](#fig-c
 ![Cursors on an expanded channel](~/images/lfp-viewer/npx2_cursors.png){#fig-cursors}
 ^^^ Four cursors sit on successive spikes of channel 131, each measured from C0, the reference. Their dimensions are drawn above, and the cursor table below.
 
-[](#fig-cursors-video) places cursors on the spikes of one channel and steps them onto their peaks, in this order:
-
-1. The viewer starts live in the stacked view, at a 10 s timebase and a 30 px channel height. It is paused, and channel 16 is selected for the cursors to read.
-2. C shows the cursors. The first cursor starts outside the view, so Home brings it in.
-3. The cursor is dragged roughly onto a spike, and two more are added and dragged roughly onto other spikes of channel 16.
-4. The Left and Right keys step each cursor onto its spike. At the 10 s timebase each pixel column holds many samples, so each cursor reads two values, the maximum and the minimum of the samples in its column, which span the spike's full swing. The cursor can only be placed on the column that holds the peak, not on the peak sample itself.
-5. Channel 16 is expanded.
-6. Clicking a cursor's button in the cursor table centers the view on that cursor.
-7. Clicking a cursor's time label above the plot makes it the reference, which the others are then measured from.
-8. The view is centered on C1 and the timebase is shortened until each pixel column holds a single sample. C1 now reads one value instead of a minimum and maximum, which shows that it sits slightly off the peak within the column it was placed on in step 4. The Left and Right keys move it one sample at a time onto the exact peak.
-9. Q and E step through the channels, showing where the cursors fall on each of them.
+[](#fig-cursors-video) places cursors on the spikes of one channel and steps them onto their peaks.
 
 ^^^
 <video id="fig-cursors-video" controls preload="metadata" src="../images/lfp-viewer/npx2_cursors.webm"></video>
-^^^ Cursors are placed and stepped onto spikes of a NeuropixelsV2 recording, with the keys and buttons pressed shown as they are used.
+^^^ Cursors are placed on spikes of a NeuropixelsV2 recording and stepped onto their peaks. The viewer starts live in the stacked view, at a 10 s timebase and a 30 px channel height, and is paused with channel 16 selected for the cursors to read. C shows the cursors, and Home brings in the first, which starts outside the view. It is dragged roughly onto a spike, and two more are added and dragged roughly onto other spikes. The Left and Right keys step each onto its spike. At this timebase each pixel column holds many samples, so each cursor reads two values, the maximum and minimum of its column, which span the spike's full swing, and it can reach the column that holds the peak but not the peak sample itself. Channel 16 is expanded, a cursor's button in the cursor table centers the view on that cursor, and clicking a cursor's time label makes it the reference. The view is then centered on C1 and the timebase shortened until each pixel column holds a single sample. C1 now reads one value, which shows that it sits slightly off the peak, and the Left and Right keys move it a sample at a time onto it. Q and E then step through the channels, showing where the cursors fall on each. The keys and buttons pressed are shown as they are used.
 
 | Element | Description |
 |---|---|
@@ -261,12 +248,28 @@ Up to four cursors measure time and amplitude on the selected channel ([](#fig-c
 | Selected channel | The cursors read the selected channel, which is chosen by clicking its trace or label, or with Q and E. Its label is boxed, and a faint band lies behind its row; in the heatmap, which would cover the band, white lines lie just above and below the row instead. With none selected, turning the cursors on or pressing X selects the first shown channel in view. Escape clears the selection, as does hiding the channel. |
 | Markers and values | Where each cursor crosses the selected channel's trace, markers show the maximum above and the minimum below of what the pixel there is drawn from, or the single sample when the pixel holds one. In the heatmap there is no marker, and the one value the color shows is labeled level with the middle of the row. |
 | Dimensions | Near the top of the plot, each cursor has a dimension line from the reference to it, with an arrowhead at the cursor. The line is broken around the time between them and its inverse in Hz, which sit on a dark fill so that they read over lines and graticules. |
-| Cursor table | The cursor table, in the lower left, lists the selected channel and, for each cursor, its time, the time from the reference (negative before it) and its inverse, the minimum and maximum, and dy min and dy max. At one sample per pixel, and always in the heatmap, it shows a single value y and its difference from the reference, dy, instead. |
-| dy min, dy max | These bound how far the signal at a cursor may differ from the signal at the reference. A cursor reads what its pixel is drawn from, which spans the signal's minimum to maximum over the samples it covers, so the true difference between the two cursors lies somewhere from dy min (this cursor's minimum less the reference's maximum) to dy max (this cursor's maximum less the reference's minimum). The range narrows as zooming in puts fewer samples in each pixel. At one sample per pixel the two are equal, and the table shows the single value y and its difference dy. |
-| + Add cursor | This button adds a cursor in the middle of the screen and makes it the active cursor. It is disabled at four cursors. |
-| Home | Home brings the cursors to the middle of the screen, keeping their spacing, or spreads them evenly if they span more than the screen. |
-| C0 to C3 buttons | While the display is paused, each cursor's button in the cursor table centers the screen on that cursor, which reaches a cursor that is off the screen. The reference's button is filled, as its time label is. |
-| x | The x button removes that cursor. |
+
+### Cursor table
+
+The cursor table, in the lower left of the plot, gives each cursor's readings on the selected channel, one row per cursor ([](#fig-cursor-table)).
+
+^^^
+![Cursor table with numbered elements](~/images/lfp-viewer/cursor-table.png){#fig-cursor-table}
+^^^ The cursor table is shown with four cursors, at several samples per pixel. C0 is both the reference and the active cursor. Its numbers match those in the table below.
+
+| Element | Description |
+|---|---|
+| 1. Channel label | The label gives the selected channel, which the cursors read, or No channel when none is selected. |
+| 2. C0 to C3 buttons | While the display is paused, each cursor's button centers the screen on that cursor, which reaches a cursor that is off the screen. The reference's button is filled, as its time label is. |
+| 3. Active row | The active cursor's row is highlighted. Clicking anywhere else on a row makes its cursor the active cursor. |
+| 4. t (s) | This column gives each cursor's time in seconds, as its time label does. |
+| 5. dt (ms) | This column gives each cursor's time from the reference in milliseconds, which is negative before the reference. It is blank for the reference itself. |
+| 6. 1/dt (Hz) | This column gives the inverse of dt, in Hz, which is the frequency of a signal whose period spans the two cursors. |
+| 7. min, max | These columns give the minimum and maximum of the samples the cursor's pixel column is drawn from, in the signal's units. At one sample per pixel, and always in the heatmap, the two are one value, and a single column, y, gives it instead. |
+| 8. dy min, dy max | These bound how far the signal at a cursor may differ from the signal at the reference. A cursor reads what its pixel is drawn from, which spans the signal's minimum to maximum over the samples it covers, so the true difference between the two cursors lies somewhere from dy min (this cursor's minimum less the reference's maximum) to dy max (this cursor's maximum less the reference's minimum). The range narrows as zooming in puts fewer samples in each pixel. At one sample per pixel, and always in the heatmap, the two are equal, and a single column, dy, gives the difference instead. |
+| 9. x | The x button removes that cursor. The reference has none, since it cannot be removed. |
+| 10. + Add cursor | This button adds a cursor in the middle of the screen and makes it the active cursor. It is disabled at four cursors. |
+| 11. Home | Home brings the cursors to the middle of the screen, keeping their spacing, or spreads them evenly if they span more than the screen. |
 
 ## How the display is drawn
 
@@ -281,7 +284,7 @@ This section describes what the viewer does with the signal it is given. None of
 
 ## Single channel
 
-With one channel, the viewer always shows it expanded, as a double-click would, and it cannot be collapsed ([](#fig-single-channel)). Chan. Height, Fit and Heatmap arrange a stack of channels, so they are disabled, and their keys do nothing. Everything else, the expanded channel's amplitude zoom included, works as usual.
+With one channel, the viewer always shows it expanded (see [Expanded channel](#expanded-channel)), and it cannot be collapsed ([](#fig-single-channel)). Chan. Height, Fit and Heatmap arrange a stack of channels, so they are disabled, and their keys do nothing. Everything else, the expanded channel's amplitude zoom included, works as usual.
 
 The workflow below makes one: it generates a sine wave with FunctionGenerator, as 8-bit samples at 44.1 kHz, so it needs no hardware or recording.
 
