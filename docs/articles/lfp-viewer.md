@@ -216,7 +216,11 @@ The expanded channel's row spans the range, as each row of the stacked view does
 
 The heatmap draws each channel's row as a strip of color instead of a trace, which brings out activity spread across many channels. H, or the Heatmap checkbox, switches to it and back. In the heatmap, Color replaces Range in the control panel, and its bar also sets the threshold below which magnitudes are drawn black (see Color in [Control panel](#control-panel)). Double-click a row to read it as a trace, and double-click again to return.
 
-<!-- VIDEO: images/lfp-viewer/npx2_fit-heatmap.webm — fitting and the heatmap (see TODO item 3). -->
+[](#fig-heatmap) uses the range and threshold to bring out spikes and slower waves in the heatmap.
+
+^^^
+<video id="fig-heatmap" controls preload="metadata" src="../images/lfp-viewer/npx2_heatmap.webm"></video>
+^^^ The heatmap of a NeuropixelsV2 recording is shown at a 1 s timebase and a 500 µV range. Channel 48 is selected, and X expands it to show its units and collapses it again. F fits every channel to the plot, where the heatmap is fairly dark at this range. An Alt+Drag narrows the range to raise the contrast, so that spikes saturate nearly to white and slower signals show as waves that travel across the probe's depth. The threshold is raised to remove the waves and leave the spikes. The display is paused, and A moves back through the record. A click near a channel with spikes selects it, and Q and E step the selection onto it. X expands the channel, where the spikes run off the plot at the narrowed range, and Q and E step through its neighbors. Alt+Wheel widens the range to fit the spikes, so when X collapses the channel the heatmap is dim again. T sets the 10 s timebase, the longest the record can fill, and the threshold is brought back to zero. H returns to the stacked traces and F turns Fit off, which is nearly where the video began, at the longer timebase. The pause button then resumes the live display. The keys and buttons pressed are shown as they are used.
 
 | Element | Description |
 |---|---|
