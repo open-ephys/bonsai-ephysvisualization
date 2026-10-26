@@ -40,7 +40,6 @@ namespace OpenEphys.EphysVisualization.Design
         ImGuiWaveformControlStrip? strip;
         StandardColumns? standardColumns;
         ImGuiHoverGLControl? canvas;
-        DisplayPacer? pacer;
         Timer? drainTimer;
 
         // NB: shown in the plot's place rather than thrown. The viewer is a view on data it does not change, so a
@@ -145,11 +144,6 @@ namespace OpenEphys.EphysVisualization.Design
                 Dock = DockStyle.Fill
             };
             host.Render += RenderFrame;
-
-            // NB: paced from the handle's lifetime rather than Load's, since a handle can be recreated.
-            host.HandleCreated += (_, _) => pacer = new DisplayPacer(host.Handle);
-            host.HandleDestroyed += (_, _) => StopPacer();
-            host.Paint += (_, _) => pacer?.Painted();
             canvas = host;
 
             var visualizerService = (IDialogTypeVisualizerService)provider.GetService(typeof(IDialogTypeVisualizerService));
@@ -270,7 +264,7 @@ namespace OpenEphys.EphysVisualization.Design
             var message = fault;
             if (message is null)
             {
-                waveform.RefreshRate = pacer?.RefreshRate ?? waveform.RefreshRate;
+                waveform.RefreshRate = canvas?.RefreshRate ?? waveform.RefreshRate;
                 waveform.Draw();
             }
             else
@@ -322,12 +316,6 @@ namespace OpenEphys.EphysVisualization.Design
         protected float ControlStripHeight =>
             stripHeight > 0 ? stripHeight : ImGui.GetTextLineHeight() + ImGui.GetFrameHeight() * 2;
 
-        void StopPacer()
-        {
-            pacer?.Dispose();
-            pacer = null;
-        }
-
         /// <inheritdoc/>
         /// <remarks>
         /// A derived class that overrides this calls it last.
@@ -337,7 +325,6 @@ namespace OpenEphys.EphysVisualization.Design
             drainTimer?.Dispose();
             while (pending.TryDequeue(out var item))
                 item.Data?.Dispose();
-            StopPacer();
             panel?.Dispose();
             canvas?.Dispose();
 

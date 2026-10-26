@@ -61,6 +61,9 @@ OpenEphys.EphysVisualization.Design.ModalChoice.Declined = 2 -> OpenEphys.EphysV
 OpenEphys.EphysVisualization.Design.ModalChoice.Pending = 0 -> OpenEphys.EphysVisualization.Design.ModalChoice
 OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl
 OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.ImGuiGLControl() -> void
+OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.Paced.get -> bool
+OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.Paced.set -> void
+OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.RefreshRate.get -> int
 OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.Render -> System.EventHandler!
 override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
 override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnHandleCreated(System.EventArgs! e) -> void

@@ -18,8 +18,8 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
     /// </summary>
     /// <remarks>
     /// Each <see cref="ImGuiGLControl"/> owns its ImGui context and makes it current around its own frames
-    /// and messages, so several can live in one process. Call <see cref="Control.Invalidate()"/> on an <see
-    /// cref="ImGuiGLControl"/> instance once for each frame to be drawn.
+    /// and messages, so several can live in one process. The control repaints once per display refresh while
+    /// <see cref="Paced"/> is set.
     /// </remarks>
     public class ImGuiGLControl : GLControl, IGLContext
     {
@@ -32,6 +32,8 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         bool resizing;
         bool initialized;
         int renderDepth;
+        bool paced = true;
+        DisplayPacer? pacer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImGuiGLControl"/> class.
@@ -45,6 +47,29 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             GraphicsContext.ShareContexts = false;
             Size = new Size(640, 480);
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the control repaints once per display refresh, which it does by
+        /// default.
+        /// </summary>
+        /// <remarks>
+        /// A host turns it off while a frame must not be drawn, such as while a message box it shows from outside
+        /// a frame is open.
+        /// </remarks>
+        public bool Paced
+        {
+            get => paced;
+            set
+            {
+                paced = value;
+                UpdatePacer();
+            }
+        }
+
+        /// <summary>
+        /// Gets the refresh rate, in Hz, of the monitor the control is on.
+        /// </summary>
+        public int RefreshRate => pacer?.RefreshRate ?? DisplayPacer.DefaultRefreshRate;
 
         /// <summary>
         /// Occurs once per frame, with this control's ImGui context current, for the handler to draw with ImGui.
@@ -93,6 +118,18 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             ImGuiImplWin32.InitForOpenGL(Handle.ToPointer());
             ImGuiImplOpenGL3.Init((string?)null);
             initialized = true;
+            UpdatePacer();
+        }
+
+        void UpdatePacer()
+        {
+            if (paced && initialized)
+                pacer ??= new DisplayPacer(Handle);
+            else
+            {
+                pacer?.Dispose();
+                pacer = null;
+            }
         }
 
         void MakeContextsCurrent()
@@ -150,6 +187,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                     renderDepth--;
                 }
             }
+            pacer?.Painted();
             base.OnPaint(e);
         }
 
@@ -235,6 +273,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         protected override void OnHandleDestroyed(EventArgs e)
         {
             initialized = false;
+            UpdatePacer();
             if (HasValidContext && !disposed)
             {
                 ImGuiImplOpenGL3.Shutdown();

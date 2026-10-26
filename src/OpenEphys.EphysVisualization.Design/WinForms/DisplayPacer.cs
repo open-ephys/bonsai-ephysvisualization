@@ -30,7 +30,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         // NB: the monitor's own refresh rate is read again every so often, so that moving the window to another
         // monitor is picked up.
         const int RefreshesBetweenReads = 100;
-        const int DefaultRefreshRate = 60;
+        internal const int DefaultRefreshRate = 60;
 
         readonly IntPtr window;
         readonly Thread thread;
