@@ -68,7 +68,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             get
             {
-                var (index, _) = RangeIndex(RangeAmplitude);
+                var (index, _) = RangeIndex(Range);
                 if (index != standardRangesIndex)
                 {
                     var first = Math.Max(RangeIndex(MinRange).Index, index - RangesBelow);

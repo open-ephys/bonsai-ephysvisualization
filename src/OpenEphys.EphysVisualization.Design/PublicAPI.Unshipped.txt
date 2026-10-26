@@ -41,6 +41,8 @@ OpenEphys.EphysVisualization.Design.WaveformScope.Palette.get -> OpenEphys.Ephys
 OpenEphys.EphysVisualization.Design.WaveformScope.Palette.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude.get -> double
 OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.RangeHeatmap.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScope.RangeHeatmap.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap.get -> bool

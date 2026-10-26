@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -36,11 +36,20 @@ namespace OpenEphys.EphysVisualization.Design
         public double Timebase { get; set; } = 2.5;
 
         /// <summary>
-        /// Gets or sets the amplitude spanned by one channel's row, in the units of the displayed data.
+        /// Gets or sets the amplitude spanned by one channel's row when channels are drawn as traces, in the units of
+        /// the displayed data.
         /// </summary>
         [DefaultValue(500.0)]
-        [Description("The amplitude spanned by one channel's row, in the units of the displayed data.")]
+        [Description("The amplitude spanned by one channel's row when channels are drawn as traces, in the units " +
+            "of the displayed data.")]
         public double RangeAmplitude { get; set; } = 500;
+
+        /// <summary>
+        /// Gets or sets the magnitude at which the heatmap's colors are brightest, in the units of the displayed data.
+        /// </summary>
+        [DefaultValue(250.0)]
+        [Description("The magnitude at which the heatmap's colors are brightest, in the units of the displayed data.")]
+        public double RangeHeatmap { get; set; } = 250;
 
         /// <summary>
         /// Gets or sets the height in pixels of one channel's row.

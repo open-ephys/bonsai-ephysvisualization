@@ -114,6 +114,12 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
+        /// Whether the plot is drawing the heatmap, which it does with the heatmap on and no channel expanded, since an
+        /// expanded channel is always drawn as a trace.
+        /// </summary>
+        public bool HeatmapDrawn => ShowHeatmap && expandedChannel < 0;
+
+        /// <summary>
         /// Whether there is only one channel, which is always shown expanded, so that nothing that arranges a stack
         /// of channels applies.
         /// </summary>
@@ -140,11 +146,11 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Magnitude, in the units of the incoming data, at or below which the heatmap shows black. It can
-        /// reach the range, where the colors are brightest.
+        /// reach the heatmap's range, where the colors are brightest.
         /// </summary>
         public double ColorThreshold
         {
-            get => Math.Max(0, Math.Min(settings.ColorThreshold, RangeAmplitude));
+            get => Math.Max(0, Math.Min(settings.ColorThreshold, Math.Max(MinRange, settings.RangeHeatmap)));
             set => settings.ColorThreshold = value;
         }
 
@@ -264,9 +270,9 @@ namespace OpenEphys.EphysVisualization.Design
         /// range.
         /// </summary>
         (double Center, double Span) AmplitudeView =>
-            expandedChannel >= 0 && amplitudeView.Channel == expandedChannel && amplitudeView.Range == RangeAmplitude
+            expandedChannel >= 0 && amplitudeView.Channel == expandedChannel && amplitudeView.Range == Range
                 ? (amplitudeView.Center, amplitudeView.Span)
-                : (0, RangeAmplitude);
+                : (0, Range);
 
         /// <summary>
         /// Zooms the expanded channel to <paramref name="span"/>, no wider than the range, keeping
@@ -274,8 +280,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         void SetAmplitudeView(double value, double fraction, double span)
         {
-            span = Math.Max(RangeAmplitude / MaxAmplitudeZoom, Math.Min(RangeAmplitude, span));
-            amplitudeView = (expandedChannel, RangeAmplitude, value - fraction * span, span);
+            span = Math.Max(Range / MaxAmplitudeZoom, Math.Min(Range, span));
+            amplitudeView = (expandedChannel, Range, value - fraction * span, span);
         }
 
         /// <summary>
@@ -323,12 +329,20 @@ namespace OpenEphys.EphysVisualization.Design
             : (MathF.Ceiling(height / ChannelHeightStep) - 1) * ChannelHeightStep;
 
         /// <summary>
-        /// Amplitude spanned by one channel's row, in the units of the incoming data.
+        /// Amplitude spanned by one channel's row, in the units of the incoming data. This is the heatmap's range
+        /// while the heatmap is drawn and the traces' range otherwise, so every control that sets it changes the
+        /// range of what is on screen.
         /// </summary>
-        public double RangeAmplitude
+        public double Range
         {
-            get => Math.Max(MinRange, settings.RangeAmplitude);
-            set => settings.RangeAmplitude = value;
+            get => Math.Max(MinRange, HeatmapDrawn ? settings.RangeHeatmap : settings.RangeAmplitude);
+            set
+            {
+                if (HeatmapDrawn)
+                    settings.RangeHeatmap = value;
+                else
+                    settings.RangeAmplitude = value;
+            }
         }
 
         /// <summary>

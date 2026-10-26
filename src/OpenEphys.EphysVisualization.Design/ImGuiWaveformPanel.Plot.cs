@@ -63,7 +63,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             var rows = envelope.Rows;
             var labelDigits = DigitCount(rows - 1);
-            if (amplitudeView.Channel != expandedChannel || amplitudeView.Range != RangeAmplitude)
+            if (amplitudeView.Channel != expandedChannel || amplitudeView.Range != Range)
                 amplitudeView.Channel = -1;
 
 

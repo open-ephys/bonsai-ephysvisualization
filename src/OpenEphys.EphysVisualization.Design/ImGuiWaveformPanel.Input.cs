@@ -362,11 +362,11 @@ namespace OpenEphys.EphysVisualization.Design
             var clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsWindowHovered() && OverPlot(mouse.X);
 
             if (clicked && Modifiers(alt: true))
-                rangeDrag = (RangeAmplitude, mouse.Y);
+                rangeDrag = (Range, mouse.Y);
 
             // NB: by a factor rather than an amount, so the drag feels alike at every range.
             if (rangeDrag is { } range)
-                RangeAmplitude = PlotText.Significant(range.Value * Math.Exp(Beyond(mouse.Y - range.Y) * RangeDragRate));
+                Range = PlotText.Significant(range.Value * Math.Exp(Beyond(mouse.Y - range.Y) * RangeDragRate));
 
             if (clicked && Paused && Modifiers(ctrl: true))
             {
@@ -519,11 +519,11 @@ namespace OpenEphys.EphysVisualization.Design
 
         void StepRange(int direction)
         {
-            var (i, exact) = RangeIndex(RangeAmplitude);
+            var (i, exact) = RangeIndex(Range);
             if (exact || direction > 0)
                 i += direction;
 
-            RangeAmplitude = RangeAt(Math.Max(RangeIndex(MinRange).Index, i));
+            Range = RangeAt(Math.Max(RangeIndex(MinRange).Index, i));
         }
 
         static float ChannelStep(in RowLayout layout)

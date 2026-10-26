@@ -152,22 +152,24 @@ namespace OpenEphys.EphysVisualization.Design
 
         string RangeLabel()
         {
-            var name = panel.ShowHeatmap ? "Color" : "Range";
+            var name = panel.HeatmapDrawn ? "Color" : "Range";
             return string.IsNullOrEmpty(panel.Unit) ? name : $"{name} ({panel.Unit})";
         }
 
+        // NB: follows what the plot draws rather than the Heatmap checkbox. An expanded channel is a trace even with
+        // the heatmap on, and a threshold set there would have no visible effect until the channel was collapsed.
         void RangeControls(float width)
         {
-            if (panel.ShowHeatmap)
+            if (panel.HeatmapDrawn)
             {
                 ColorControls(width);
                 return;
             }
 
-            var range = panel.RangeAmplitude;
+            var range = panel.Range;
             if (InputDoubleCombo("##range", ref range, panel.StandardRanges, width,
                 "Amplitude each channel's row spans. A smaller range magnifies the signal.\n" + RangeKeys))
-                panel.RangeAmplitude = range;
+                panel.Range = range;
         }
 
         // NB: the range sets the colors' bright end, so it stays in view, at the end of the bar it bounds. The bar
@@ -181,7 +183,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             var threshold = (float)panel.ColorThreshold;
             if (ImGuiThresholdSlider.Draw(
-                "##threshold", Icefire.Map, (float)panel.RangeAmplitude, ref threshold,
+                "##threshold", Icefire.Map, (float)panel.Range, ref threshold,
                 barWidth, ImGui.GetFrameHeight() / 2,
                 tooltip: "Signals smaller than this show as black, so that only larger activity is colored. Drag to set."))
             {
@@ -189,10 +191,10 @@ namespace OpenEphys.EphysVisualization.Design
             }
 
             ImGui.SetCursorScreenPos(new Vector2(corner.X + width - rangeWidth, corner.Y));
-            var range = panel.RangeAmplitude;
+            var range = panel.Range;
             if (InputDoubleCombo("##range", ref range, panel.StandardRanges, rangeWidth,
                 "Amplitude at which the colors are brightest. A smaller range brings out smaller signals.\n" + RangeKeys))
-                panel.RangeAmplitude = range;
+                panel.Range = range;
         }
 
         void PaletteControls(float width)

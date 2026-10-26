@@ -137,7 +137,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             // NB: whole pixels, which is where ImGui puts the pointer.
             var from = MathF.Floor(top + rows.RowHeight / 4);
             var to = MathF.Floor(top + rows.RowHeight / 2);
-            var range = panel.RangeAmplitude;
+            var range = panel.Range;
 
             RightDrag(new Vector2(x, from), new Vector2(x, to));
 
@@ -177,6 +177,47 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
             var rows = panel.Rows();
             Assert.Equal(rows.Bottom, rows.RowTop(14) + rows.RowHeight, 1);
+        }
+
+        [Fact]
+        public void TheTracesAndTheHeatmap_KeepRangesOfTheirOwn()
+        {
+            settings.RangeAmplitude = 1000;
+            settings.RangeHeatmap = 50;
+            Assert.Equal(1000, panel.Range);
+
+            imgui.Key(ImGuiKey.H, draw);
+            Assert.Equal(50, panel.Range);
+            imgui.Key(ImGuiKey.ModAlt, ImGuiKey.W, draw);
+            Assert.Equal(25, settings.RangeHeatmap);
+
+            imgui.Key(ImGuiKey.H, draw);
+            Assert.Equal(1000, panel.Range);
+            Assert.Equal(1000, settings.RangeAmplitude);
+        }
+
+        [Fact]
+        public void AnExpandedChannel_InTheHeatmap_IsDrawnAtTheTracesRange()
+        {
+            settings.RangeAmplitude = 1000;
+            settings.RangeHeatmap = 50;
+            settings.ShowHeatmap = true;
+
+            imgui.Key(ImGuiKey.X, draw);
+
+            Assert.False(panel.HeatmapDrawn);
+            Assert.Equal(1000, panel.Range);
+            Assert.Equal(1000, panel.AmplitudeView().Span);
+        }
+
+        [Fact]
+        public void TheColorThreshold_IsLimitedByTheHeatmapsRange()
+        {
+            settings.RangeAmplitude = 1000;
+            settings.RangeHeatmap = 100;
+            settings.ColorThreshold = 200;
+
+            Assert.Equal(100, panel.ColorThreshold);
         }
 
         void Scroll(int channels)
