@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using Hexa.NET.Utilities.Text;
@@ -45,6 +45,9 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         PixelAxis Axis => new(window, plotLeft, plotSpan);
 
+        // NB: read by nothing in the panel; the tests read it to see which rows are in view.
+        RowLayout lastLayout;
+
         /// <summary>
         /// Lays out the label column and the plot. Each channel's row is centered on zero with +/- range / 2 at its
         /// edges, and a trace that exceeds its range runs into the neighboring channels' rows rather than being
@@ -78,9 +81,11 @@ namespace OpenEphys.EphysVisualization.Design
             var plotWidth = 0f;
             var frame = default(PlotFrame);
 
-            // NB: the rows scroll in a child of their own that the wheel does not scroll, so that every wheel gesture
-            // over them, plain or with modifiers, is the panel's to answer (HandleWheel). With no padding, as the
-            // table that scrolled them before had none.
+            // NB: ImGui scrolls one pixel at a time, but the panel often scrolls in increments of full rows, for the
+            // zoom box, for collapsing a channel, and for W and S. Padding above the first row would offset those
+            // scrolls and leave a sliver of the row above in view, so the ##rows window has no padding. ImGui's mouse
+            // wheel scrolling is also turned off here, because it would scroll on Shift+wheel and Ctrl+wheel too.
+            // HandleWheel handles every wheel gesture instead.
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
             var rowsOpen = ImGui.BeginChild("##rows", new Vector2(-1, tableHeight), ImGuiChildFlags.None,
                 ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);
@@ -92,7 +97,11 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.TableSetupColumn(string.Empty);
                 ScrollIfPending();
 
+                // NB: the table cells get no top padding either, for the same reason. The table reads the padding in
+                // TableNextRow, so the push has to go around that call.
+                ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(ImGui.GetStyle().CellPadding.X, 0));
                 ImGui.TableNextRow();
+                ImGui.PopStyleVar();
                 ImGui.TableNextColumn();
 
                 // NB: measured inside the cell, which leaves out the row's padding, so that rows fitted to it fill
@@ -100,6 +109,7 @@ namespace OpenEphys.EphysVisualization.Design
                 visibleHeight = ImGui.GetContentRegionAvail().Y;
                 var layout = LayoutRows(rows, plotTop, plotBottom, ImGui.GetCursorScreenPos().Y,
                     ImGui.GetContentRegionAvail().Y);
+                lastLayout = layout;
                 var hovered = HoveredChannel(layout);
                 if (selectedChannel >= rows)
                     selectedChannel = -1;
@@ -494,8 +504,9 @@ namespace OpenEphys.EphysVisualization.Design
                 return;
 
             var top = MathF.Floor(frame.Layout.RowTop(frame.Selected));
-            draw.AddRectFilled(new Vector2(frame.Left, top),
-                new Vector2(frame.Left + frame.Width, top + frame.Layout.RowHeight), ColSelectedRow);
+            var bottom = MathF.Floor(frame.Layout.RowTop(frame.Selected) + frame.Layout.RowHeight);
+            draw.AddRectFilled(new Vector2(frame.Left, top), new Vector2(frame.Left + frame.Width, bottom),
+                ColSelectedRow);
         }
 
         /// <summary>

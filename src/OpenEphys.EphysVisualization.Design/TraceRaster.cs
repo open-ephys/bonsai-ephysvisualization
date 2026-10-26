@@ -3,6 +3,7 @@ using System.IO;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using OpenCV.Net;
+using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 
 namespace OpenEphys.EphysVisualization.Design
@@ -74,7 +75,7 @@ namespace OpenEphys.EphysVisualization.Design
             var current = new Key(
                 frame.Envelope, frame.Window, frame.Range, frame.Center, frame.Expanded, frame.Heatmap, frame.ColorThreshold,
                 w, h,
-                layout.FirstVisible, layout.LastVisible, layout.RowHeight, layout.Origin - frame.Top);
+                layout.FirstVisible, layout.LastVisible, layout.RowHeight, Origin(frame));
 
             // NB: the columns changed since the last frame: all of them, or from the column the sweep was filling at
             // the last frame to the one it is filling now, both included, since each was part filled when last drawn.
@@ -122,6 +123,17 @@ namespace OpenEphys.EphysVisualization.Design
             drawnSamples = samples;
             ImGui.GetWindowDrawList().AddImage(new ImTextureRef(null, (ulong)texture), corner, corner + new Vector2(w, h));
         }
+
+        /// <summary>
+        /// The top of the first row, in pixels down from the texture's top.
+        /// </summary>
+        /// <remarks>
+        /// The texture is placed on a whole pixel, at the plot's top rounded down, so the rows are measured from there
+        /// rather than from the top itself. Then a row edge the shaders put at <c>floor(origin + k * rowHeight)</c>
+        /// lands on the pixel row <c>floor(RowTop)</c> that everything drawn over the texture puts it on, wherever
+        /// the plot's top falls.
+        /// </remarks>
+        static float Origin(in PlotFrame frame) => frame.Layout.Origin - MathF.Floor(frame.Top);
 
         void Create(int w, int h)
         {
@@ -215,7 +227,16 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 if (!tried)
                 {
+                    // NB: GL's entry points are loaded with a context, and a call made without one faults the
+                    // process past any catch, so nothing is tried until one is current.
+                    if (GraphicsContext.CurrentContext is null)
+                    {
+                        Error = "no OpenGL context is current";
+                        return false;
+                    }
+
                     tried = true;
+                    Error = null;
                     try { Build(); }
                     catch (Exception ex) { Error = ex.Message; }
                 }
@@ -398,7 +419,7 @@ namespace OpenEphys.EphysVisualization.Design
                 GL.Uniform1(GL.GetUniformLocation(program, "combines"), frame.Axis.Combines ? 1 : 0);
                 GL.Uniform1(GL.GetUniformLocation(program, "firstRow"), layout.FirstRow);
                 GL.Uniform1(GL.GetUniformLocation(program, "firstVisible"), layout.FirstVisible);
-                GL.Uniform1(GL.GetUniformLocation(program, "origin"), layout.Origin - frame.Top);
+                GL.Uniform1(GL.GetUniformLocation(program, "origin"), Origin(frame));
                 GL.Uniform1(GL.GetUniformLocation(program, "rowHeight"), layout.RowHeight);
 
                 var visible = layout.LastVisible - layout.FirstVisible;

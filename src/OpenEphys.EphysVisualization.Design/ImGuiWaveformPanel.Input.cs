@@ -29,11 +29,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         const double AmplitudeWheelFactor = 1.25;
 
-        /// <summary>
-        /// Significant digits a dragged range or timebase is rounded to.
-        /// </summary>
-        const int RangeDragDigits = 3;
-
         bool? dragHidden;
         int dragAnchor;
 
@@ -211,12 +206,12 @@ namespace OpenEphys.EphysVisualization.Design
             return io.KeyCtrl == ctrl && io.KeyShift == shift && io.KeyAlt == alt && !io.KeySuper;
         }
 
-        // NB: every wheel over the rows is answered here, since their child is not scrolled by ImGui (WaveformPlot).
-        // The gestures follow two conventions every application shares: Shift turns the wheel horizontal, as a
-        // touchpad's sideways swipe is, and Ctrl zooms, as a touchpad's pinch arrives. So the wheel alone and with
-        // Shift moves along the channels and through time, anywhere over the rows; with Ctrl it zooms the channel
-        // height, and with Ctrl+Shift the timebase; with Alt it sets the gain, the range. Zooming and gain answer
-        // from the plot only, and upward always magnifies.
+        // NB: ImGui doesn't scroll the ##rows window (see WaveformPlot), so every wheel gesture over the rows ends up
+        // here. The modifiers follow conventions every application shares: Shift scrolls sideways, like a touchpad's
+        // sideways swipe, and Ctrl zooms, because a touchpad pinch arrives as Ctrl+wheel. The plain wheel scrolls the
+        // channels, and Shift+wheel moves through time. Ctrl+wheel zooms the channel height, Ctrl+Shift+wheel zooms the
+        // timebase, and Alt+wheel sets the range. The zooms and the range only respond over the plot, and wheeling up
+        // always magnifies.
         void HandleWheel(in RowLayout layout)
         {
             var io = ImGui.GetIO();
@@ -275,7 +270,7 @@ namespace OpenEphys.EphysVisualization.Design
                     var (center, span) = AmplitudeView;
                     var fraction = RowFraction(layout, mouse.Y);
                     SetAmplitudeView(center + fraction * span, fraction,
-                        Significant(span * Math.Pow(AmplitudeWheelFactor, -direction)));
+                        PlotText.Significant(span * Math.Pow(AmplitudeWheelFactor, -direction)));
                 }
             }
         }
@@ -371,7 +366,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             // NB: by a factor rather than an amount, so the drag feels alike at every range.
             if (rangeDrag is { } range)
-                RangeAmplitude = Significant(range.Value * Math.Exp(Beyond(mouse.Y - range.Y) * RangeDragRate));
+                RangeAmplitude = PlotText.Significant(range.Value * Math.Exp(Beyond(mouse.Y - range.Y) * RangeDragRate));
 
             if (clicked && Paused && Modifiers(ctrl: true))
             {
@@ -393,13 +388,13 @@ namespace OpenEphys.EphysVisualization.Design
             if (timebaseDrag is { } zoom)
             {
                 var longest = standardTimeBases[ServableTimeBases - 1];
-                var value = Significant(zoom.Value * Math.Exp(-Beyond(mouse.X - zoom.X) * TimebaseDragRate));
+                var value = PlotText.Significant(zoom.Value * Math.Exp(-Beyond(mouse.X - zoom.X) * TimebaseDragRate));
                 SetTimebase(Math.Max(ShortestTimeBase, Math.Min(longest, value)), zoom.Anchor, zoom.Fraction);
             }
 
             if (amplitudeDrag is { } amplitude && expandedChannel >= 0)
             {
-                var span = Significant(amplitude.Span * Math.Exp(Beyond(mouse.Y - amplitude.Y) * RangeDragRate));
+                var span = PlotText.Significant(amplitude.Span * Math.Exp(Beyond(mouse.Y - amplitude.Y) * RangeDragRate));
                 SetAmplitudeView(amplitude.Value, amplitude.Fraction, span);
             }
 
@@ -434,7 +429,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (box.Wide)
             {
                 var longest = standardTimeBases[ServableTimeBases - 1];
-                var value = Significant(Timebase * (box.Max.X - box.Min.X) / plotSpan);
+                var value = PlotText.Significant(Timebase * (box.Max.X - box.Min.X) / plotSpan);
                 SetTimebase(Math.Max(ShortestTimeBase, Math.Min(longest, value)), Axis.PositionAt(box.Min.X), 0);
             }
 
@@ -442,7 +437,7 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 var (center, span) = AmplitudeView;
                 SetAmplitudeView(center + RowFraction(layout, (box.Min.Y + box.Max.Y) / 2) * span, 0,
-                    Significant(span * (box.Max.Y - box.Min.Y) / layout.RowHeight));
+                    PlotText.Significant(span * (box.Max.Y - box.Min.Y) / layout.RowHeight));
             }
             else if (box.Tall)
             {
@@ -520,12 +515,6 @@ namespace OpenEphys.EphysVisualization.Design
         {
             var anchor = Axis.PositionAt(x);
             SetTimebase(value, anchor, window.FractionOf(anchor));
-        }
-
-        static double Significant(double value)
-        {
-            var scale = Math.Pow(10, Math.Floor(Math.Log10(value)) - RangeDragDigits + 1);
-            return Math.Round(value / scale) * scale;
         }
 
         void StepRange(int direction)

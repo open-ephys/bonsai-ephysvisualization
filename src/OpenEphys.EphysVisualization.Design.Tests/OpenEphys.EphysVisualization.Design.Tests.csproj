@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenEphys.EphysVisualization.Design\OpenEphys.EphysVisualization.Design.csproj" />
+  </ItemGroup>
+
+  <!-- NB: OpenCV's and ImGui's native libraries reach a Bonsai workflow through Bonsai's own package loading, which
+       a test run does not have, so the ones the tests call into are copied next to them. -->
+  <ItemGroup>
+    <PackageReference Include="OpenCV.Net.Runtime.win-x64" Version="2.4.13" GeneratePathProperty="true" ExcludeAssets="all" />
+    <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" GeneratePathProperty="true" />
+    <None Include="$(PkgOpenCV_Net_Runtime_win-x64)\runtimes\win-x64\native\vc14\bin\opencv_core2413.dll;$(PkgOpenCV_Net_Runtime_win-x64)\runtimes\win-x64\native\vc14\bin\opencv_imgproc2413.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(PkgHexa_NET_ImGui)\runtimes\win-x64\native\cimgui.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+</Project>
