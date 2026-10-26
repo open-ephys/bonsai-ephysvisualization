@@ -134,19 +134,19 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ClearSelection() -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Contacts.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.ContactState>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DragIntent.get -> OpenEphys.EphysVisualization.Design.DragSelectIntent
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawMinimap() -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawRulerControls() -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawZoomedView(bool selectionEnabled) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.get -> System.Func<int, uint>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColorOverridesBlocked.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColorOverridesBlocked.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hotkeys.get -> System.Collections.Generic.IEnumerable<Hexa.NET.ImGui.ImGuiKey>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hovered.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.HoveredContactIndex.get -> int
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ImGuiProbeSelector(float? zoomWindow = null, float zoomWindowFraction = 0.1, float? scrollX = null, float? scrollY = null) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.LegendEntry>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.MinimapWidth(float height, float availableWidth) -> float
-OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ModeLabel.get -> string!
-OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ModeLabel.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Refresh(OpenEphys.ProbeInterface.NET.SingleProbeGroup? probeGroup) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionChanged -> System.EventHandler?
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.get -> bool

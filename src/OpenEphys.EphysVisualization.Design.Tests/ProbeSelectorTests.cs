@@ -20,12 +20,23 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         readonly ImGuiProbeSelector selector = new(zoomWindowFraction: 1);
         readonly Rect[] contacts = new Rect[Count];
         bool selectionEnabled = true;
+        bool rulerControls;
+        Vector2 addButton, clearButton;
         int selectionChanges;
         readonly Action draw;
 
         public ProbeSelectorTests()
         {
-            draw = () => selector.DrawZoomedView(selectionEnabled);
+            draw = () =>
+            {
+                if (rulerControls)
+                {
+                    addButton = ImGui.GetCursorScreenPos() + new Vector2(4);
+                    selector.DrawRulerControls();
+                    clearButton = ImGui.GetItemRectMin() + new Vector2(4);
+                }
+                selector.DrawZoomedView(selectionEnabled);
+            };
             selector.Refresh(Probe(Columns, Rows));
             selector.SelectionChanged += (_, _) => selectionChanges++;
 
@@ -180,14 +191,201 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
-        public void NothingIsSelected_WhileTheRulerIsOn()
+        public void R_ArmsOneRuler_WhichADragPlaces()
+        {
+            PlaceRuler(0, 18);
+
+            Assert.Equal(1, Rulers());
+            Assert.Empty(Selected());
+
+            Click(5);
+            Assert.Equal(new[] { 5 }, Selected());
+            Assert.Equal(1, Rulers());
+        }
+
+        [Fact]
+        public void AnArmedRuler_CanBePlacedWithTwoClicks()
         {
             imgui.MoveMouse(contacts[0].Center, draw);
             imgui.Key(ImGuiKey.R, draw);
 
+            Click(0);
+            Click(18);
+
+            Assert.Equal(1, Rulers());
+            Assert.Empty(Selected());
+        }
+
+        [Fact]
+        public void R_Again_DisarmsTheRuler()
+        {
+            imgui.MoveMouse(contacts[0].Center, draw);
+            imgui.Key(ImGuiKey.R, draw);
+            imgui.Key(ImGuiKey.R, draw);
+
             Click(5);
 
+            Assert.Equal(new[] { 5 }, Selected());
+            Assert.Equal(0, Rulers());
+        }
+
+        [Fact]
+        public void AnArmedRuler_HidesThePointer_ForACrosshair()
+        {
+            imgui.MoveMouse(contacts[0].Center, draw);
+            Assert.Equal(ImGuiMouseCursor.Arrow, ImGui.GetMouseCursor());
+
+            imgui.Key(ImGuiKey.R, draw);
+            Assert.Equal(ImGuiMouseCursor.None, ImGui.GetMouseCursor());
+
+            imgui.Key(ImGuiKey.Escape, draw);
+            Assert.Equal(ImGuiMouseCursor.Arrow, ImGui.GetMouseCursor());
+        }
+
+        [Fact]
+        public void TheAddButton_ArmsARuler_AndPressingItAgainCancelsIt()
+        {
+            ShowRulerControls();
+
+            ClickAt(addButton);
+            Assert.True(Placing());
+            Drag(contacts[0].Center, contacts[18].Center);
+            Assert.Equal(1, Rulers());
+
+            ClickAt(addButton);
+            Click(0);
+            ClickAt(addButton);
+            Assert.False(Placing());
+            Click(18);
+            Assert.Equal(1, Rulers());
+        }
+
+        [Fact]
+        public void TheClearButton_RemovesEveryRuler()
+        {
+            ShowRulerControls();
+            PlaceRuler(0, 18);
+            PlaceRuler(1, 19);
+
+            ClickAt(clearButton);
+
+            Assert.Equal(0, Rulers());
+        }
+
+        [Fact]
+        public void APlacedRuler_IsSelected()
+        {
+            PlaceRuler(0, 18);
+            PlaceRuler(1, 19);
+
+            Assert.Equal(1, SelectedRuler());
+        }
+
+        [Fact]
+        public void ClickingARuler_SelectsIt_WithoutTouchingTheContacts()
+        {
+            Click(5);
+            PlaceRuler(0, 18);
+            PlaceRuler(1, 19);
+
+            // NB: contact 8 lies under the first ruler.
+            Click(8);
+
+            Assert.Equal(0, SelectedRuler());
+            Assert.Equal(new[] { 5 }, Selected());
+        }
+
+        [Fact]
+        public void ClickingAwayFromTheRulers_DeselectsThem()
+        {
+            PlaceRuler(0, 18);
+
+            Click(5);
+
+            Assert.Equal(-1, SelectedRuler());
+            Assert.Equal(new[] { 5 }, Selected());
+        }
+
+        [Fact]
+        public void Delete_RemovesTheSelectedRuler()
+        {
+            PlaceRuler(0, 18);
+            PlaceRuler(1, 19);
+            Click(8);
+
+            imgui.Key(ImGuiKey.Delete, draw);
+
+            Assert.Equal(1, Rulers());
+            Assert.Equal(-1, SelectedRuler());
+        }
+
+        [Fact]
+        public void ShiftDelete_RemovesEveryRuler()
+        {
+            PlaceRuler(0, 18);
+            PlaceRuler(1, 19);
+
+            imgui.Key(ImGuiKey.LeftShift, ImGuiKey.Delete, draw);
+
+            Assert.Equal(0, Rulers());
+        }
+
+        [Fact]
+        public void Escape_CancelsARuler_ThenDeselectsOne_ThenClearsTheSelection()
+        {
+            Click(5);
+            PlaceRuler(0, 18);
+            imgui.Key(ImGuiKey.R, draw);
+            Click(1);
+
+            imgui.Key(ImGuiKey.Escape, draw);
+            Assert.Equal(1, Rulers());
+            Assert.Equal(0, SelectedRuler());
+            Assert.Equal(new[] { 5 }, Selected());
+
+            imgui.Key(ImGuiKey.Escape, draw);
+            Assert.Equal(-1, SelectedRuler());
+            Assert.Equal(new[] { 5 }, Selected());
+
+            imgui.Key(ImGuiKey.Escape, draw);
             Assert.Empty(Selected());
+            Assert.Equal(1, Rulers());
+        }
+
+        [Fact]
+        public void ARulerHalfPlaced_IsDropped_WhenTheViewGoesUndrawn()
+        {
+            imgui.MoveMouse(contacts[0].Center, draw);
+            imgui.Key(ImGuiKey.R, draw);
+            Click(0);
+
+            imgui.Frame(() => { });
+            Click(18);
+
+            Assert.Equal(0, Rulers());
+            Assert.Equal(new[] { 18 }, Selected());
+        }
+
+        [Fact]
+        public void WithoutSelection_RulersStillWork()
+        {
+            selectionEnabled = false;
+
+            PlaceRuler(0, 18);
+            Click(8);
+            imgui.Key(ImGuiKey.Delete, draw);
+
+            Assert.Equal(0, Rulers());
+        }
+
+        [Fact]
+        public void Hovered_SaysWhetherThePointerIsOverTheView()
+        {
+            imgui.MoveMouse(contacts[0].Center, draw);
+            Assert.True(selector.Hovered);
+
+            imgui.MoveMouse(new Vector2(-50, -50), draw);
+            Assert.False(selector.Hovered);
         }
 
         [Fact]
@@ -209,6 +407,30 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
             Assert.Equal(4, selector.Contacts.Count);
             Assert.All(selector.Contacts, c => Assert.Equal(default, c));
+        }
+
+        object Ruler() => Private.Get<object>(selector, "ruler");
+
+        int Rulers() => Private.Get<System.Collections.ICollection>(Ruler(), "locked").Count;
+
+        int SelectedRuler() => Private.Get<int>(Ruler(), "selectedIdx");
+
+        bool Placing() => ((ImGuiProbeRuler)Ruler()).Placing;
+
+        // NB: the buttons sit above the view and push it down, so the contacts are found again.
+        void ShowRulerControls()
+        {
+            rulerControls = true;
+            imgui.Frames(2, draw);
+            for (int i = 0; i < Count; i++)
+                contacts[i] = Assert.Single(ImGuiHarness.Rects(Fill(i)));
+        }
+
+        void PlaceRuler(int from, int to)
+        {
+            imgui.MoveMouse(contacts[from].Center, draw);
+            imgui.Key(ImGuiKey.R, draw);
+            Drag(contacts[from].Center, contacts[to].Center);
         }
 
         int[] Selected() => Indices(c => c.Selected);

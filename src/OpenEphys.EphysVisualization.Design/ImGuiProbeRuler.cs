@@ -8,14 +8,14 @@ namespace OpenEphys.EphysVisualization.Design
     internal class ImGuiProbeRuler
     {
         readonly record struct RulerLine(Vector2 Start, Vector2 End);
-        enum PlacementState { None, Dragging, ClickMode }
+        enum PlacementState { None, Armed, Dragging, ClickMode }
 
         readonly List<RulerLine> locked = new();
         PlacementState placement = PlacementState.None;
         Vector2 draftStartUm;
         Vector2 draftStartScreen;
         Vector2 draftEndUm;
-        int hoveredIdx = -1;
+        int selectedIdx = -1;
 
         readonly float majorTickSpacingUm;
         readonly int   minorTicksPerMajor;
@@ -30,7 +30,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         // visual constants
         static readonly uint ColorLine = ImGuiPalette.AzureBlue;
-        static readonly uint ColorHovered = ImGuiPalette.Yellow;
+        static readonly uint ColorSelected = ImGuiPalette.Yellow;
         static readonly uint ColorLabel = ImGuiPalette.White;
         static readonly uint ColorLabelBg = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0xBB);
         static readonly uint ColorTickLabel = ImGuiPalette.Grey0xCC;
@@ -41,99 +41,129 @@ namespace OpenEphys.EphysVisualization.Design
         const float MinorTickHalfLen = 4f;
 
         /// <summary>
-        /// Call each frame while ruler mode is active. Does NOT signal exit —
-        /// ruler mode is exited only by pressing r again.
+        /// Whether a ruler is armed or partly placed, in which case it takes the clicks in the view.
         /// </summary>
-        public void HandleRulerModeInput(Vector2 mouseProbeCoord, bool inCanvas,
+        public bool Placing => placement != PlacementState.None;
+
+        public bool HasSelection => selectedIdx >= 0;
+
+        public int Count => locked.Count;
+
+        /// <summary>
+        /// Arms one ruler. The next press in the view starts it, and letting go after a drag, or a second click,
+        /// sets it.
+        /// </summary>
+        public void Arm() => placement = PlacementState.Armed;
+
+        public void Cancel() => placement = PlacementState.None;
+
+        public void Deselect() => selectedIdx = -1;
+
+        public void RemoveSelected()
+        {
+            if (selectedIdx < 0) return;
+            locked.RemoveAt(selectedIdx);
+            selectedIdx = -1;
+        }
+
+        public void RemoveAll()
+        {
+            locked.Clear();
+            selectedIdx = -1;
+        }
+
+        /// <summary>
+        /// Call each frame the view is drawn. Returns whether the ruler took this frame's left click, which is then
+        /// not also a click on the contacts.
+        /// </summary>
+        public bool HandleInput(Vector2 mouseProbeCoord, bool inCanvas,
             Vector2 mouseScreenPos, float viewLeft, float viewBot,
             float xLow, float yLow, float scaleXY)
         {
-            // Hover: only scan when not actively placing
-            if (placement == PlacementState.None)
-            {
-                hoveredIdx = -1;
-                for (int i = 0; i < locked.Count; i++)
-                {
-                    var s = ToScreen(locked[i].Start, viewLeft, viewBot, xLow, yLow, scaleXY);
-                    var e = ToScreen(locked[i].End, viewLeft, viewBot, xLow, yLow, scaleXY);
-                    if (PointToSegmentDist(mouseScreenPos, s, e) <= HoverDist)
-                    { hoveredIdx = i; break; }
-                }
-            }
-
-            // Delete hovered ruler (only when not placing)
-            if (placement == PlacementState.None && hoveredIdx >= 0 &&
-                ImGui.IsKeyPressed(ImGuiKey.Delete, false))
-            {
-                locked.RemoveAt(hoveredIdx);
-                hoveredIdx = -1;
-                return;
-            }
-
-            // Start placement
-            if (placement == PlacementState.None &&
-                ImGui.IsMouseClicked(ImGuiMouseButton.Left) && inCanvas)
-            {
-                draftStartUm     = mouseProbeCoord;
-                draftEndUm       = mouseProbeCoord;
-                draftStartScreen = mouseScreenPos;
-                placement        = PlacementState.Dragging;
-            }
-
-            // Track end point every frame while placing
             if (placement != PlacementState.None)
                 draftEndUm = mouseProbeCoord;
 
-            // Drag release
-            if (placement == PlacementState.Dragging &&
-                ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+            var clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+            switch (placement)
             {
-                var delta = mouseScreenPos - draftStartScreen;
-                if (delta.LengthSquared() >= 16f)
-                {
-                    LockDraft();
-                    placement = PlacementState.None;
-                }
-                else
-                    placement = PlacementState.ClickMode;
-            }
+                case PlacementState.None:
+                    var near = inCanvas ? Nearest(mouseScreenPos, viewLeft, viewBot, xLow, yLow, scaleXY) : -1;
+                    if (near >= 0)
+                        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                    if (!clicked || !inCanvas) return false;
+                    selectedIdx = near;
+                    return near >= 0;
 
-            // Click-click mode: second click locks
-            if (placement == PlacementState.ClickMode &&
-                ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-            {
-                LockDraft();
-                placement = PlacementState.None;
+                case PlacementState.Armed:
+                    if (!clicked || !inCanvas) return false;
+                    draftStartUm     = mouseProbeCoord;
+                    draftEndUm       = mouseProbeCoord;
+                    draftStartScreen = mouseScreenPos;
+                    placement        = PlacementState.Dragging;
+                    return true;
+
+                case PlacementState.Dragging:
+                    if (!ImGui.IsMouseReleased(ImGuiMouseButton.Left)) return false;
+                    if ((mouseScreenPos - draftStartScreen).LengthSquared() >= 16f)
+                        LockDraft();
+                    else
+                        placement = PlacementState.ClickMode;
+                    return false;
+
+                // NB: a click outside the view belongs to whatever it lands on, such as the button that arms
+                // rulers, so it leaves the ruler waiting rather than cancelling it.
+                case PlacementState.ClickMode:
+                    if (!clicked || !inCanvas) return false;
+                    LockDraft();
+                    return true;
             }
+            return false;
         }
 
-        public void ResetHover() => hoveredIdx = -1;
+        int Nearest(Vector2 mouseScreenPos, float viewLeft, float viewBot, float xLow, float yLow, float scaleXY)
+        {
+            int nearest = -1;
+            float nearestDist = HoverDist;
+            for (int i = 0; i < locked.Count; i++)
+            {
+                var s = ToScreen(locked[i].Start, viewLeft, viewBot, xLow, yLow, scaleXY);
+                var e = ToScreen(locked[i].End, viewLeft, viewBot, xLow, yLow, scaleXY);
+                var dist = PointToSegmentDist(mouseScreenPos, s, e);
+                if (dist <= nearestDist) { nearest = i; nearestDist = dist; }
+            }
+            return nearest;
+        }
 
         public void Draw(ImDrawListPtr dl, float viewLeft, float viewBot,
-            float xLow, float yLow, float scaleXY, bool rulerMode)
+            float xLow, float yLow, float scaleXY)
         {
             for (int i = 0; i < locked.Count; i++)
                 DrawSingleRuler(dl, locked[i].Start, locked[i].End,
-                    viewLeft, viewBot, xLow, yLow, scaleXY, i == hoveredIdx);
+                    viewLeft, viewBot, xLow, yLow, scaleXY, i == selectedIdx);
 
-            if (placement != PlacementState.None)
+            if (placement is PlacementState.Dragging or PlacementState.ClickMode)
                 DrawSingleRuler(dl, draftStartUm, draftEndUm,
                     viewLeft, viewBot, xLow, yLow, scaleXY, false);
         }
 
+        // NB: the ruler just placed is selected, so Delete takes back one placed by mistake.
         void LockDraft()
         {
+            placement = PlacementState.None;
             if ((draftEndUm - draftStartUm).LengthSquared() > 0f)
+            {
                 locked.Add(new RulerLine(draftStartUm, draftEndUm));
+                selectedIdx = locked.Count - 1;
+            }
         }
 
         void DrawSingleRuler(ImDrawListPtr dl, Vector2 startUm, Vector2 endUm,
-            float viewLeft, float viewBot, float xLow, float yLow, float scaleXY, bool isHovered)
+            float viewLeft, float viewBot, float xLow, float yLow, float scaleXY, bool isSelected)
         {
             var s = ToScreen(startUm, viewLeft, viewBot, xLow, yLow, scaleXY);
             var e = ToScreen(endUm,   viewLeft, viewBot, xLow, yLow, scaleXY);
 
-            uint lineCol = isHovered ? ColorHovered : ColorLine;
+            uint lineCol = isSelected ? ColorSelected : ColorLine;
             dl.AddLine(s, e, lineCol, LineWidth);
 
             var dir = e - s;

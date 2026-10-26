@@ -186,9 +186,10 @@ namespace OpenEphys.EphysVisualization.Design
         public bool ShowCoordinateReadout { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the label drawn in the lower left of the zoomed view, naming what a drag does there.
+        /// Gets a value indicating whether the pointer was over the zoomed view when it was last drawn, for an owner
+        /// whose keys, like the view's own, should work only there.
         /// </summary>
-        public string ModeLabel { get; set; } = string.Empty;
+        public bool Hovered { get; private set; }
 
         /// <summary>
         /// Gets or sets the legend drawn in the zoomed view.
@@ -275,11 +276,13 @@ namespace OpenEphys.EphysVisualization.Design
         readonly ImGuiProbeRuler ruler = new();
 
         /// <summary>
-        /// Every key the probe view answers: R turns the ruler on and off, and Delete removes the ruler under the
-        /// pointer.
+        /// Every key the probe view answers: R arms a ruler, which the next drag or pair of clicks places, Delete
+        /// removes the selected ruler and Shift+Delete all of them, and Escape cancels a ruler being placed, then
+        /// deselects a ruler, then clears the selection.
         /// </summary>
-        public IEnumerable<ImGuiKey> Hotkeys => new[] { ImGuiKey.R, ImGuiKey.Delete };
-        bool rulerMode;
+        public IEnumerable<ImGuiKey> Hotkeys => new[] { ImGuiKey.R, ImGuiKey.Delete, ImGuiKey.Escape };
+
+        int lastDrawnFrame = -1;
 
         // visual constants
         static readonly uint  ColContactDefault   = ImGuiPalette.Grey0x4D;
@@ -305,6 +308,7 @@ namespace OpenEphys.EphysVisualization.Design
         const float ClickThresholdSq    = 16f;
         static readonly uint ColCoordOverlayBg = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0xBB);
         static readonly uint  ColBottomInfoText   = ImGuiPalette.White;
+        static readonly uint  ColCrosshair        = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0xC0);
         const float GridMarginHPx       = 60f;
         const float GridMarginVPx       = 60f;
         static readonly uint ColContourFill = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0xBB);
@@ -508,6 +512,15 @@ namespace OpenEphys.EphysVisualization.Design
         /// </param>
         public void DrawZoomedView(bool selectionEnabled)
         {
+            Hovered = ImGui.IsWindowHovered();
+
+            // NB: a view that wasn't drawn last frame was hidden, such as behind another tab. A ruler armed or half
+            // placed there is dropped, since the user has moved on from it.
+            var frame = ImGui.GetFrameCount();
+            if (frame != lastDrawnFrame + 1)
+                ruler.Cancel();
+            lastDrawnFrame = frame;
+
             if (contacts.Count == 0) { ImGui.TextDisabled("No contacts."); return; }
 
             HoveredContactIndex = -1;
@@ -590,8 +603,21 @@ namespace OpenEphys.EphysVisualization.Design
                         ColContactInspectBorder, 0f, ContactSelBorderWidth);
             }
 
-            if (selectionEnabled && !rulerMode)
-                HandleDragSelect(dl, viewLeft, viewBot, xLow, yLow, scaleXY);
+            var mp = ImGui.GetMousePos();
+            float mousePx = xLow + (mp.X - viewLeft) / scaleXY;
+            float mousePy = yLow + (viewBot - mp.Y)  / scaleXY;
+            bool inCanvas = Hovered &&
+                            mp.X >= gridLeft && mp.X <= gridRight &&
+                            mp.Y >= gridTop  && mp.Y <= gridBot;
+
+            HandleKeys(selectionEnabled);
+            var rulerTookClick = ruler.HandleInput(new Vector2(mousePx, mousePy), inCanvas,
+                mp, viewLeft, viewBot, xLow, yLow, scaleXY);
+            if (ruler.Placing && inCanvas)
+                ImGui.SetMouseCursor(ImGuiMouseCursor.None);
+
+            if (selectionEnabled)
+                HandleDragSelect(dl, viewLeft, viewBot, xLow, yLow, scaleXY, rulerTookClick);
 
             if (ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
             {
@@ -602,7 +628,6 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 if (ImGui.IsMouseDown(ImGuiMouseButton.Middle))
                 {
-                    var mp = ImGui.GetMousePos();
                     scrollX -= (mp.X - middlePanLastPos.X) / scaleXY;
                     scrollY += (mp.Y - middlePanLastPos.Y) / scaleXY;
                     ClampScroll(); ClampScrollX();
@@ -620,64 +645,100 @@ namespace OpenEphys.EphysVisualization.Design
                     gridMajor);
             }
 
-            if (ImGui.IsWindowHovered() && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.R, false))
+            if (inCanvas)
             {
-                rulerMode = !rulerMode;
-                if (!rulerMode) ruler.ResetHover();
-            }
-
-            if (ImGui.IsWindowHovered())
-            {
-                var mp = ImGui.GetMousePos();
-                float mousePx = xLow + (mp.X - viewLeft) / scaleXY;
-                float mousePy = yLow + (viewBot - mp.Y)  / scaleXY;
-                bool inCanvas = mp.X >= gridLeft && mp.X <= gridRight &&
-                                mp.Y >= gridTop  && mp.Y <= gridBot;
-
-                if (rulerMode)
-                    ruler.HandleRulerModeInput(new Vector2(mousePx, mousePy), inCanvas,
-                        mp, viewLeft, viewBot, xLow, yLow, scaleXY);
-
-                if (inCanvas)
+                if (ShowCoordinateReadout)
                 {
-                    if (ShowCoordinateReadout)
-                    {
-                        string coord = $"({mousePx:0.##} {units}, {mousePy:0.##} {units})";
-                        var sz  = ImGui.CalcTextSize(coord);
-                        const float pad = 5f;
-                        float refBot  = cp.Y + avail.Y - 18f;
-                        var bgMin = new Vector2(cp.X + avail.X - sz.X - pad * 3f, refBot - sz.Y - pad);
-                        var bgMax = new Vector2(cp.X + avail.X - pad, refBot);
-                        dl.AddText(new Vector2(bgMin.X + pad, bgMin.Y + pad), ColBottomInfoText, coord);
-                    }
+                    string coord = $"({mousePx:0.##} {units}, {mousePy:0.##} {units})";
+                    var sz  = ImGui.CalcTextSize(coord);
+                    const float pad = 5f;
+                    float refBot  = cp.Y + avail.Y - 18f;
+                    var bgMin = new Vector2(cp.X + avail.X - sz.X - pad * 3f, refBot - sz.Y - pad);
+                    var bgMax = new Vector2(cp.X + avail.X - pad, refBot);
+                    dl.AddText(new Vector2(bgMin.X + pad, bgMin.Y + pad), ColBottomInfoText, coord);
+                }
 
-                    for (int i = 0; i < contacts.Count; i++)
-                    {
-                        var c = contacts[i];
-                        float hw = c.Size.X / 2f, hh = c.Size.Y / 2f;
-                        if (mousePx >= c.Position.X - hw && mousePx <= c.Position.X + hw &&
-                            mousePy >= c.Position.Y - hh && mousePy <= c.Position.Y + hh)
-                        { HoveredContactIndex = i; break; }
-                    }
+                for (int i = 0; i < contacts.Count; i++)
+                {
+                    var c = contacts[i];
+                    float hw = c.Size.X / 2f, hh = c.Size.Y / 2f;
+                    if (mousePx >= c.Position.X - hw && mousePx <= c.Position.X + hw &&
+                        mousePy >= c.Position.Y - hh && mousePy <= c.Position.Y + hh)
+                    { HoveredContactIndex = i; break; }
                 }
             }
 
-            // TODO: Hack. Make the interaction state coherent
-            string overlayTag = rulerMode ? "MODE: RULER (R to exit)" : ModeLabel;
-            if (!string.IsNullOrEmpty(overlayTag))
+            DrawLegend(dl, cp, avail);
+            ruler.Draw(dl, viewLeft, viewBot, xLow, yLow, scaleXY);
+            if (ruler.Placing && inCanvas)
             {
-                const float pad = 5f;
-                var tsz    = ImGui.CalcTextSize(overlayTag);
-                float refBot = cp.Y + avail.Y - 18f;
-                var tagMin = new Vector2(cp.X + pad, refBot - tsz.Y - pad);
-                var tagMax = new Vector2(cp.X + pad * 3f + tsz.X, refBot);
-                dl.AddText(new Vector2(tagMin.X + pad, tagMin.Y + pad / 2f), ColBottomInfoText, overlayTag);
+                dl.AddLine(new Vector2(mp.X, gridTop), new Vector2(mp.X, gridBot), ColCrosshair);
+                dl.AddLine(new Vector2(gridLeft, mp.Y), new Vector2(gridRight, mp.Y), ColCrosshair);
             }
 
-            DrawLegend(dl, cp, avail);
-            ruler.Draw(dl, viewLeft, viewBot, xLow, yLow, scaleXY, rulerMode);
-
             ImGui.Dummy(avail);
+        }
+
+        /// <summary>
+        /// Draws an Add button, which arms a ruler for the zoomed view as R does, and a Clear button, which removes
+        /// every ruler. The owner draws them wherever suits it. Add stays lit while a ruler waits to be placed, and
+        /// pressing it then cancels the ruler.
+        /// </summary>
+        public void DrawRulerControls()
+        {
+            var placing = ruler.Placing;
+            if (placing)
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive));
+
+            if (ImGui.Button("Add##ruler"))
+                ToggleRuler();
+            ImGuiWidgets.Tooltip("Add a ruler to the probe view. Click and drag in the view, or click its two ends, " +
+                "to place it. Click a ruler to select it, and press Delete to remove it.\nKey: R over the probe view");
+
+            if (placing)
+                ImGui.PopStyleColor();
+
+            ImGui.SameLine();
+            ImGui.BeginDisabled(ruler.Count == 0);
+            if (ImGui.Button("Clear##rulers"))
+                ruler.RemoveAll();
+            ImGuiWidgets.Tooltip("Remove every ruler from the probe view.\nKey: Shift+Delete over the probe view",
+                "There are no rulers.");
+            ImGui.EndDisabled();
+        }
+
+        void ToggleRuler()
+        {
+            if (ruler.Placing) ruler.Cancel();
+            else ruler.Arm();
+        }
+
+        void HandleKeys(bool selectionEnabled)
+        {
+            // NB: Escape backs out of the most recent thing first, so cancelling a ruler doesn't also lose the
+            // selection.
+            if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
+            {
+                if (ruler.Placing)
+                    ruler.Cancel();
+                else if (ruler.HasSelection)
+                    ruler.Deselect();
+                else if (selectionEnabled)
+                    ClearOnEscape();
+            }
+
+            if (!Hovered || ImGui.GetIO().WantTextInput) return;
+
+            if (ImGui.IsKeyPressed(ImGuiKey.R, false))
+                ToggleRuler();
+
+            if (ImGui.IsKeyPressed(ImGuiKey.Delete, false))
+            {
+                if (ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift))
+                    ruler.RemoveAll();
+                else
+                    ruler.RemoveSelected();
+            }
         }
 
         void HandleWheel()
@@ -741,23 +802,12 @@ namespace OpenEphys.EphysVisualization.Design
         #region Private: drag-select state machine
 
         void HandleDragSelect(ImDrawListPtr dl, float viewLeft, float viewBot,
-            float xLow, float yLow, float scaleXY)
+            float xLow, float yLow, float scaleXY, bool clickTaken)
         {
-            if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
-            {
-                Array.Clear(selected,  0, selected.Length);
-                Array.Clear(inDragBox,   0, inDragBox.Length);
-                Array.Clear(inspected, 0, inspected.Length);
-                isDragging = false;
-                DragIntent = DragSelectIntent.Idle;
-                SelectionChanged?.Invoke(this, EventArgs.Empty);
-                return;
-            }
-
             if (!ImGui.IsWindowHovered()) return;
 
             var mp = ImGui.GetMousePos();
-            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !isDragging)
+            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !isDragging && !clickTaken)
             {
                 dragStart    = mp;
                 dragHadShift = ImGui.IsKeyDown(ImGuiKey.LeftShift)  || ImGui.IsKeyDown(ImGuiKey.RightShift);
@@ -802,6 +852,16 @@ namespace OpenEphys.EphysVisualization.Design
                 isDragging = false;
                 SelectionChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        void ClearOnEscape()
+        {
+            Array.Clear(selected,  0, selected.Length);
+            Array.Clear(inDragBox,   0, inDragBox.Length);
+            Array.Clear(inspected, 0, inspected.Length);
+            isDragging = false;
+            DragIntent = DragSelectIntent.Idle;
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
         void AccumulateSelection(bool[] target, bool[] preDrag, bool skipBlocked,
@@ -1127,7 +1187,7 @@ namespace OpenEphys.EphysVisualization.Design
             float boxW = maxEntryW + pad * 4f;
             float boxH = Legend.Count * rowH + pad * 3f;
 
-            // Anchor inside the grid contact area (bottom-left), clear of axis-label margins and above the mode label
+            // Anchor inside the grid contact area (bottom-left), clear of axis-label margins
             float boxLeft = cp.X + GridMarginHPx + pad;
             float boxBottom = cp.Y + avail.Y - GridMarginVPx - pad;
             float boxTop = boxBottom - boxH;
