@@ -740,7 +740,8 @@ namespace OpenEphys.EphysVisualization.Design
 
             var timeDivision = Timebase / TimeDivisions;
             var time = timeDivision < 1 ? $"{PlotText.Significant(timeDivision * 1000)} ms/div" : $"{PlotText.Significant(timeDivision)} s/div";
-            var name = $"Ch {expandedChannel}   {PlotText.Significant(frame.Range / AmplitudeDivisions)} {Unit}/div   {time}";
+            var unit = string.IsNullOrEmpty(Unit) ? "a.u." : Unit;
+            var name = $"Ch {expandedChannel}   {PlotText.Significant(frame.Range / AmplitudeDivisions)} {unit}/div   {time}";
             PlotText.Framed(draw, new Vector2(left, top) + 2 * pad, name);
         }
 

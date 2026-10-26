@@ -119,6 +119,75 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(axis.PositionAt(to), Cursor);
         }
 
+        [Theory]
+        [InlineData(ImGuiKey.None, ImGuiKey.Equal)]
+        [InlineData(ImGuiKey.ModShift, ImGuiKey.Equal)]
+        [InlineData(ImGuiKey.None, ImGuiKey.KeypadAdd)]
+        public void Plus_AddsACursorInTheMiddle_AndMakesItTheActiveOne(ImGuiKey modifier, ImGuiKey plus)
+        {
+            imgui.Key(ImGuiKey.ModShift, ImGuiKey.RightArrow, draw);
+            var first = Cursor;
+
+            Press(modifier, plus);
+            imgui.Key(ImGuiKey.RightArrow, draw);
+
+            var positions = panel.CursorPositions();
+            Assert.Equal(2, positions.Count);
+            Assert.Equal(first, positions[0]);
+            Assert.Equal(panel.Axis().CellColumns(Middle).End, panel.Axis().CellColumns(positions[1]).Start);
+        }
+
+        [Fact]
+        public void Plus_StopsAtFourCursors()
+        {
+            for (int i = 0; i < 5; i++)
+                imgui.Key(ImGuiKey.Equal, draw);
+
+            Assert.Equal(4, panel.CursorPositions().Count);
+        }
+
+        [Theory]
+        [InlineData(ImGuiKey.Minus)]
+        [InlineData(ImGuiKey.KeypadSubtract)]
+        [InlineData(ImGuiKey.Delete)]
+        public void Minus_RemovesTheActiveCursor_AndHandsTheArrowsToTheReference(ImGuiKey remove)
+        {
+            var reference = Cursor;
+            imgui.Key(ImGuiKey.Equal, draw);
+            imgui.Key(ImGuiKey.ModShift, ImGuiKey.RightArrow, draw);
+
+            imgui.Key(remove, draw);
+            Assert.Equal(reference, Cursor);
+            imgui.Key(ImGuiKey.RightArrow, draw);
+
+            Assert.NotEqual(reference, Cursor);
+        }
+
+        [Fact]
+        public void Minus_DoesNothing_WhileTheReferenceIsActive()
+        {
+            // NB: off the middle, where the panel would put a new cursor if the reference were removed.
+            imgui.Key(ImGuiKey.ModShift, ImGuiKey.RightArrow, draw);
+            var reference = Cursor;
+
+            imgui.Key(ImGuiKey.Minus, draw);
+            imgui.Key(ImGuiKey.Delete, draw);
+
+            Assert.Equal(reference, Cursor);
+        }
+
+        [Fact]
+        public void PlusAndMinus_DoNothing_WhileTheCursorsAreHidden()
+        {
+            imgui.Key(ImGuiKey.Equal, draw);
+            imgui.Key(ImGuiKey.C, draw);
+
+            imgui.Key(ImGuiKey.Equal, draw);
+            imgui.Key(ImGuiKey.Minus, draw);
+
+            Assert.Equal(2, panel.CursorPositions().Count);
+        }
+
         [Fact]
         public void ACursorTheViewCanStillReach_KeepsItsPlace_ThroughHidingAndShowing()
         {
@@ -147,6 +216,14 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             var window = panel.Axis().Window;
             Assert.True(placed < window.Start, $"{placed} was left in view of {window.Start}..{window.End}");
             Assert.Equal(Middle, Cursor);
+        }
+
+        void Press(ImGuiKey modifier, ImGuiKey key)
+        {
+            if (modifier == ImGuiKey.None)
+                imgui.Key(key, draw);
+            else
+                imgui.Key(modifier, key, draw);
         }
     }
 }

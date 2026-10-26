@@ -120,6 +120,42 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
+        /// Adds a cursor in the middle of the window <paramref name="axis"/> shows and makes it the active one, as
+        /// the table's Add button does. Nothing happens once there are as many cursors as allowed.
+        /// </summary>
+        public void Add(in PixelAxis axis)
+        {
+            if (!Show || positions.Count >= MaxCursors)
+                return;
+
+            positions.Add(axis.Snap(axis.Window.Start + axis.Window.Span / 2));
+            active = positions.Count - 1;
+        }
+
+        /// <summary>
+        /// Removes the active cursor, as its x button in the table does. Nothing happens while the reference is
+        /// active, since the reference has no x button and cannot be removed.
+        /// </summary>
+        public void RemoveActive()
+        {
+            if (Show && active != reference)
+                Remove(active);
+        }
+
+        void Remove(int cursor)
+        {
+            positions.RemoveAt(cursor);
+            if (cursor < reference)
+                reference--;
+
+            // NB: removing the active cursor hands the arrows to the reference, which cannot be removed.
+            if (cursor == active)
+                active = reference;
+            else if (cursor < active)
+                active--;
+        }
+
+        /// <summary>
         /// Moves a cursor by dragging its line, and draws the cursors.
         /// </summary>
         public void Draw(ImDrawListPtr draw, in PlotFrame frame)
@@ -440,8 +476,8 @@ namespace OpenEphys.EphysVisualization.Design
                 // does the heatmap, which reduces a cell to one value.
                 var oneSample = window.Step == 1 && frame.Axis.SingleColumnCells || Heatmap(frame);
                 var headers = oneSample
-                    ? new[] { "", "t (s)", "dt (ms)", "1/dt (Hz)", $"y ({unit})", $"dy ({unit})", "" }
-                    : new[] { "", "t (s)", "dt (ms)", "1/dt (Hz)", $"min ({unit})", $"max ({unit})", $"dy min ({unit})", $"dy max ({unit})", "" };
+                    ? new[] { "", "t (s)", "dt (ms)", "1/dt (Hz)", WithUnit("y"), WithUnit("dy"), "" }
+                    : new[] { "", "t (s)", "dt (ms)", "1/dt (Hz)", WithUnit("min"), WithUnit("max"), WithUnit("dy min"), WithUnit("dy max"), "" };
                 if (ImGui.BeginTable("##readings", headers.Length, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.BordersInnerV))
                 {
                     foreach (var header in headers)
@@ -500,32 +536,19 @@ namespace OpenEphys.EphysVisualization.Design
                         if (measured && ImGui.SmallButton($"x##remove{i}"))
                             remove = i;
                         if (measured)
-                            ImGuiWidgets.Tooltip("Remove this cursor.");
+                            ImGuiWidgets.Tooltip("Remove this cursor.\nKeys: - or Delete remove the active cursor.");
                     }
 
                     ImGui.EndTable();
                 }
 
                 if (remove >= 0)
-                {
-                    positions.RemoveAt(remove);
-                    if (remove < reference)
-                        reference--;
-
-                    // NB: removing the active cursor hands the arrows to the reference, which cannot be removed.
-                    if (remove == active)
-                        active = reference;
-                    else if (remove < active)
-                        active--;
-                }
+                    Remove(remove);
 
                 ImGui.BeginDisabled(positions.Count >= MaxCursors);
                 if (ImGui.SmallButton("+ Add cursor"))
-                {
-                    positions.Add(frame.Axis.Snap(window.Start + window.Span / 2));
-                    active = positions.Count - 1;
-                }
-                ImGuiWidgets.Tooltip("Add a cursor in the middle of the view.", "Four cursors at most.");
+                    Add(frame.Axis);
+                ImGuiWidgets.Tooltip("Add a cursor in the middle of the view.\nKey: +", "Four cursors at most.");
                 ImGui.EndDisabled();
 
                 ImGui.SameLine();
@@ -545,6 +568,8 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(text);
             }
+
+            string WithUnit(string header) => string.IsNullOrEmpty(unit) ? header : $"{header} ({unit})";
         }
 
         // NB: an expanded channel is drawn as a trace in either view.

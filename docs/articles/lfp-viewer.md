@@ -13,7 +13,7 @@ This workflow plays back a NeuropixelsV2 recording, saved by the Open Ephys GUI 
 The LfpViewer's settings describe the samples it is given:
 
 - SampleRate is left at its default of 30000, the recording's rate.
-- Scale is 0.195, the microvolts each count stands for in this recording, so the amplitudes shown are in microvolts, though they are still labeled a.u., since the viewer cannot know that.
+- Scale is 0.195, the microvolts each count stands for in this recording, so the amplitudes shown are in microvolts, though they are shown without a unit, since the viewer cannot know that.
 - Offset is left at 0, since the samples are signed and centered on zero.
 - SaturationLow and SaturationHigh are left empty, so a channel is marked as clipping when a sample reaches −32768 or 32767, the limits of 16-bit samples.
 
@@ -32,7 +32,7 @@ The display's settings are properties of the node, saved with the workflow. The 
 | Property | Description |
 |---|---|
 | [SampleRate](xref:OpenEphys.EphysVisualization.Design.LfpViewer.SampleRate) | Each channel is sampled at this rate, in Hz, which sets the time axis. |
-| [Scale](xref:OpenEphys.EphysVisualization.Design.LfpViewer.Scale), [Offset](xref:OpenEphys.EphysVisualization.Design.LfpViewer.Offset) | What is drawn is (sample − Offset) × Scale, as when turning ADC counts into microvolts. The viewer cannot know what unit that gives, so amplitudes are labeled a.u., arbitrary units. |
+| [Scale](xref:OpenEphys.EphysVisualization.Design.LfpViewer.Scale), [Offset](xref:OpenEphys.EphysVisualization.Design.LfpViewer.Offset) | What is drawn is (sample − Offset) × Scale, as when turning ADC counts into microvolts. The viewer cannot know what unit that gives, so amplitudes are shown without a unit. The expanded channel's amplitude per division is the one exception, which reads a.u./div, for arbitrary units. |
 | [SaturationLow](xref:OpenEphys.EphysVisualization.Design.LfpViewer.SaturationLow), [SaturationHigh](xref:OpenEphys.EphysVisualization.Design.LfpViewer.SaturationHigh) | A channel is marked as clipping when a sample, before Offset and Scale are applied, reaches either of these values (see [Clipping](#clipping)). When they are left empty, the limits of the input's integer type are used, such as 0 and 65535 for unsigned 16-bit samples, and floating point input is not checked. An ADC that does not fill its type, such as a 10-bit ADC in 16-bit samples, never reaches those limits, so for it they need to be set. |
 | [HistorySize](xref:OpenEphys.EphysVisualization.Design.LfpViewer.HistorySize) | This is the memory, in megabytes, given to the record of recent signal that a paused view is redrawn from. How many seconds that holds depends on the channel count and sample rate, and is shown in the control panel. |
 
@@ -90,6 +90,8 @@ Each key has a single owner in the window, so a key does the same thing wherever
 | C | Show or hide the cursors | Always |
 | Left / Right | Step the active cursor back or forward by one pixel column | Cursors shown |
 | Shift+Left / Shift+Right | Step the active cursor by ten pixel columns | Cursors shown |
+| + | Add a cursor in the middle of the plot and make it the active cursor, as + Add cursor does | Cursors shown, fewer than four |
+| − or Delete | Remove the active cursor, as its x button does | Cursors shown, the active cursor not the reference |
 | H | Switch between traces and the heatmap | More than one channel |
 | F | Turn Fit on or off (see Chan. Height) | More than one channel |
 | T | Set the longest timebase. While paused, that is the longest the record can fill, so the whole record is in view | Always |
@@ -246,7 +248,7 @@ Up to four cursors measure time and amplitude on the selected channel ([](#fig-c
 
 | Element | Description |
 |---|---|
-| C0 to C3 | There can be up to four cursors, C0 to C3. C0 is always present while cursors are shown, and the others are added from the cursor table. |
+| C0 to C3 | There can be up to four cursors, C0 to C3. C0 is always present while cursors are shown, and the others are added from the cursor table or with +. |
 | Reference | The reference is the cursor the others are measured from, C0 to begin with. It is drawn as a solid line with a filled time label, where the others are dotted and outlined. Clicking a cursor's time label makes it the reference. The reference cannot be removed. |
 | Active cursor | The active cursor is the one the Left and Right keys move, one pixel column at a time, or ten with Shift. A pixel column is one sample once the view is zoomed in to a sample per pixel, so a cursor can be stepped onto the tip of a spike. The active cursor is the one last dragged, picked by clicking its time label or its row in the cursor table, or added. Its row in the cursor table is highlighted, and where there is more than one cursor its line is drawn heavier. Removing the active cursor makes the reference active. |
 | Time label | Each cursor's time label sits in the row of time labels, over any it would collide with, and gives the cursor's name and time. Clicking it makes that cursor the reference and the active cursor; where labels overlap, the one on top takes the click. |

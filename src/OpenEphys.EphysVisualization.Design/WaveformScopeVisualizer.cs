@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -109,11 +109,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// Gets the unit of the samples shown, or an empty string where they have none. Read once, when the
         /// visualizer loads.
         /// </summary>
-        /// <remarks>
-        /// By default <c>a.u.</c>, arbitrary units, so that a viewer which cannot know what its samples measure says
-        /// so rather than showing bare numbers.
-        /// </remarks>
-        protected virtual string Unit => "a.u.";
+        protected virtual string Unit => string.Empty;
 
         /// <summary>
         /// Gets the keys, besides the plot's own, that whatever a derived class draws answers while the pointer is

@@ -147,6 +147,11 @@ namespace OpenEphys.EphysVisualization.Design
             (ImGuiKey.D, true, () => TimeKey(1)),
             (ImGuiKey.LeftArrow, true, () => CursorKey(-1)),
             (ImGuiKey.RightArrow, true, () => CursorKey(1)),
+            (ImGuiKey.Equal, false, AddCursorKey),
+            (ImGuiKey.KeypadAdd, false, AddCursorKey),
+            (ImGuiKey.Minus, false, RemoveCursorKey),
+            (ImGuiKey.KeypadSubtract, false, RemoveCursorKey),
+            (ImGuiKey.Delete, false, RemoveCursorKey),
         };
 
         // NB: these scroll the channels, which ImGui does to the window current when asked, so they are answered
@@ -319,6 +324,19 @@ namespace OpenEphys.EphysVisualization.Design
             var cells = Modifiers() ? 1 : Modifiers(shift: true) ? CursorCoarseStep : 0;
             if (cells > 0)
                 cursors.Step(direction * cells, Axis);
+        }
+
+        // NB: with or without Shift, since + shares its key with = and typing it takes Shift on most layouts.
+        void AddCursorKey()
+        {
+            if (Modifiers() || Modifiers(shift: true))
+                cursors.Add(Axis);
+        }
+
+        void RemoveCursorKey()
+        {
+            if (Modifiers() || Modifiers(shift: true))
+                cursors.RemoveActive();
         }
 
         const int CursorCoarseStep = 10;
