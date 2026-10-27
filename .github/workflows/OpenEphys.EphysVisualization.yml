@@ -68,9 +68,10 @@ jobs:
 
       # ----------------------------------------------------------------------- Check public API is shipped
       # NB: a release must move PublicAPI.Unshipped.txt into PublicAPI.Shipped.txt, so that a later change to API
-      # that has been released is caught as a breaking change rather than taken for an edit to new API.
+      # that has been released is caught as a breaking change rather than taken for an edit to new API. A pre-release
+      # is exempt, since its API may still change before the release it leads up to.
       - name: Check public API is shipped
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && !github.event.release.prerelease
         shell: bash
         run: |
           unshipped=$(cat src/*/PublicAPI.Unshipped.txt | tr -d '\r' | grep -v -e '^#nullable enable$' -e '^[[:space:]]*$' || true)
