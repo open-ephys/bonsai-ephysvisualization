@@ -1,6 +1,6 @@
 # LFP Viewer
 
-The [LfpViewer](xref:OpenEphys.EphysVisualization.Design.LfpViewer) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
+The [LfpViewer](xref:OpenEphys.EphysVisualization.Design.LfpViewer) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. Data in .NET arrays can be converted to matrices first (see [Array input](#array-input)). The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
 
 ## Getting started
 
@@ -22,6 +22,29 @@ For a signal that needs no hardware or recording, see [Single channel](#single-c
 The viewer opens like any visualizer, from the node, and can be closed and reopened during a run. To open it when the workflow starts, including when Bonsai runs without the editor (`--no-editor`), place Bonsai's VisualizerWindow operator after the node; its properties set the window's position and size.
 
 Every control has a tooltip saying what it does and naming its keys and gestures. Labels name only the control and, in parentheses, its unit.
+
+## Array input
+
+The viewer takes OpenCV matrices. Data held in .NET arrays, such as arrays from a device or a script that never uses OpenCV, can be converted into matrices by Bonsai.Dsp's [ConvertFromArray](xref:Bonsai.Dsp.ConvertFromArray) placed before the viewer. Its Size gives the matrix's width, which is its number of columns, and its height, which is its number of rows. When each channel's samples are stored together, the width is the number of samples in each array and the height is the number of channels:
+
+:::workflow
+![Arrays with each channel's samples together, converted for LfpViewer](~/workflows/array-input.bonsai)
+:::
+
+Here the arrays come from FunctionGenerator and ConvertToArray, so the workflow runs as it is. Each array holds 300 samples of one sine wave, which ConvertFromArray cuts into 10 rows of 30 samples, so the viewer shows 10 channels sampled at 3 kHz.
+
+When each sample's channels are stored together, so that the channels are interleaved, Size is the other way round, with the channels as the width. Transpose then turns the matrix so that its rows are the channels:
+
+:::workflow
+![Interleaved arrays, converted and transposed for LfpViewer](~/workflows/array-input-interleaved.bonsai)
+:::
+
+Here the arrays come from the same kind of generator, making a 100 Hz sine wave. Its consecutive values go to the 10 channels in turn, so each channel holds every tenth value, and the viewer shows 10 channels sampled at 3 kHz.
+
+> [!WARNING]
+> ConvertFromArray does not check an array's length against Size. It cuts a longer array short, and it reads past the end of a shorter one, so the matrix holds memory that is not part of the array, and Bonsai can crash ([bonsai-rx/bonsai#2678](https://github.com/bonsai-rx/bonsai/issues/2678)). Every array must hold exactly width × height values.
+
+The matrix's depth follows the array's element type, unless ConvertFromArray's Depth is set. SaturationLow and SaturationHigh, when left empty, fall back to the limits of an integer element type, and floating-point arrays are not checked, as with matrix input.
 
 ## Settings
 

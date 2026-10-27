@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.9.0"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
+                 xmlns:ephysviz="clr-namespace:OpenEphys.EphysVisualization.Design;assembly=OpenEphys.EphysVisualization.Design"
+                 xmlns="https://bonsai-rx.org/2018/workflow">
+  <Workflow>
+    <Nodes>
+      <Expression xsi:type="GroupWorkflow">
+        <Name>Array Generator</Name>
+        <Description>Stands in for a device or script that produces .NET arrays. FunctionGenerator makes a 1 kHz sine wave in blocks of 300 samples at 30 kHz, and ConvertToArray turns each block into a float[300]. ConvertFromArray then reads each array as 10 channels of 30 samples, with each channel's samples stored together.</Description>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="dsp:FunctionGenerator">
+                <dsp:BufferLength>300</dsp:BufferLength>
+                <dsp:Frequency>1000</dsp:Frequency>
+                <dsp:Waveform>Sine</dsp:Waveform>
+                <dsp:SampleRate>30000</dsp:SampleRate>
+                <dsp:Depth>F32</dsp:Depth>
+                <dsp:Amplitude>1</dsp:Amplitude>
+                <dsp:Offset>0</dsp:Offset>
+                <dsp:Phase>0</dsp:Phase>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="dsp:ConvertToArray">
+              <dsp:Depth>F32</dsp:Depth>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge From="0" To="1" Label="Source1" />
+            <Edge From="1" To="2" Label="Source1" />
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="dsp:ConvertFromArray">
+          <dsp:Size>
+            <dsp:Width>30</dsp:Width>
+            <dsp:Height>10</dsp:Height>
+          </dsp:Size>
+          <dsp:Depth>F32</dsp:Depth>
+          <dsp:Channels xsi:nil="true" />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="ephysviz:LfpViewer">
+        <ephysviz:Timebase>0.5</ephysviz:Timebase>
+        <ephysviz:RangeAmplitude>2500</ephysviz:RangeAmplitude>
+        <ephysviz:SampleRate>3000</ephysviz:SampleRate>
+        <ephysviz:Scale>1000</ephysviz:Scale>
+        <ephysviz:SaturationLow xsi:nil="true" />
+        <ephysviz:SaturationHigh xsi:nil="true" />
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge From="0" To="1" Label="Source1" />
+      <Edge From="1" To="2" Label="Source1" />
+    </Edges>
+  </Workflow>
+</WorkflowBuilder>
