@@ -25,13 +25,19 @@
     /// <param name="Selected">The selected channel, or -1.</param>
     /// <param name="Heatmap">Whether channels are drawn as rows of color rather than as traces.</param>
     /// <param name="ColorThreshold">Magnitude at or below which a row of color is black.</param>
+    /// <param name="RowChannels">The channel each row shows, or null for each row showing its own index.</param>
     internal readonly record struct PlotFrame(
         Envelope Envelope,
         ImGuiWaveformPanel.RowLayout Layout, PixelAxis Axis, float Top, float Bottom, int SampleRate,
         bool Paused, long PauseOrigin, double Timebase, double PausedTimebase,
         double Range, double Center, string Unit,
-        bool[] Hidden, int Expanded, int Selected, bool Heatmap, double ColorThreshold)
+        bool[] Hidden, int Expanded, int Selected, bool Heatmap, double ColorThreshold, int[]? RowChannels = null)
     {
+        /// <summary>
+        /// The channel row <paramref name="row"/> shows.
+        /// </summary>
+        public int ChannelOf(int row) => ImGuiWaveformPanel.ChannelOf(RowChannels, row);
+
         /// <summary>
         /// The stretch of the axis the columns cover.
         /// </summary>

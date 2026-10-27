@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using Hexa.NET.Utilities.Text;
@@ -62,7 +63,7 @@ namespace OpenEphys.EphysVisualization.Design
         void WaveformPlot(Envelope envelope, DisplayWindow shown)
         {
             var rows = envelope.Rows;
-            var labelDigits = DigitCount(rows - 1);
+            var labelDigits = DigitCount(rowChannels is { Length: > 0 } map ? map.Max() : rows - 1);
             if (amplitudeView.Channel != expandedChannel || amplitudeView.Range != Range)
                 amplitudeView.Channel = -1;
 
@@ -136,14 +137,15 @@ namespace OpenEphys.EphysVisualization.Design
                 frame = new PlotFrame(
                     envelope, layout, new PixelAxis(shown, plotLeft, plotSpan), plotTop, plotBottom,
                     sampleRate, Paused, CursorPosition, Timebase, pausedTimebase,
-                    AmplitudeView.Span, AmplitudeView.Center, Unit, ChannelHidden, expandedChannel, selectedChannel, ShowHeatmap, ColorThreshold);
+                    AmplitudeView.Span, AmplitudeView.Center, Unit, ChannelHidden, expandedChannel, selectedChannel, ShowHeatmap, ColorThreshold,
+                    rowChannels);
 
                 // NB: an item the height of every row, which is what the table scrolls through. Everything in the
                 // plot is drawn rather than laid out.
                 ImGui.Dummy(new Vector2(plotWidth, layout.Height));
                 var draw = ImGui.GetWindowDrawList();
                 DrawRowBand(draw, frame);
-                traces.Draw(frame, Colors.Packed(channels),
+                traces.Draw(frame, Colors.Packed(channels, rowChannels),
                     Paused || decimator is null ? -1 : decimator.Cursor, history?.Count ?? 0, FastSweep);
 
                 // NB: a trace that runs off its row may run into its neighbors but not past the rows, which can
@@ -242,7 +244,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             // NB: an expanded channel is named in the plot's top left already.
             var position = $"{seconds:0.0000} s   {amplitude:0.0} {frame.Unit}";
-            var text = frame.Expanded >= 0 ? position : $"Ch {hovered}   {position}";
+            var text = frame.Expanded >= 0 ? position : $"Ch {ChannelOf(hovered)}   {position}";
             var corner = new Vector2(frame.Left + frame.Width, frame.Bottom) - ImGui.CalcTextSize(text) -
                 2 * ImGui.GetStyle().FramePadding;
             PlotText.Framed(draw, corner, text);
@@ -375,10 +377,11 @@ namespace OpenEphys.EphysVisualization.Design
             // NB: an expanded channel is named inside the plot instead, by AmplitudeLabels.
             for (int i = layout.FirstVisible; i < layout.LastVisible && expandedChannel < 0; i++)
             {
+                var name = ChannelOf(i);
                 label.Reset();
-                for (var n = DigitCount(i); n < labelDigits; n++)
+                for (var n = DigitCount(name); n < labelDigits; n++)
                     label.Append('0');
-                label.Append(i);
+                label.Append(name);
                 label.End();
 
                 // NB: at least as tall as the label, centered on the row as the label is, so that on a row shorter
@@ -394,7 +397,7 @@ namespace OpenEphys.EphysVisualization.Design
                 // Highlight hovered channel and the selected one
                 if ((i == hovered || i == selected) && expandedChannel < 0)
                 {
-                    var fill = Colors.Of(i);
+                    var fill = Colors.Of(name);
                     fill.W = HoverFillAlpha;
                     draw.AddRectFilled(new Vector2(left, markTop), new Vector2(right, markTop + markHeight),
                         ImGui.ColorConvertFloat4ToU32(fill));
@@ -451,7 +454,7 @@ namespace OpenEphys.EphysVisualization.Design
                 high[i] = new Vector2(x, frame.ValueY(channel, max));
             }
 
-            var color = ImGui.ColorConvertFloat4ToU32(Colors.Of(channel));
+            var color = ImGui.ColorConvertFloat4ToU32(Colors.Of(ChannelOf(channel)));
             Segments(draw, low, points, color, weight);
             if (frame.Window.Step > 1 || axis.Combines && points < columns)
                 Segments(draw, high, points, color, weight);
@@ -741,7 +744,7 @@ namespace OpenEphys.EphysVisualization.Design
             var timeDivision = Timebase / TimeDivisions;
             var time = timeDivision < 1 ? $"{PlotText.Significant(timeDivision * 1000)} ms/div" : $"{PlotText.Significant(timeDivision)} s/div";
             var unit = string.IsNullOrEmpty(Unit) ? "a.u." : Unit;
-            var name = $"Ch {expandedChannel}   {PlotText.Significant(frame.Range / AmplitudeDivisions)} {unit}/div   {time}";
+            var name = $"Ch {ChannelOf(expandedChannel)}   {PlotText.Significant(frame.Range / AmplitudeDivisions)} {unit}/div   {time}";
             PlotText.Framed(draw, new Vector2(left, top) + 2 * pad, name);
         }
 

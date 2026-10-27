@@ -93,6 +93,23 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
+        /// Gets or sets the channel each row of the posted data shows, from the top, or null for each row showing the
+        /// channel of its own index.
+        /// </summary>
+        /// <remarks>
+        /// For an owner that reorders the rows it posts, as by where their electrodes sit, with the clipping flags in
+        /// the same order. Labels, hidden channels, colors and readouts then follow the channel rather than the row.
+        /// A change discards what the display holds, so set it through <see cref="Post"/> ahead of the first block in
+        /// the new order, and only while not paused.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected int[]? RowChannels
+        {
+            get => Panel.RowChannels;
+            set => Panel.RowChannels = value;
+        }
+
+        /// <summary>
         /// Gets a value indicating whether a fault has been reported, after which the viewer shows it in place of
         /// the plot until it is closed.
         /// </summary>

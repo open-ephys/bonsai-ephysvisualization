@@ -177,6 +177,8 @@ OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Paused.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Post(System.Action! action) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostClipping(bool[]! channels) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostData(OpenCV.Net.Mat! data, int sampleRate) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.RowChannels.get -> int[]?
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.RowChannels.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Scope.get -> OpenEphys.EphysVisualization.Design.WaveformScope!
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.WaveformScopeVisualizer() -> void
 abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HistoryBytes.get -> long

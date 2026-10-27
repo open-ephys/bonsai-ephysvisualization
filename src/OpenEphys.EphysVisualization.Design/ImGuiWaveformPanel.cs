@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using OpenCV.Net;
@@ -182,24 +184,63 @@ namespace OpenEphys.EphysVisualization.Design
         // NB: how many channels the data has, which the hidden mask's length used to stand in for.
         int channels;
 
-        // NB: the node's hidden channels as a mask, for looking a channel up, worked out again whenever the node's
-        // array is replaced or the channel count changes. Never written to: hiding and showing replace the array.
+        // NB: the data's rows, and with them whatever is drawn, selected or expanded, are counted in rows. What a
+        // user reads and what the settings name are channels, which an owner that reorders its rows maps here.
+        int[]? rowChannels;
+
+        /// <summary>
+        /// The channel each row of the data shows, from the top, or null for each row showing the channel of its own
+        /// index.
+        /// </summary>
+        /// <remarks>
+        /// A change discards the buffers, whose rows then belong to other channels, and keeps the selected and the
+        /// expanded channel where they were. A paused view is read from those buffers, so it is changed only live.
+        /// </remarks>
+        public int[]? RowChannels
+        {
+            get => rowChannels;
+            set
+            {
+                if (ReferenceEquals(value, rowChannels) ||
+                    value is not null && rowChannels is not null && value.SequenceEqual(rowChannels))
+                    return;
+
+                var selected = selectedChannel >= 0 ? ChannelOf(selectedChannel) : -1;
+                var expanded = expandedChannel >= 0 ? ChannelOf(expandedChannel) : -1;
+                rowChannels = value;
+                selectedChannel = selected >= 0 ? RowOf(selected) : -1;
+                expandedChannel = expanded >= 0 ? RowOf(expanded) : -1;
+                ResetBuffers();
+            }
+        }
+
+        internal int ChannelOf(int row) => ChannelOf(rowChannels, row);
+
+        internal static int ChannelOf(int[]? rowChannels, int row) =>
+            rowChannels is { } map && (uint)row < (uint)map.Length ? map[row] : row;
+
+        int RowOf(int channel) => rowChannels is { } map ? Array.IndexOf(map, channel) : channel;
+
+        // NB: the node's hidden channels as a mask by row, for looking a row up, worked out again whenever the node's
+        // array or the row order is replaced or the channel count changes. Never written to: hiding and showing
+        // replace the array.
         bool[] hiddenMask = Array.Empty<bool>();
         int[]? maskedFrom;
+        int[]? maskedRows;
 
         bool[] ChannelHidden
         {
             get
             {
-                if (hiddenMask.Length != channels || !ReferenceEquals(maskedFrom, settings.HiddenChannels))
+                if (hiddenMask.Length != channels || !ReferenceEquals(maskedFrom, settings.HiddenChannels) ||
+                    !ReferenceEquals(maskedRows, rowChannels))
                 {
                     maskedFrom = settings.HiddenChannels;
+                    maskedRows = rowChannels;
                     hiddenMask = new bool[channels];
-                    foreach (var channel in maskedFrom ?? Array.Empty<int>())
-                    {
-                        if (channel >= 0 && channel < channels)
-                            hiddenMask[channel] = true;
-                    }
+                    var hidden = new HashSet<int>(maskedFrom ?? Array.Empty<int>());
+                    for (int row = 0; row < channels; row++)
+                        hiddenMask[row] = hidden.Contains(ChannelOf(row));
                 }
 
                 return hiddenMask;

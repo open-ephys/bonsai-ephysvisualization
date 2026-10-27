@@ -469,7 +469,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (ImGui.BeginChild("##cursorTable", Vector2.Zero, childFlags, ImGuiWindowFlags.NoScrollbar))
             {
                 var channel = Channel(frame);
-                ImGui.TextUnformatted(channel >= 0 ? $"Ch {channel}" : "No channel");
+                ImGui.TextUnformatted(channel >= 0 ? $"Ch {frame.ChannelOf(channel)}" : "No channel");
 
                 var remove = -1;
                 // NB: a cell of one sample has min and max equal, so it has one value and one difference from C0, as

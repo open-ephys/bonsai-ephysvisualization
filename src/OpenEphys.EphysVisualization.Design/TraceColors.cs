@@ -77,17 +77,19 @@ namespace OpenEphys.EphysVisualization.Design
         public Vector4 Of(int channel) => Group(GroupOf(channel));
 
         /// <summary>
-        /// The colors of the first <paramref name="count"/> channels, packed as RGBA, for drawing in bulk. The
-        /// array is reused from call to call.
+        /// The colors of the first <paramref name="count"/> rows, each its channel's, packed as RGBA, for drawing in
+        /// bulk. The array is reused from call to call.
         /// </summary>
-        public uint[] Packed(int count)
+        /// <param name="count">How many rows.</param>
+        /// <param name="rowChannels">The channel each row shows, or null for each row showing its own index.</param>
+        public uint[] Packed(int count, int[]? rowChannels)
         {
             if (packed.Length != count)
                 packed = new uint[count];
 
             for (int i = 0; i < count; i++)
             {
-                var c = Of(i);
+                var c = Of(ImGuiWaveformPanel.ChannelOf(rowChannels, i));
                 packed[i] = (uint)(c.X * 255) | (uint)(c.Y * 255) << 8 | (uint)(c.Z * 255) << 16 | 0xFFu << 24;
             }
 

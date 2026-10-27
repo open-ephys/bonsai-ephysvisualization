@@ -114,11 +114,14 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 var lo = Math.Min(dragAnchor, channel);
                 var hi = Math.Max(dragAnchor, channel);
-                var hidden = dragOriginal.Where(c => c < lo || c > hi).ToList();
+                var dragged = new HashSet<int>();
+                for (int row = lo; row <= hi; row++)
+                    dragged.Add(ChannelOf(row));
+
+                var hidden = dragOriginal.Where(c => !dragged.Contains(c)).ToList();
                 if (hide)
                 {
-                    for (int c = lo; c <= hi; c++)
-                        hidden.Add(c);
+                    hidden.AddRange(dragged);
                     hidden.Sort();
                 }
 
