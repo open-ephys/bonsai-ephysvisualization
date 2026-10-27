@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using Hexa.NET.Utilities.Text;
@@ -24,8 +24,8 @@ namespace OpenEphys.EphysVisualization.Design
         static readonly uint ColSelectedRow = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0x20);
 
         static readonly uint ColFrozenTail = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0x80);
-        static readonly uint ColZoomBox = ImGuiPalette.Grey0x99;
-        static readonly uint ColZoomBoxFill = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0x18);
+        internal static readonly uint ColZoomBox = ImGuiPalette.Grey0x99;
+        internal static readonly uint ColZoomBoxFill = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0x18);
 
         /// <summary>
         /// Color and weight of the plot's frame, for the control strip's divider to match.

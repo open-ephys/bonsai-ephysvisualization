@@ -258,10 +258,12 @@ namespace OpenEphys.EphysVisualization.Design
         float effectiveXWindow;
 
         // drag-select state machine
-        bool isDragging, dragHadShift, dragHadCtrl;
-        Vector2 dragStart, dragCurrent;
+        readonly DragBox selectBox = new(ImGuiMouseButton.Left);
+        bool dragHadShift, dragHadCtrl;
         bool[] preDragSelection = Array.Empty<bool>();
         bool[] preDragInspected = Array.Empty<bool>();
+
+        readonly DragBox zoomBox = new(ImGuiMouseButton.Right);
 
         // middle-mouse pan
         bool isMiddlePanning;
@@ -277,8 +279,8 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Every key the probe view answers: R arms a ruler, which the next drag or pair of clicks places, Delete
-        /// removes the selected ruler and Shift+Delete all of them, and Escape cancels a ruler being placed, then
-        /// deselects a ruler, then clears the selection.
+        /// removes the selected ruler and Shift+Delete all of them, and Escape cancels a zoom box or a ruler being
+        /// placed, then deselects a ruler, then clears the selection.
         /// </summary>
         public IEnumerable<ImGuiKey> Hotkeys => new[] { ImGuiKey.R, ImGuiKey.Delete, ImGuiKey.Escape };
 
@@ -305,7 +307,6 @@ namespace OpenEphys.EphysVisualization.Design
         const float RulerMinorTickLen   = 3f;
         static readonly uint  ColDragSelect       = ImGuiPalette.Yellow;
         static readonly uint  ColDragDeselect     = ImGuiPalette.Red;
-        const float ClickThresholdSq    = 16f;
         static readonly uint ColCoordOverlayBg = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0xBB);
         static readonly uint  ColBottomInfoText   = ImGuiPalette.White;
         static readonly uint  ColCrosshair        = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0xC0);
@@ -486,8 +487,8 @@ namespace OpenEphys.EphysVisualization.Design
             float boxBot   = Clamp(viewTop + (mmYMax - (scrollY - yHalf)) * scale, viewTop, viewBot);
             float boxLeft  = Clamp(contactLeft + (scrollX - xHalf - mmXMin) * scale, contactLeft, contactLeft + rendW);
             float boxRight = Clamp(contactLeft + (scrollX + xHalf - mmXMin) * scale, contactLeft, contactLeft + rendW);
-            dl.AddRectFilled(new Vector2(boxLeft, boxTop), new Vector2(boxRight, boxBot), ColZoomBoxFill);
-            dl.AddRect(new Vector2(boxLeft, boxTop), new Vector2(boxRight, boxBot), ColZoomBoxBorder);
+            PixelRect.Fill(dl, new Vector2(boxLeft, boxTop), new Vector2(boxRight, boxBot), ColZoomBoxFill);
+            PixelRect.Outline(dl, new Vector2(boxLeft, boxTop), new Vector2(boxRight, boxBot), ColZoomBoxBorder);
 
             ImGui.SetCursorScreenPos(new Vector2(contactLeft, viewTop));
             ImGui.InvisibleButton("##minimapbtn", new Vector2(Math.Max(1f, rendW), Math.Max(1f, mmH)));
@@ -609,6 +610,8 @@ namespace OpenEphys.EphysVisualization.Design
             bool inCanvas = Hovered &&
                             mp.X >= gridLeft && mp.X <= gridRight &&
                             mp.Y >= gridTop  && mp.Y <= gridBot;
+            var canvasMin = new Vector2(gridLeft, gridTop);
+            var canvasMax = new Vector2(gridRight, gridBot);
 
             HandleKeys(selectionEnabled);
             var rulerTookClick = ruler.HandleInput(new Vector2(mousePx, mousePy), inCanvas,
@@ -617,7 +620,8 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.SetMouseCursor(ImGuiMouseCursor.None);
 
             if (selectionEnabled)
-                HandleDragSelect(dl, viewLeft, viewBot, xLow, yLow, scaleXY, rulerTookClick);
+                HandleDragSelect(dl, canvasMin, canvasMax, viewLeft, viewBot, xLow, yLow, scaleXY, rulerTookClick);
+            HandleZoomBox(dl, canvasMin, canvasMax, inCanvas, avail, viewLeft, viewBot, xLow, yLow, scaleXY);
 
             if (ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
             {
@@ -719,7 +723,9 @@ namespace OpenEphys.EphysVisualization.Design
             // selection.
             if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
             {
-                if (ruler.Placing)
+                if (zoomBox.Dragging)
+                    zoomBox.Cancel();
+                else if (ruler.Placing)
                     ruler.Cancel();
                 else if (ruler.HasSelection)
                     ruler.Deselect();
@@ -768,6 +774,53 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
+        /// <summary>
+        /// Right click and drag a box to zoom to it, or double-click to zoom all the way out.
+        /// </summary>
+        void HandleZoomBox(ImDrawListPtr dl, Vector2 canvasMin, Vector2 canvasMax, bool inCanvas, Vector2 region,
+            float viewLeft, float viewBot, float xLow, float yLow, float scaleXY)
+        {
+            if (inCanvas && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
+            {
+                zoomBox.Cancel();
+                ZoomAll(region);
+            }
+            else if (inCanvas && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                zoomBox.Begin();
+
+            if (zoomBox.Current(canvasMin, canvasMax) is { } box && (box.Wide || box.Tall))
+            {
+                PixelRect.Fill(dl, box.Min, box.Max, ImGuiWaveformPanel.ColZoomBoxFill);
+                PixelRect.Outline(dl, box.Min, box.Max, ImGuiWaveformPanel.ColZoomBox);
+            }
+
+            if (!zoomBox.Released(canvasMin, canvasMax, out var end) || !end.Wide && !end.Tall)
+                return;
+
+            // NB: one scale serves both axes, so the zoom is set by whichever side of the box needs more room at the
+            // view's shape.
+            var (_, _, mmYMin, mmYMax) = GetMmBounds();
+            var widthUm = (end.Max.X - end.Min.X) / scaleXY;
+            var heightUm = (end.Max.Y - end.Min.Y) / scaleXY;
+            zoomWindow = Math.Max(50f, Math.Min(mmYMax - mmYMin, Math.Max(heightUm, widthUm * region.Y / region.X)));
+            scrollX = xLow + ((end.Min.X + end.Max.X) / 2f - viewLeft) / scaleXY;
+            scrollY = yLow + (viewBot - (end.Min.Y + end.Max.Y) / 2f) / scaleXY;
+            ClampScroll();
+            UpdateLayout(region.Y, region.X);
+        }
+
+        // NB: the view's width follows from the zoom, so the layout is redone before the view is clamped across,
+        // which would otherwise use the width from before. HandleZoomBox does the same.
+        void ZoomAll(Vector2 region)
+        {
+            var (_, _, mmYMin, mmYMax) = GetMmBounds();
+            zoomWindow = mmYMax - mmYMin;
+            scrollX = (probeXMin + probeXMax) / 2f;
+            scrollY = (probeYMin + probeYMax) / 2f;
+            ClampScroll();
+            UpdateLayout(region.Y, region.X);
+        }
+
         #region Private: scroll clamping
 
         (float xMin, float xMax, float yMin, float yMax) GetMmBounds()
@@ -801,38 +854,31 @@ namespace OpenEphys.EphysVisualization.Design
 
         #region Private: drag-select state machine
 
-        void HandleDragSelect(ImDrawListPtr dl, float viewLeft, float viewBot,
+        void HandleDragSelect(ImDrawListPtr dl, Vector2 canvasMin, Vector2 canvasMax, float viewLeft, float viewBot,
             float xLow, float yLow, float scaleXY, bool clickTaken)
         {
             if (!ImGui.IsWindowHovered()) return;
 
-            var mp = ImGui.GetMousePos();
-            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !isDragging && !clickTaken)
+            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !selectBox.Dragging && !clickTaken)
             {
-                dragStart    = mp;
+                selectBox.Begin();
                 dragHadShift = ImGui.IsKeyDown(ImGuiKey.LeftShift)  || ImGui.IsKeyDown(ImGuiKey.RightShift);
                 dragHadCtrl  = ImGui.IsKeyDown(ImGuiKey.LeftCtrl)   || ImGui.IsKeyDown(ImGuiKey.RightCtrl);
-                isDragging   = true;
                 Array.Copy(selected,  preDragSelection, selected.Length);
                 Array.Copy(inspected, preDragInspected, inspected.Length);
                 DragIntent = (dragHadShift && dragHadCtrl) ? DragSelectIntent.Remove : DragSelectIntent.Add;
             }
 
-            if (!isDragging) return;
+            if (selectBox.Current(canvasMin, canvasMax) is not { } box) return;
 
-            dragCurrent   = mp;
             bool deselect = dragHadShift && dragHadCtrl;
             bool additive = dragHadShift && !dragHadCtrl;
-            float dx = dragCurrent.X - dragStart.X;
-            float dy = dragCurrent.Y - dragStart.Y;
-            bool aboveThreshold = dx * dx + dy * dy >= ClickThresholdSq;
-
-            if (aboveThreshold)
+            if (box.Wide || box.Tall)
             {
-                float minX = xLow + (Math.Min(dragStart.X, dragCurrent.X) - viewLeft) / scaleXY;
-                float maxX = xLow + (Math.Max(dragStart.X, dragCurrent.X) - viewLeft) / scaleXY;
-                float minY = yLow + (viewBot - Math.Max(dragStart.Y, dragCurrent.Y))  / scaleXY;
-                float maxY = yLow + (viewBot - Math.Min(dragStart.Y, dragCurrent.Y))  / scaleXY;
+                float minX = xLow + (box.Min.X - viewLeft) / scaleXY;
+                float maxX = xLow + (box.Max.X - viewLeft) / scaleXY;
+                float minY = yLow + (viewBot - box.Max.Y) / scaleXY;
+                float maxY = yLow + (viewBot - box.Min.Y) / scaleXY;
 
                 Array.Clear(inDragBox, 0, inDragBox.Length);
                 UpdateBoxContacts(minX, maxX, minY, maxY, inDragBox, true, SelectionSkipsBlocked);
@@ -842,14 +888,13 @@ namespace OpenEphys.EphysVisualization.Design
                 AccumulateSelection(inspected, preDragInspected, false,
                     minX, maxX, minY, maxY, additive, deselect);
 
-                dl.AddRect(dragStart, dragCurrent, deselect ? ColDragDeselect : ColDragSelect);
+                PixelRect.Outline(dl, box.Min, box.Max, deselect ? ColDragDeselect : ColDragSelect);
             }
 
-            if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+            if (selectBox.Released(canvasMin, canvasMax, out var end))
             {
-                if (!aboveThreshold)
+                if (!end.Wide && !end.Tall)
                     ApplyClick(viewLeft, viewBot, xLow, yLow, scaleXY, additive, deselect);
-                isDragging = false;
                 SelectionChanged?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -859,7 +904,7 @@ namespace OpenEphys.EphysVisualization.Design
             Array.Clear(selected,  0, selected.Length);
             Array.Clear(inDragBox,   0, inDragBox.Length);
             Array.Clear(inspected, 0, inspected.Length);
-            isDragging = false;
+            selectBox.Cancel();
             DragIntent = DragSelectIntent.Idle;
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -877,8 +922,10 @@ namespace OpenEphys.EphysVisualization.Design
         void ApplyClick(float viewLeft, float viewBot, float xLow, float yLow,
             float scaleXY, bool additive, bool deselect)
         {
-            float cx = xLow + (dragStart.X - viewLeft) / scaleXY;
-            float cy = yLow + (viewBot - dragStart.Y)  / scaleXY;
+            // NB: where the button went down, which a click may drift from by less than the drag threshold.
+            var at = ImGui.GetIO().MouseClickedPos[0];
+            float cx = xLow + (at.X - viewLeft) / scaleXY;
+            float cy = yLow + (viewBot - at.Y)  / scaleXY;
 
             Array.Clear(inDragBox, 0, inDragBox.Length);
             if (!additive && !deselect)

@@ -379,6 +379,61 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void ARightDrag_ZoomsToTheBox_WithoutTouchingTheSelection()
+        {
+            var before = ZoomWindow();
+            var width = contacts[6].Max.X - contacts[6].Min.X;
+
+            RightDrag(contacts[4].Center, contacts[9].Center);
+
+            Assert.True(ZoomWindow() < before / 2, $"The zoom went from {before} to {ZoomWindow()}.");
+            var zoomed = Assert.Single(ImGuiHarness.Rects(Fill(6)));
+            Assert.True(zoomed.Max.X - zoomed.Min.X > width * 2);
+            Assert.Empty(Selected());
+            Assert.Equal(0, selectionChanges);
+        }
+
+        [Fact]
+        public void ARightDrag_ShorterThanTheDragThreshold_DoesNothing()
+        {
+            var before = ZoomWindow();
+
+            RightDrag(contacts[4].Center, contacts[4].Center + new Vector2(2, 2));
+
+            Assert.Equal(before, ZoomWindow());
+        }
+
+        [Fact]
+        public void ARightDoubleClick_ZoomsAllTheWayOut()
+        {
+            RightDrag(contacts[4].Center, contacts[9].Center);
+            var center = Assert.Single(ImGuiHarness.Rects(Fill(6))).Center;
+
+            imgui.MoveMouse(center, draw);
+            imgui.Click(ImGuiMouseButton.Right, draw);
+            imgui.Click(ImGuiMouseButton.Right, draw);
+
+            var height = Private.Get<float>(selector, "probeYMax") - Private.Get<float>(selector, "probeYMin");
+            Assert.Equal(height * 1.2f, ZoomWindow(), 3);
+        }
+
+        [Fact]
+        public void Escape_CancelsAZoomBox_AndKeepsTheSelection()
+        {
+            Click(5);
+            var before = ZoomWindow();
+
+            imgui.MoveMouse(contacts[4].Center, draw);
+            imgui.Button(ImGuiMouseButton.Right, true, draw);
+            imgui.MoveMouse(contacts[9].Center, draw);
+            imgui.Key(ImGuiKey.Escape, draw);
+            imgui.Button(ImGuiMouseButton.Right, false, draw);
+
+            Assert.Equal(before, ZoomWindow());
+            Assert.Equal(new[] { 5 }, Selected());
+        }
+
+        [Fact]
         public void Hovered_SaysWhetherThePointerIsOverTheView()
         {
             imgui.MoveMouse(contacts[0].Center, draw);
@@ -444,6 +499,17 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         {
             imgui.MoveMouse(at, draw);
             imgui.Click(ImGuiMouseButton.Left, draw);
+        }
+
+        float ZoomWindow() => Private.Get<float>(selector, "zoomWindow");
+
+        void RightDrag(Vector2 from, Vector2 to)
+        {
+            imgui.MoveMouse(from, draw);
+            imgui.Button(ImGuiMouseButton.Right, true, draw);
+            imgui.MoveMouse(to, draw);
+            imgui.Button(ImGuiMouseButton.Right, false, draw);
+            imgui.Frames(2, draw);
         }
 
         void Drag(Vector2 from, Vector2 to)

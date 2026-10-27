@@ -2,3 +2,5 @@
   href: ../index.md
 - name: LFP Viewer
   href: lfp-viewer.md
+- name: Probe Selector
+  href: probe-selector.md
