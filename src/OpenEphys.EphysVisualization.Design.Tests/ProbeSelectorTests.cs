@@ -20,23 +20,12 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         readonly ImGuiProbeSelector selector = new(zoomWindowFraction: 1);
         readonly Rect[] contacts = new Rect[Count];
         bool selectionEnabled = true;
-        bool rulerControls;
-        Vector2 addButton, clearButton;
         int selectionChanges;
         readonly Action draw;
 
         public ProbeSelectorTests()
         {
-            draw = () =>
-            {
-                if (rulerControls)
-                {
-                    addButton = ImGui.GetCursorScreenPos() + new Vector2(4);
-                    selector.DrawRulerControls();
-                    clearButton = ImGui.GetItemRectMin() + new Vector2(4);
-                }
-                selector.DrawZoomedView(selectionEnabled);
-            };
+            draw = () => selector.DrawZoomedView(selectionEnabled);
             selector.Refresh(Probe(Columns, Rows));
             selector.SelectionChanged += (_, _) => selectionChanges++;
 
@@ -243,33 +232,30 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
-        public void TheAddButton_ArmsARuler_AndPressingItAgainCancelsIt()
+        public void ToggleRuler_ArmsARuler_AndAgainCancelsIt()
         {
-            ShowRulerControls();
-
-            ClickAt(addButton);
-            Assert.True(Placing());
+            selector.ToggleRuler();
+            Assert.True(selector.PlacingRuler);
             Drag(contacts[0].Center, contacts[18].Center);
-            Assert.Equal(1, Rulers());
+            Assert.Equal(1, selector.RulerCount);
 
-            ClickAt(addButton);
+            selector.ToggleRuler();
             Click(0);
-            ClickAt(addButton);
-            Assert.False(Placing());
+            selector.ToggleRuler();
+            Assert.False(selector.PlacingRuler);
             Click(18);
-            Assert.Equal(1, Rulers());
+            Assert.Equal(1, selector.RulerCount);
         }
 
         [Fact]
-        public void TheClearButton_RemovesEveryRuler()
+        public void RemoveRulers_RemovesEveryRuler()
         {
-            ShowRulerControls();
             PlaceRuler(0, 18);
             PlaceRuler(1, 19);
 
-            ClickAt(clearButton);
+            selector.RemoveRulers();
 
-            Assert.Equal(0, Rulers());
+            Assert.Equal(0, selector.RulerCount);
         }
 
         [Fact]
@@ -473,13 +459,6 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         bool Placing() => ((ImGuiProbeRuler)Ruler()).Placing;
 
         // NB: the buttons sit above the view and push it down, so the contacts are found again.
-        void ShowRulerControls()
-        {
-            rulerControls = true;
-            imgui.Frames(2, draw);
-            for (int i = 0; i < Count; i++)
-                contacts[i] = Assert.Single(ImGuiHarness.Rects(Fill(i)));
-        }
 
         void PlaceRuler(int from, int to)
         {

@@ -684,38 +684,29 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Draws an Add button, which arms a ruler for the zoomed view as R does, and a Clear button, which removes
-        /// every ruler. The owner draws them wherever suits it. Add stays lit while a ruler waits to be placed, and
-        /// pressing it then cancels the ruler.
+        /// Whether a ruler is armed or partly placed, for an owner's control to show.
         /// </summary>
-        public void DrawRulerControls()
-        {
-            var placing = ruler.Placing;
-            if (placing)
-                ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive));
+        public bool PlacingRuler => ruler.Placing;
 
-            if (ImGui.Button("Add##ruler"))
-                ToggleRuler();
-            ImGuiWidgets.Tooltip("Add a ruler to the probe view. Click and drag in the view, or click its two ends, " +
-                "to place it. Click a ruler to select it, and press Delete to remove it.\nKey: R over the probe view");
+        /// <summary>
+        /// The number of rulers placed.
+        /// </summary>
+        public int RulerCount => ruler.Count;
 
-            if (placing)
-                ImGui.PopStyleColor();
-
-            ImGui.SameLine();
-            ImGui.BeginDisabled(ruler.Count == 0);
-            if (ImGui.Button("Clear##rulers"))
-                ruler.RemoveAll();
-            ImGuiWidgets.Tooltip("Remove every ruler from the probe view.\nKey: Shift+Delete over the probe view",
-                "There are no rulers.");
-            ImGui.EndDisabled();
-        }
-
-        void ToggleRuler()
+        /// <summary>
+        /// Arms a ruler for the zoomed view, as R does, or cancels one waiting to be placed. The next drag in the
+        /// view, or pair of clicks, places it.
+        /// </summary>
+        public void ToggleRuler()
         {
             if (ruler.Placing) ruler.Cancel();
             else ruler.Arm();
         }
+
+        /// <summary>
+        /// Removes every ruler, as Shift+Delete does.
+        /// </summary>
+        public void RemoveRulers() => ruler.RemoveAll();
 
         void HandleKeys(bool selectionEnabled)
         {

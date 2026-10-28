@@ -137,7 +137,6 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ClearSelection() -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Contacts.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.ContactState>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DragIntent.get -> OpenEphys.EphysVisualization.Design.DragSelectIntent
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawMinimap() -> void
-OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawRulerControls() -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawZoomedView(bool selectionEnabled) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.get -> System.Func<int, uint>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.set -> void
@@ -150,7 +149,10 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ImGuiProbeSelector(float?
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.LegendEntry>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.MinimapWidth(float height, float availableWidth) -> float
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.PlacingRuler.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Refresh(OpenEphys.ProbeInterface.NET.SingleProbeGroup? probeGroup) -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RemoveRulers() -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RulerCount.get -> int
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionChanged -> System.EventHandler?
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.set -> void
@@ -158,6 +160,7 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowCoordinateReadout.get
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowCoordinateReadout.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowGrid.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowGrid.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ToggleRuler() -> void
 static OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.BlockedFillColor.get -> uint
 static OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.InspectionBorderColor.get -> uint
 static OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionBorderColor.get -> uint
