@@ -50,5 +50,36 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(5, layout.RowAt(339.5f));
             Assert.Equal(480, layout.Height);
         }
+
+        // NB: rows 0 and 1 share slot 0, and slots 2 to 4 are empty.
+        static readonly RowLayout Positioned = new(0, 4, 20, 100, 600, 100, new[] { 0f, 0, 1, 5 });
+
+        [Fact]
+        public void PositionedRows_LieAtTheirSlots_AndSpanThemAll()
+        {
+            Assert.Equal(100, Positioned.RowTop(1));
+            Assert.Equal(120, Positioned.RowTop(2));
+            Assert.Equal(200, Positioned.RowTop(3));
+            Assert.Equal(120, Positioned.Height);
+        }
+
+        [Fact]
+        public void PositionedRows_AreFoundWhereTheyLie_TheLastWhereTheyShare_AndNoneInAGap()
+        {
+            Assert.Equal(1, Positioned.RowAt(110));
+            Assert.Equal(2, Positioned.RowAt(130));
+            Assert.Equal(-1, Positioned.RowAt(150));
+            Assert.Equal(3, Positioned.RowAt(210));
+            Assert.Equal(4, Positioned.RowAt(230));
+        }
+
+        [Fact]
+        public void VisiblePositionedRows_AreThoseThePlotCrosses_PastTheGaps()
+        {
+            var scrolled = new RowLayout(0, 4, 20, 100, 150, 100 - 30, new[] { 0f, 0, 1, 5 });
+
+            Assert.Equal(2, scrolled.FirstVisible);
+            Assert.Equal(3, scrolled.LastVisible);
+        }
     }
 }

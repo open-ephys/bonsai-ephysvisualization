@@ -26,7 +26,7 @@ namespace OpenEphys.EphysVisualization.Design
         readonly record struct Key(
             Envelope Envelope, DisplayWindow Window, double Range, double Center, int Expanded, bool Heatmap, double ColorThreshold,
             int Width, int Height,
-            int FirstVisible, int LastVisible, float RowHeight, float Origin);
+            int FirstVisible, int LastVisible, float RowHeight, float Origin, float[]? Slots);
 
         readonly GpuPainter gpu = new();
         int width;
@@ -75,7 +75,7 @@ namespace OpenEphys.EphysVisualization.Design
             var current = new Key(
                 frame.Envelope, frame.Window, frame.Range, frame.Center, frame.Expanded, frame.Heatmap, frame.ColorThreshold,
                 w, h,
-                layout.FirstVisible, layout.LastVisible, layout.RowHeight, Origin(frame));
+                layout.FirstVisible, layout.LastVisible, layout.RowHeight, Origin(frame), layout.Slots);
 
             // NB: the columns changed since the last frame: all of them, or from the column the sweep was filling at
             // the last frame to the one it is filling now, both included, since each was part filled when last drawn.
@@ -131,7 +131,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// The texture is placed on a whole pixel, at the plot's top rounded down, so the rows are measured from there
         /// rather than from the top itself. Then a row edge the shaders put at <c>floor(origin + k * rowHeight)</c>
         /// lands on the pixel row <c>floor(RowTop)</c> that everything drawn over the texture puts it on, wherever
-        /// the plot's top falls.
+        /// the plot's top falls, where k is the row's slot minus the first's.
         /// </remarks>
         static float Origin(in PlotFrame frame) => frame.Layout.Origin - MathF.Floor(frame.Top);
 
@@ -211,12 +211,14 @@ namespace OpenEphys.EphysVisualization.Design
             int maxima;
             int cellTexture;
             int colorTexture;
+            int slotTexture;
             int colormap;
             int envelopeRows;
             int envelopeColumns;
             bool tried;
             float[] cellData = Array.Empty<float>();
             uint[] colorData = Array.Empty<uint>();
+            float[] slotData = Array.Empty<float>();
 
             /// <summary>
             /// Why the traces cannot be drawn, or null.
@@ -255,6 +257,7 @@ namespace OpenEphys.EphysVisualization.Design
                 maxima = DataTexture();
                 cellTexture = DataTexture();
                 colorTexture = DataTexture();
+                slotTexture = DataTexture();
                 colormap = DataTexture();
 
                 var map = Icefire.Map;
@@ -385,6 +388,14 @@ namespace OpenEphys.EphysVisualization.Design
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, colorData.Length, 1, 0,
                     PixelFormat.Rgba, PixelType.UnsignedByte, colorData);
 
+                if (slotData.Length != colors.Length)
+                    slotData = new float[colors.Length];
+                for (int i = 0; i < slotData.Length; i++)
+                    slotData[i] = layout.Slot(i);
+                GL.BindTexture(TextureTarget.Texture2D, slotTexture);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R32f, slotData.Length, 1, 0,
+                    PixelFormat.Red, PixelType.Float, slotData);
+
                 var viewport = new int[4];
                 GL.GetInteger(GetPName.Viewport, viewport);
 
@@ -416,8 +427,9 @@ namespace OpenEphys.EphysVisualization.Design
                 Bind(program, "maximaTexture", 1, maxima);
                 Bind(program, "cellTexture", 2, cellTexture);
                 Bind(program, "colorTexture", 3, colorTexture);
+                Bind(program, "slotTexture", 5, slotTexture);
                 GL.Uniform1(GL.GetUniformLocation(program, "combines"), frame.Axis.Combines ? 1 : 0);
-                GL.Uniform1(GL.GetUniformLocation(program, "firstRow"), layout.FirstRow);
+                GL.Uniform1(GL.GetUniformLocation(program, "firstSlot"), layout.Slot(layout.FirstRow));
                 GL.Uniform1(GL.GetUniformLocation(program, "firstVisible"), layout.FirstVisible);
                 GL.Uniform1(GL.GetUniformLocation(program, "origin"), Origin(frame));
                 GL.Uniform1(GL.GetUniformLocation(program, "rowHeight"), layout.RowHeight);

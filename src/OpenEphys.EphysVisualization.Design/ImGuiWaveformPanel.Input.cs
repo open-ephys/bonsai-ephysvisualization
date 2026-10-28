@@ -462,8 +462,11 @@ namespace OpenEphys.EphysVisualization.Design
             }
             else if (box.Tall)
             {
-                var first = Math.Max(layout.FirstRow, layout.RowAt(box.Min.Y));
-                var last = Math.Min(layout.LastRow - 1, layout.RowAt(box.Max.Y - 1));
+                // NB: counted in slots, not rows (the same when evenly spaced), so a box over a gap zooms to the
+                // gap as drawn.
+                var slots = (int)Math.Ceiling(layout.Slot(layout.LastRow - 1) + 1);
+                var first = Math.Max(0, (int)Math.Floor(layout.SlotAt(box.Min.Y)));
+                var last = Math.Min(slots - 1, (int)Math.Floor(layout.SlotAt(box.Max.Y - 1)));
                 ChannelHeight = Math.Min(layout.Bottom - layout.Top, MathF.Floor(visibleHeight / (last - first + 1)));
                 pendingScroll = first * ChannelHeight;
             }
@@ -547,9 +550,14 @@ namespace OpenEphys.EphysVisualization.Design
             Range = RangeAt(Math.Max(RangeIndex(MinRange).Index, i));
         }
 
+        // NB: counted in slots, not rows (the same when evenly spaced), since counting rows that share a slot
+        // would page past the view.
         static float ChannelStep(in RowLayout layout)
         {
-            var visibleRows = Math.Max(1, layout.LastVisible - layout.FirstVisible);
+            var slots = (int)Math.Ceiling(layout.Slot(layout.LastRow - 1) + 1);
+            var visibleRows = Math.Max(1,
+                Math.Min(slots, (int)Math.Ceiling(layout.SlotAt(layout.Bottom))) -
+                Math.Max(0, (int)Math.Floor(layout.SlotAt(layout.Top))));
             return Modifiers(shift: true)
                 ? (int)(visibleRows * CoarsePanFraction) * layout.RowHeight
                 : layout.RowHeight;
@@ -622,7 +630,7 @@ namespace OpenEphys.EphysVisualization.Design
                 return;
 
             var height = ChannelHeight;
-            var rowTop = expandedRow * height;
+            var rowTop = SlotOf(expandedRow) * height;
             if (rowTop < collapsedScroll)
                 collapsedScroll = rowTop;
             else if (rowTop + height > collapsedScroll + visibleHeight)

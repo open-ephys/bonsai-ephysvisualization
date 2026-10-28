@@ -8,6 +8,21 @@ uniform sampler2D maximaTexture;
 uniform sampler2D cellTexture;
 uniform int combines;
 
+// Each channel's slot (its offset below the first row's top, in row heights), and the first row's slot.
+uniform sampler2D slotTexture;
+uniform float firstSlot;
+
+float Slot(int channel)
+{
+    return texelFetch(slotTexture, ivec2(channel, 0), 0).r;
+}
+
+// The top of a slot in pixels below the texture's top, matching the plot's rows.
+float SlotTop(float slot, float origin, float rowHeight)
+{
+    return origin + (slot - firstSlot) * rowHeight;
+}
+
 // The min and max channel shows at pixel column p, or false where the pixel holds no column or a column not yet
 // written, which holds NaN.
 bool Bin(int channel, int p, out float low, out float high)

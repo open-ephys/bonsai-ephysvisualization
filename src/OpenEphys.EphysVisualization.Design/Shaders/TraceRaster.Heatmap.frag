@@ -9,7 +9,6 @@ uniform sampler2D colorTexture;
 uniform sampler2D colormapTexture;
 uniform int colormapLength;
 
-uniform int firstRow;
 uniform int firstVisible;
 uniform int lastVisible;
 uniform float origin;
@@ -24,15 +23,23 @@ void main()
     int p = int(gl_FragCoord.x);
     float y = floor(gl_FragCoord.y);
 
-    // NB: rows end where the plot's rows do, floor(origin + k * rowHeight), so the row worked out by division is
-    // checked against those edges.
-    int channel = firstRow + int(floor((y - origin) / rowHeight));
-    if (y < floor(origin + float(channel - firstRow) * rowHeight))
-        channel--;
-    else if (y >= floor(origin + float(channel - firstRow + 1) * rowHeight))
-        channel++;
+    // NB: row edges fall on whole pixels, as the plot's do. The row is the last visible one whose top is at or
+    // above the pixel, found by binary search since rows never move up. Where rows share a slot it is the one
+    // drawn last, as with the traces; a pixel below its bottom is in a gap.
+    int lo = firstVisible - 1;
+    int hi = lastVisible - 1;
+    while (lo < hi)
+    {
+        int mid = (lo + hi + 1) / 2;
+        if (floor(SlotTop(Slot(mid), origin, rowHeight)) <= y)
+            lo = mid;
+        else
+            hi = mid - 1;
+    }
 
-    if (channel < firstVisible || channel >= lastVisible || texelFetch(colorTexture, ivec2(channel, 0), 0).a == 0.0)
+    int channel = lo;
+    if (channel < firstVisible || y >= floor(SlotTop(Slot(channel) + 1.0, origin, rowHeight)) ||
+        texelFetch(colorTexture, ivec2(channel, 0), 0).a == 0.0)
         discard;
 
     float low;

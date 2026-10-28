@@ -83,7 +83,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// Without one, the colors follow the rows, so that neighboring rows differ whichever channels <see
-        /// cref="RowChannels"/> puts side by side. Called for every channel every frame, so a function that reads
+        /// cref="Order"/> puts side by side. Called for every channel every frame, so a function that reads
         /// settings as it goes never has to be told they changed.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
@@ -94,20 +94,23 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Gets or sets the channel each row of the posted data shows, from the top, or null for each row showing the
-        /// channel of its own index.
+        /// Gets or sets the channel each row of the posted data shows, from the top, and where each row lies, or null
+        /// for each row showing the channel of its own index, the rows evenly spaced.
         /// </summary>
         /// <remarks>
         /// For an owner that reorders the rows it posts, as by where their electrodes sit, with the clipping flags in
         /// the same order. Labels, hidden channels, colors and readouts then follow the channel rather than the row.
-        /// A change discards what the display holds, so set it through <see cref="Post"/> ahead of the first block in
-        /// the new order, and only while not paused.
+        /// A change of channels discards what the display holds, so set it through <see cref="Post"/> ahead of the
+        /// first block in the new order, and only while not paused. A change of positions alone keeps it.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
-        protected int[]? RowChannels
+        /// <exception cref="ArgumentException">
+        /// The positions are not one per channel, or one is less than the one before it.
+        /// </exception>
+        protected RowOrder? Order
         {
-            get => Panel.RowChannels;
-            set => Panel.RowChannels = value;
+            get => Panel.Order;
+            set => Panel.Order = value;
         }
 
         /// <summary>

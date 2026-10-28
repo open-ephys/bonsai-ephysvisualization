@@ -22,6 +22,12 @@ OpenEphys.EphysVisualization.Design.LfpViewer.Scale.get -> double
 OpenEphys.EphysVisualization.Design.LfpViewer.Scale.set -> void
 OpenEphys.EphysVisualization.Design.LfpViewerVisualizer
 OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.LfpViewerVisualizer() -> void
+OpenEphys.EphysVisualization.Design.RowOrder
+OpenEphys.EphysVisualization.Design.RowOrder.Channels.get -> int[]!
+OpenEphys.EphysVisualization.Design.RowOrder.Channels.init -> void
+OpenEphys.EphysVisualization.Design.RowOrder.Positions.get -> float[]?
+OpenEphys.EphysVisualization.Design.RowOrder.Positions.init -> void
+OpenEphys.EphysVisualization.Design.RowOrder.RowOrder(int[]! Channels, float[]? Positions = null) -> void
 OpenEphys.EphysVisualization.Design.WaveformScope
 OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.get -> float
 OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.set -> void
@@ -180,8 +186,8 @@ OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Paused.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Post(System.Action! action) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostClipping(bool[]! rows) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostData(OpenCV.Net.Mat! data, int sampleRate) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.RowChannels.get -> int[]?
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.RowChannels.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Order.get -> OpenEphys.EphysVisualization.Design.RowOrder?
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Order.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Scope.get -> OpenEphys.EphysVisualization.Design.WaveformScope!
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.WaveformScopeVisualizer() -> void
 abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HistoryBytes.get -> long

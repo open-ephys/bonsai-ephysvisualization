@@ -6,7 +6,6 @@ uniform sampler2D colorTexture;
 
 uniform int width;
 uniform int height;
-uniform int firstRow;
 uniform int firstVisible;
 
 // Where values fall in a row: the top of the first row, in pixels down from the texture's top, the height of a
@@ -43,7 +42,7 @@ void main()
         spanHigh = max(high, previousLow);
     }
 
-    float offset = origin + (float(channel - firstRow) + 0.5) * rowHeight + center * scale;
+    float offset = SlotTop(Slot(channel) + 0.5, origin, rowHeight) + center * scale;
     float top = floor(offset - spanHigh * scale);
     float bottom = floor(offset - spanLow * scale) + 1.0;
     if (!drawn)

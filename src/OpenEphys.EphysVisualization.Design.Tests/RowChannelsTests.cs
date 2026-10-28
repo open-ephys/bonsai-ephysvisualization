@@ -78,16 +78,43 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Reorder(Reversed);
             var decimator = Private.Get<Decimator>(panel, "decimator");
 
-            panel.RowChannels = (int[])Reversed.Clone();
+            panel.Order = new RowOrder((int[])Reversed.Clone());
             Assert.Same(decimator, Private.Get<Decimator?>(panel, "decimator"));
 
-            panel.RowChannels = null;
+            panel.Order = null;
             Assert.Null(Private.Get<Decimator?>(panel, "decimator"));
+        }
+
+        [Fact]
+        public void NewPositions_KeepTheBuffers_AndFittingFitsTheRowsWithTheirGaps()
+        {
+            Reorder(Reversed);
+            var decimator = Private.Get<Decimator>(panel, "decimator");
+
+            // NB: the last row is 2.5 pitches below the one before it, leaving a 1.5 pitch gap.
+            var positions = Enumerable.Range(0, Channels).Select(row => 10f * row).ToArray();
+            positions[Channels - 1] += 15;
+            panel.Order = new RowOrder((int[])Reversed.Clone(), positions);
+            imgui.Frames(3, draw);
+
+            Assert.Same(decimator, Private.Get<Decimator?>(panel, "decimator"));
+            var rows = panel.Rows();
+            Assert.Equal(rows.RowTop(Channels - 2) + 2.5f * rows.RowHeight, rows.RowTop(Channels - 1), 2);
+            Assert.Equal(Private.Get<float>(panel, "visibleHeight"), rows.Height, 1);
+        }
+
+        [Fact]
+        public void Positions_MustBeOnePerChannel_AndNeverFall()
+        {
+            Assert.Throws<ArgumentException>(() => panel.Order = new RowOrder(Reversed, new float[Channels - 1]));
+
+            var falling = Enumerable.Range(0, Channels).Select(row => -1f * row).ToArray();
+            Assert.Throws<ArgumentException>(() => panel.Order = new RowOrder(Reversed, falling));
         }
 
         void Reorder(int[] rowChannels)
         {
-            panel.RowChannels = rowChannels;
+            panel.Order = new RowOrder(rowChannels);
             Feed();
         }
 

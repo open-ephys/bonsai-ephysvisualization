@@ -305,6 +305,10 @@ namespace OpenEphys.EphysVisualization.Design
         /// The rows the plot spans this frame and where they fall on screen: every channel at
         /// <see cref="ChannelHeight"/>, or the expanded channel alone filling the visible height.
         /// </summary>
+        /// <remarks>
+        /// Each row is one row height tall, at its slot: its offset from the top in row heights, k for row k
+        /// or where the owner's positions put it, which can leave slots empty or stack rows.
+        /// </remarks>
         internal readonly struct RowLayout
         {
             public readonly int FirstRow;
@@ -313,8 +317,10 @@ namespace OpenEphys.EphysVisualization.Design
             public readonly float Top;
             public readonly float Bottom;
             public readonly float Origin;
+            public readonly float[]? Slots;
 
-            public RowLayout(int firstRow, int lastRow, float rowHeight, float top, float bottom, float origin)
+            public RowLayout(int firstRow, int lastRow, float rowHeight, float top, float bottom, float origin,
+                float[]? slots = null)
             {
                 FirstRow = firstRow;
                 LastRow = lastRow;
@@ -322,15 +328,77 @@ namespace OpenEphys.EphysVisualization.Design
                 Top = top;
                 Bottom = bottom;
                 Origin = origin;
+                Slots = slots;
             }
 
-            public float Height => (LastRow - FirstRow) * RowHeight;
-            public int FirstVisible => Math.Max(FirstRow, RowAt(Top));
-            public int LastVisible => Math.Min(LastRow, FirstRow + (int)Math.Ceiling((Bottom - Origin) / RowHeight));
-            public float RowTop(int row) => Origin + (row - FirstRow) * RowHeight;
-            public int RowAt(float y) => FirstRow + (int)Math.Floor((y - Origin) / RowHeight);
+            // NB: rows past either end continue one row height apart, so the top of the row after the last is the
+            // rows' bottom edge.
+            public static float SlotOf(float[]? slots, int row) =>
+                slots is { Length: > 0 }
+                    ? row < 0 ? slots[0] + row
+                    : row >= slots.Length ? slots[slots.Length - 1] + row - (slots.Length - 1)
+                    : slots[row]
+                    : row;
+
+            public float Slot(int row) => SlotOf(Slots, row);
+
+            /// <summary>
+            /// The slot at screen height <paramref name="y"/>, with its fractional part.
+            /// </summary>
+            public float SlotAt(float y) => Slot(FirstRow) + (y - Origin) / RowHeight;
+
+            public float Height => LastRow > FirstRow ? (Slot(LastRow - 1) + 1 - Slot(FirstRow)) * RowHeight : 0;
+
+            public int FirstVisible => Slots is null
+                ? Math.Max(FirstRow, RowAt(Top))
+                : FirstRowFrom(SlotAt(Top) - 1, inclusive: false);
+
+            public int LastVisible => Slots is null
+                ? Math.Min(LastRow, FirstRow + (int)Math.Ceiling((Bottom - Origin) / RowHeight))
+                : FirstRowFrom(SlotAt(Bottom), inclusive: true);
+
+            public float RowTop(int row) => Origin + (Slot(row) - Slot(FirstRow)) * RowHeight;
+
+            /// <summary>
+            /// The row at screen height <paramref name="y"/>: the one drawn last if rows share a slot, -1 in a gap,
+            /// and before the first or after the last outside the rows.
+            /// </summary>
+            public int RowAt(float y)
+            {
+                if (Slots is null)
+                    return FirstRow + (int)Math.Floor((y - Origin) / RowHeight);
+
+                var slot = SlotAt(y);
+                var first = Slot(FirstRow);
+                if (slot < first)
+                    return FirstRow + (int)Math.Floor(slot - first);
+
+                var row = FirstRowFrom(slot, inclusive: false) - 1;
+                var end = Slot(row) + 1;
+                return slot < end ? row
+                    : row == LastRow - 1 ? LastRow + (int)Math.Floor(slot - end)
+                    : -1;
+            }
+
+            // NB: the first row whose slot is after the given one (or at it, if inclusive), else LastRow. A binary
+            // search, since slots never decrease.
+            int FirstRowFrom(float slot, bool inclusive)
+            {
+                int lo = FirstRow, hi = LastRow;
+                while (lo < hi)
+                {
+                    var mid = (lo + hi) / 2;
+                    var at = Slot(mid);
+                    if (inclusive ? at >= slot : at > slot)
+                        hi = mid;
+                    else
+                        lo = mid + 1;
+                }
+                return lo;
+            }
         }
 
+        // NB: an expanded channel fills the plot alone, so its layout is one row, wherever its slot.
         RowLayout LayoutRows(int rows, float top, float bottom, float origin, float available)
         {
             if (expandedRow >= rows)
@@ -338,7 +406,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             return expandedRow >= 0
                 ? new RowLayout(expandedRow, expandedRow + 1, available, top, bottom, origin)
-                : new RowLayout(0, rows, ChannelHeight, top, bottom, origin);
+                : new RowLayout(0, rows, ChannelHeight, top, bottom, origin, SlotsFor(rows));
         }
 
         static float LabelColumnWidth(int labelDigits) => labelDigits * ImGui.CalcTextSize("0").X;
@@ -349,7 +417,6 @@ namespace OpenEphys.EphysVisualization.Design
         {
             var labelBuffer = stackalloc byte[32];
             var label = new StrBuilder(labelBuffer, 32);
-            var labelTop = ImGui.GetCursorScreenPos().Y;
             var textOffset = (layout.RowHeight - ImGui.GetTextLineHeight()) / 2;
             var left = ImGui.GetCursorScreenPos().X;
             var right = left + ImGui.GetContentRegionAvail().X;
@@ -371,8 +438,13 @@ namespace OpenEphys.EphysVisualization.Design
             }
 
             var selected = selectedRow;
+            var rows = layout;
             bool Crowds(int row, int priority) =>
-                priority >= 0 && priority != row && Math.Abs(row - priority) * rowHeight < lineHeight;
+                priority >= 0 && priority != row && Math.Abs(rows.RowTop(row) - rows.RowTop(priority)) < lineHeight;
+
+            // NB: uneven spacing can put a stepped label nearer the previous one than the step assumes, or on top
+            // of it where rows share a slot; skip those too.
+            var nextFree = float.NegativeInfinity;
 
             // NB: an expanded channel is named inside the plot instead, by AmplitudeLabels.
             for (int i = layout.FirstVisible; i < layout.LastVisible && expandedRow < 0; i++)
@@ -409,14 +481,19 @@ namespace OpenEphys.EphysVisualization.Design
                     draw.AddRect(new Vector2(left, boxTop), new Vector2(right, boxTop + markHeight), WaveformCursors.Color);
                 }
 
-                if (i != hoveredRow && i != selected && !clipping &&
-                    (i % step != 0 || Crowds(i, hoveredRow) || Crowds(i, selected)))
+                var priority = i == hoveredRow || i == selected || clipping;
+                if (!priority &&
+                    (i % step != 0 || layout.RowTop(i) < nextFree || Crowds(i, hoveredRow) || Crowds(i, selected)))
                     continue;
+
+                // NB: half a pixel of slack, as rounding can leave evenly spaced labels that much short.
+                if (!priority)
+                    nextFree = layout.RowTop(i) + lineHeight - 0.5f;
 
                 // NB: drawn rather than laid out, since a label on a row shorter than the text reaches past it,
                 // and on the last rows would stretch what the rows scroll through and bring up a scroll bar.
                 var color = ImGui.GetColorU32(RowHidden[i] ? ImGuiCol.TextDisabled : ImGuiCol.Text);
-                draw.AddText(new Vector2(left, labelTop + (i - layout.FirstRow) * layout.RowHeight + textOffset), color, label);
+                draw.AddText(new Vector2(left, layout.RowTop(i) + textOffset), color, label);
             }
         }
 

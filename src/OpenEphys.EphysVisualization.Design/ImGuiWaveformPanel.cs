@@ -186,33 +186,81 @@ namespace OpenEphys.EphysVisualization.Design
 
         // NB: the data's rows, and with them whatever is drawn, selected or expanded, are counted in rows. What a
         // user reads and what the settings name are channels, which an owner that reorders its rows maps here.
+        RowOrder? order;
         int[]? rowChannels;
 
+        // NB: each row's offset from the top of the first, in row heights, or null for row k at k.
+        float[]? rowSlots;
+
         /// <summary>
-        /// The channel each row of the data shows, from the top, or null for each row showing the channel of its own
-        /// index.
+        /// The channel each row of the data shows, from the top, and where each row lies, or null for each row
+        /// showing the channel of its own index, the rows evenly spaced.
         /// </summary>
         /// <remarks>
-        /// A change discards the buffers, whose rows then belong to other channels, and keeps the selected and the
-        /// expanded channel where they were. A paused view is read from those buffers, so it is changed only live.
+        /// A change of channels discards the buffers, whose rows then belong to other channels, and keeps the
+        /// selected and the expanded channel where they were. A paused view is read from those buffers, so the
+        /// channels are changed only live. A change of positions alone moves the rows and keeps the buffers.
         /// </remarks>
-        public int[]? RowChannels
+        /// <exception cref="ArgumentException">
+        /// The positions are not one per channel, or one is less than the one before it.
+        /// </exception>
+        public RowOrder? Order
         {
-            get => rowChannels;
+            get => order;
             set
             {
-                if (ReferenceEquals(value, rowChannels) ||
-                    value is not null && rowChannels is not null && value.SequenceEqual(rowChannels))
+                var channels = value?.Channels;
+                var slots = Slots(value);
+                order = value;
+                rowSlots = slots;
+                if (ReferenceEquals(channels, rowChannels) ||
+                    channels is not null && rowChannels is not null && channels.SequenceEqual(rowChannels))
                     return;
 
                 var selected = selectedRow >= 0 ? ChannelOf(selectedRow) : -1;
                 var expanded = expandedRow >= 0 ? ChannelOf(expandedRow) : -1;
-                rowChannels = value;
+                rowChannels = channels;
                 selectedRow = selected >= 0 ? RowOf(selected) : -1;
                 expandedRow = expanded >= 0 ? RowOf(expanded) : -1;
                 ResetBuffers();
             }
         }
+
+        static float[]? Slots(RowOrder? order)
+        {
+            if (order?.Positions is not { } positions)
+                return null;
+
+            if (positions.Length != order.Channels.Length)
+                throw new ArgumentException("There must be one position for each channel.", nameof(order));
+
+            var pitch = float.PositiveInfinity;
+            for (int i = 1; i < positions.Length; i++)
+            {
+                var step = positions[i] - positions[i - 1];
+                if (step < 0)
+                    throw new ArgumentException("Each position must be at least the one before it.", nameof(order));
+                if (step > 0)
+                    pitch = Math.Min(pitch, step);
+            }
+
+            if (float.IsPositiveInfinity(pitch))
+                pitch = 1;
+
+            var slots = new float[positions.Length];
+            for (int i = 0; i < positions.Length; i++)
+                slots[i] = (positions[i] - positions[0]) / pitch;
+            return slots;
+        }
+
+        // NB: positions apply only when the data has a row for each, which a block posted before a new order
+        // may not.
+        float[]? SlotsFor(int rows) => rowSlots is { } slots && slots.Length == rows ? slots : null;
+
+        float SlotOf(int row) => RowLayout.SlotOf(SlotsFor(rowCount), row);
+
+        // NB: the rows' total span in row heights, the row count when evenly spaced.
+        float SlotCount => rowCount > 0 ? SlotOf(rowCount - 1) + 1 : 0;
 
         internal int ChannelOf(int row) => ChannelOf(rowChannels, row);
 
@@ -354,7 +402,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// height allows. Rows any shorter would leave part of the plot unused.
         /// </summary>
         float FitHeight => rowCount > 0 && visibleHeight > 0
-            ? Math.Max(MinChannelHeight, visibleHeight / rowCount)
+            ? Math.Max(MinChannelHeight, visibleHeight / SlotCount)
             : MinChannelHeight;
 
         /// <summary>
