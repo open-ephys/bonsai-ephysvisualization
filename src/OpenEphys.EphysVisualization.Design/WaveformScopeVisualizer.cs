@@ -78,18 +78,19 @@ namespace OpenEphys.EphysVisualization.Design
         protected bool Maximized => panel?.Maximized ?? false;
 
         /// <summary>
-        /// Gets or sets the function giving the group a channel takes its color from. Channels sharing a group share
-        /// a color.
+        /// Gets or sets the function giving the group a channel takes its color from, or null, the default, for
+        /// each row to take the next color of the palette. Channels sharing a group share a color.
         /// </summary>
         /// <remarks>
-        /// Called for every channel every frame, so a function that reads settings as it goes never has to be told
-        /// they changed. By default each channel is its own group.
+        /// Without one, the colors follow the rows, so that neighboring rows differ whichever channels <see
+        /// cref="RowChannels"/> puts side by side. Called for every channel every frame, so a function that reads
+        /// settings as it goes never has to be told they changed.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
-        protected Func<int, int> ChannelGroup
+        protected Func<int, int>? ChannelGroup
         {
             get => Panel.Colors.GroupOf;
-            set => Panel.Colors.GroupOf = value ?? throw new ArgumentNullException(nameof(value));
+            set => Panel.Colors.GroupOf = value;
         }
 
         /// <summary>
@@ -200,11 +201,11 @@ namespace OpenEphys.EphysVisualization.Design
         protected void PostData(Mat data, int sampleRate) => pending.Enqueue(new(data, sampleRate, null, null));
 
         /// <summary>
-        /// Marks the channels set in <paramref name="channels"/> as clipping now, from any thread, in order with the
+        /// Marks the rows set in <paramref name="rows"/> as clipping now, from any thread, in order with the
         /// data.
         /// </summary>
-        /// <param name="channels">One flag per channel, set where a sample reached either end of its range.</param>
-        protected void PostClipping(bool[] channels) => pending.Enqueue(new(null, 0, channels, null));
+        /// <param name="rows">One flag per row of the posted data, set where a sample reached either end of its range.</param>
+        protected void PostClipping(bool[] rows) => pending.Enqueue(new(null, 0, rows, null));
 
         /// <summary>
         /// Runs <paramref name="action"/> on the window's thread, in order with the data, from any thread.
@@ -228,8 +229,8 @@ namespace OpenEphys.EphysVisualization.Design
                     using (data)
                         panel?.Update(data, item.SampleRate);
                 }
-                else if (item.Clipping is { } channels)
-                    panel?.MarkClipping(channels);
+                else if (item.Clipping is { } rows)
+                    panel?.MarkClipping(rows);
                 else
                     item.Work?.Invoke();
             }

@@ -35,14 +35,15 @@ namespace OpenEphys.EphysVisualization.Design
         public TraceColors(WaveformScope settings) => this.settings = settings;
 
         /// <summary>
-        /// The group a channel takes its color from, which channels sharing a color share. Each channel is its
-        /// own group unless the owner says otherwise.
+        /// The group a channel takes its color from, which channels sharing a color share, or null for each row
+        /// to take the next color of the palette.
         /// </summary>
         /// <remarks>
-        /// Read for every channel every frame, so an assignment that reads its owner's settings live never has to
-        /// be told they changed.
+        /// Without one, the colors follow the rows rather than the channels, since the palette is there to tell
+        /// neighboring rows apart, whichever channels an owner's order puts side by side. Read for every channel
+        /// every frame, so an assignment that reads its owner's settings live never has to be told they changed.
         /// </remarks>
-        public Func<int, int> GroupOf { get; set; } = channel => channel;
+        public Func<int, int>? GroupOf { get; set; }
 
         /// <summary>
         /// Palette the colors are drawn from.
@@ -69,12 +70,12 @@ namespace OpenEphys.EphysVisualization.Design
         static int Byte(float component) => (int)Math.Round(Math.Max(0, Math.Min(1, component)) * 255);
 
         /// <summary>
-        /// The color channel <paramref name="channel"/> is drawn in.
+        /// The color row <paramref name="row"/>, which shows channel <paramref name="channel"/>, is drawn in.
         /// </summary>
         /// <remarks>
         /// Read by the trace, its outline and its label's highlight alike, so they always agree.
         /// </remarks>
-        public Vector4 Of(int channel) => Group(GroupOf(channel));
+        public Vector4 Of(int row, int channel) => Group(GroupOf is { } group ? group(channel) : row);
 
         /// <summary>
         /// The colors of the first <paramref name="count"/> rows, each its channel's, packed as RGBA, for drawing in
@@ -89,7 +90,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             for (int i = 0; i < count; i++)
             {
-                var c = Of(ImGuiWaveformPanel.ChannelOf(rowChannels, i));
+                var c = Of(i, ImGuiWaveformPanel.ChannelOf(rowChannels, i));
                 packed[i] = (uint)(c.X * 255) | (uint)(c.Y * 255) << 8 | (uint)(c.Z * 255) << 16 | 0xFFu << 24;
             }
 

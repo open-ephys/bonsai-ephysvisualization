@@ -13,7 +13,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         {
             for (float y = Scrolled.Top + 0.5f; y < Scrolled.Bottom; y++)
             {
-                var channel = Scrolled.ChannelAt(y);
+                var channel = Scrolled.RowAt(y);
                 Assert.InRange(y, Scrolled.RowTop(channel), Scrolled.RowTop(channel) + Scrolled.RowHeight);
             }
         }
@@ -47,7 +47,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(5, layout.FirstVisible);
             Assert.Equal(6, layout.LastVisible);
             Assert.Equal(100, layout.RowTop(5));
-            Assert.Equal(5, layout.ChannelAt(339.5f));
+            Assert.Equal(5, layout.RowAt(339.5f));
             Assert.Equal(480, layout.Height);
         }
     }

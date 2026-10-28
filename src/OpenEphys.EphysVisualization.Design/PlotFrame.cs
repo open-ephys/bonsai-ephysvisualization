@@ -20,9 +20,9 @@
     /// <param name="Range">Amplitude spanned by one channel's row.</param>
     /// <param name="Center">Value at the middle of a channel's row.</param>
     /// <param name="Unit">Unit of the amplitudes.</param>
-    /// <param name="Hidden">Hidden channels, by index.</param>
-    /// <param name="Expanded">The channel drawn alone, or -1.</param>
-    /// <param name="Selected">The selected channel, or -1.</param>
+    /// <param name="Hidden">Which rows are hidden.</param>
+    /// <param name="Expanded">The row drawn alone, or -1.</param>
+    /// <param name="Selected">The selected row, or -1.</param>
     /// <param name="Heatmap">Whether channels are drawn as rows of color rather than as traces.</param>
     /// <param name="ColorThreshold">Magnitude at or below which a row of color is black.</param>
     /// <param name="RowChannels">The channel each row shows, or null for each row showing its own index.</param>
@@ -54,28 +54,28 @@
         public float Width => Axis.Width;
 
         /// <summary>
-        /// The line values in <paramref name="channel"/>'s row lie on: a value's height on screen is
+        /// The line values in row <paramref name="row"/> lie on: a value's height on screen is
         /// <c>Offset</c> less the value times <c>Scale</c>.
         /// </summary>
-        public (float Offset, float Scale) ValueMapping(int channel)
+        public (float Offset, float Scale) ValueMapping(int row)
         {
             var scale = Layout.RowHeight / Range;
-            return ((float)(Layout.RowTop(channel) + Layout.RowHeight / 2 + Center * scale), (float)scale);
+            return ((float)(Layout.RowTop(row) + Layout.RowHeight / 2 + Center * scale), (float)scale);
         }
 
         /// <summary>
-        /// Height on screen of <paramref name="value"/> in <paramref name="channel"/>'s row.
+        /// Height on screen of <paramref name="value"/> in row <paramref name="row"/>.
         /// </summary>
-        public float ValueY(int channel, double value)
+        public float ValueY(int row, double value)
         {
-            var (offset, scale) = ValueMapping(channel);
+            var (offset, scale) = ValueMapping(row);
             return offset - (float)value * scale;
         }
 
         /// <summary>
-        /// The value at height <paramref name="y"/> on screen in <paramref name="channel"/>'s row.
+        /// The value at height <paramref name="y"/> on screen in row <paramref name="row"/>.
         /// </summary>
-        public double ValueAt(int channel, float y) =>
-            Center + (Layout.RowTop(channel) + Layout.RowHeight / 2 - y) / Layout.RowHeight * Range;
+        public double ValueAt(int row, float y) =>
+            Center + (Layout.RowTop(row) + Layout.RowHeight / 2 - y) / Layout.RowHeight * Range;
     }
 }

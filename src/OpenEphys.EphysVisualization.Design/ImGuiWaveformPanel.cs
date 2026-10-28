@@ -119,13 +119,13 @@ namespace OpenEphys.EphysVisualization.Design
         /// Whether the plot is drawing the heatmap, which it does with the heatmap on and no channel expanded, since an
         /// expanded channel is always drawn as a trace.
         /// </summary>
-        public bool HeatmapDrawn => ShowHeatmap && expandedChannel < 0;
+        public bool HeatmapDrawn => ShowHeatmap && expandedRow < 0;
 
         /// <summary>
         /// Whether there is only one channel, which is always shown expanded, so that nothing that arranges a stack
         /// of channels applies.
         /// </summary>
-        public bool SingleChannel => channels == 1;
+        public bool SingleChannel => rowCount == 1;
 
         /// <summary>
         /// Whether clipping channels are marked and CLIPPING shown.
@@ -174,15 +174,15 @@ namespace OpenEphys.EphysVisualization.Design
         /// The channel selected by clicking its trace or label or stepping with Q and E, or -1. The cursors read
         /// it.
         /// </summary>
-        int selectedChannel = -1;
+        int selectedRow = -1;
 
         Decimator? decimator;
         int sampleRate = 30000;
 
         WaveformHistory? history;
 
-        // NB: how many channels the data has, which the hidden mask's length used to stand in for.
-        int channels;
+        // NB: how many rows the data has, which the hidden mask's length used to stand in for.
+        int rowCount;
 
         // NB: the data's rows, and with them whatever is drawn, selected or expanded, are counted in rows. What a
         // user reads and what the settings name are channels, which an owner that reorders its rows maps here.
@@ -205,11 +205,11 @@ namespace OpenEphys.EphysVisualization.Design
                     value is not null && rowChannels is not null && value.SequenceEqual(rowChannels))
                     return;
 
-                var selected = selectedChannel >= 0 ? ChannelOf(selectedChannel) : -1;
-                var expanded = expandedChannel >= 0 ? ChannelOf(expandedChannel) : -1;
+                var selected = selectedRow >= 0 ? ChannelOf(selectedRow) : -1;
+                var expanded = expandedRow >= 0 ? ChannelOf(expandedRow) : -1;
                 rowChannels = value;
-                selectedChannel = selected >= 0 ? RowOf(selected) : -1;
-                expandedChannel = expanded >= 0 ? RowOf(expanded) : -1;
+                selectedRow = selected >= 0 ? RowOf(selected) : -1;
+                expandedRow = expanded >= 0 ? RowOf(expanded) : -1;
                 ResetBuffers();
             }
         }
@@ -228,18 +228,18 @@ namespace OpenEphys.EphysVisualization.Design
         int[]? maskedFrom;
         int[]? maskedRows;
 
-        bool[] ChannelHidden
+        bool[] RowHidden
         {
             get
             {
-                if (hiddenMask.Length != channels || !ReferenceEquals(maskedFrom, settings.HiddenChannels) ||
+                if (hiddenMask.Length != rowCount || !ReferenceEquals(maskedFrom, settings.HiddenChannels) ||
                     !ReferenceEquals(maskedRows, rowChannels))
                 {
                     maskedFrom = settings.HiddenChannels;
                     maskedRows = rowChannels;
-                    hiddenMask = new bool[channels];
+                    hiddenMask = new bool[rowCount];
                     var hidden = new HashSet<int>(maskedFrom ?? Array.Empty<int>());
-                    for (int row = 0; row < channels; row++)
+                    for (int row = 0; row < rowCount; row++)
                         hiddenMask[row] = hidden.Contains(ChannelOf(row));
                 }
 
@@ -265,17 +265,17 @@ namespace OpenEphys.EphysVisualization.Design
         double[] lastClip = Array.Empty<double>();
 
         /// <summary>
-        /// Marks the channels set in <paramref name="channels"/> as clipping now: a sample sat at either end of
+        /// Marks the rows set in <paramref name="rows"/> as clipping now: a sample sat at either end of
         /// their source's range. Ignored while paused, which keeps the marks as they were.
         /// </summary>
-        public void MarkClipping(bool[] channels)
+        public void MarkClipping(bool[] rows)
         {
-            if (Paused || channels.Length != lastClip.Length)
+            if (Paused || rows.Length != lastClip.Length)
                 return;
 
-            for (int c = 0; c < channels.Length; c++)
+            for (int c = 0; c < rows.Length; c++)
             {
-                if (channels[c])
+                if (rows[c])
                     lastClip[c] = dataSeconds;
             }
         }
@@ -289,14 +289,14 @@ namespace OpenEphys.EphysVisualization.Design
                 lastClip[c] = double.NegativeInfinity;
         }
 
-        bool Clipping(int channel) =>
-            ShowClipping && !ChannelHidden[channel] && dataSeconds - lastClip[channel] < ClipHoldSeconds;
+        bool Clipping(int row) =>
+            ShowClipping && !RowHidden[row] && dataSeconds - lastClip[row] < ClipHoldSeconds;
 
         // NB: steady while paused, when the marks only say which channels were clipping and flashing would only
         // distract from studying the view.
         bool ClipFlashOn => Paused || (long)(ImGui.GetTime() * 2 * ClipFlashHz) % 2 == 0;
 
-        int expandedChannel = -1;
+        int expandedRow = -1;
 
         /// <summary>
         /// Most an expanded channel's amplitude can be magnified, against the range.
@@ -304,14 +304,14 @@ namespace OpenEphys.EphysVisualization.Design
         const double MaxAmplitudeZoom = 1000;
 
         // NB: for one channel at one range, so that expanding another, collapsing or changing the range starts it over.
-        (int Channel, double Range, double Center, double Span) amplitudeView = (-1, 0, 0, 0);
+        (int Row, double Range, double Center, double Span) amplitudeView = (-1, 0, 0, 0);
 
         /// <summary>
         /// The value at the middle of a row and the amplitude a row spans: an expanded channel's zoom, or zero and the
         /// range.
         /// </summary>
         (double Center, double Span) AmplitudeView =>
-            expandedChannel >= 0 && amplitudeView.Channel == expandedChannel && amplitudeView.Range == Range
+            expandedRow >= 0 && amplitudeView.Row == expandedRow && amplitudeView.Range == Range
                 ? (amplitudeView.Center, amplitudeView.Span)
                 : (0, Range);
 
@@ -322,7 +322,7 @@ namespace OpenEphys.EphysVisualization.Design
         void SetAmplitudeView(double value, double fraction, double span)
         {
             span = Math.Max(Range / MaxAmplitudeZoom, Math.Min(Range, span));
-            amplitudeView = (expandedChannel, Range, value - fraction * span, span);
+            amplitudeView = (expandedRow, Range, value - fraction * span, span);
         }
 
         /// <summary>
@@ -353,8 +353,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// The channel height at which every channel just fills the plot's visible height, as far as the smallest
         /// height allows. Rows any shorter would leave part of the plot unused.
         /// </summary>
-        float FitHeight => channels > 0 && visibleHeight > 0
-            ? Math.Max(MinChannelHeight, visibleHeight / channels)
+        float FitHeight => rowCount > 0 && visibleHeight > 0
+            ? Math.Max(MinChannelHeight, visibleHeight / rowCount)
             : MinChannelHeight;
 
         /// <summary>
@@ -488,16 +488,16 @@ namespace OpenEphys.EphysVisualization.Design
                 // the live one, so that changing the timebase while paused rebuilds both together.
                 pannedDecimator = new Decimator(rows, columns, samplesPerBin);
 
-                if (channels != rows)
+                if (rowCount != rows)
                 {
                     // NB: set outright rather than through Expand and Collapse, which move the scroll, and this can
                     // run outside a frame, from the owner's drain timer.
                     if (rows == 1)
-                        expandedChannel = 0;
-                    else if (channels == 1)
-                        expandedChannel = -1;
+                        expandedRow = 0;
+                    else if (rowCount == 1)
+                        expandedRow = -1;
 
-                    channels = rows;
+                    rowCount = rows;
                     lastClip = new double[rows];
                     ClearClipping();
                 }

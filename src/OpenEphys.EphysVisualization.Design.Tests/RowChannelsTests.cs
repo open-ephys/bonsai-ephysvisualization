@@ -65,11 +65,11 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             var axis = panel.Axis();
             imgui.MoveMouse(new Vector2(axis.Left + axis.Width / 2, RowMiddle(panel.Rows(), 2)), draw);
             imgui.Click(ImGuiMouseButton.Left, draw);
-            Assert.Equal(2, Private.Get<int>(panel, "selectedChannel"));
+            Assert.Equal(2, Private.Get<int>(panel, "selectedRow"));
 
             Reorder(Reversed);
 
-            Assert.Equal(Channels - 1 - 2, Private.Get<int>(panel, "selectedChannel"));
+            Assert.Equal(Channels - 1 - 2, Private.Get<int>(panel, "selectedRow"));
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
         int[] HiddenRows()
         {
-            var hidden = Private.Get<bool[]>(panel, "ChannelHidden");
+            var hidden = Private.Get<bool[]>(panel, "RowHidden");
             return Enumerable.Range(0, hidden.Length).Where(row => hidden[row]).ToArray();
         }
 

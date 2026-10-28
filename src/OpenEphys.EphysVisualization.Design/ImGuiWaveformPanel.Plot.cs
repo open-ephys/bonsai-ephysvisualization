@@ -64,8 +64,8 @@ namespace OpenEphys.EphysVisualization.Design
         {
             var rows = envelope.Rows;
             var labelDigits = DigitCount(rowChannels is { Length: > 0 } map ? map.Max() : rows - 1);
-            if (amplitudeView.Channel != expandedChannel || amplitudeView.Range != Range)
-                amplitudeView.Channel = -1;
+            if (amplitudeView.Row != expandedRow || amplitudeView.Range != Range)
+                amplitudeView.Row = -1;
 
 
             // NB: the axis labels get a button-height row, so the plot's frame starts one button-height down.
@@ -111,14 +111,14 @@ namespace OpenEphys.EphysVisualization.Design
                 var layout = LayoutRows(rows, plotTop, plotBottom, ImGui.GetCursorScreenPos().Y,
                     ImGui.GetContentRegionAvail().Y);
                 lastLayout = layout;
-                var hovered = HoveredChannel(layout);
-                if (selectedChannel >= rows)
-                    selectedChannel = -1;
-                if (selectOnShow && selectedChannel < 0)
-                    selectedChannel = FirstShownInView(layout);
+                var hoveredRow = HoveredRow(layout);
+                if (selectedRow >= rows)
+                    selectedRow = -1;
+                if (selectOnShow && selectedRow < 0)
+                    selectedRow = FirstShownInView(layout);
                 selectOnShow = false;
-                ChannelLabels(layout, labelDigits, hovered);
-                HandleChannelInput(hovered);
+                ChannelLabels(layout, labelDigits, hoveredRow);
+                HandleChannelInput(hoveredRow);
                 AnswerTableKeys(layout);
                 HandleWheel(layout);
                 HandleDrags(layout);
@@ -137,7 +137,7 @@ namespace OpenEphys.EphysVisualization.Design
                 frame = new PlotFrame(
                     envelope, layout, new PixelAxis(shown, plotLeft, plotSpan), plotTop, plotBottom,
                     sampleRate, Paused, CursorPosition, Timebase, pausedTimebase,
-                    AmplitudeView.Span, AmplitudeView.Center, Unit, ChannelHidden, expandedChannel, selectedChannel, ShowHeatmap, ColorThreshold,
+                    AmplitudeView.Span, AmplitudeView.Center, Unit, RowHidden, expandedRow, selectedRow, ShowHeatmap, ColorThreshold,
                     rowChannels);
 
                 // NB: an item the height of every row, which is what the table scrolls through. Everything in the
@@ -145,17 +145,17 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.Dummy(new Vector2(plotWidth, layout.Height));
                 var draw = ImGui.GetWindowDrawList();
                 DrawRowBand(draw, frame);
-                traces.Draw(frame, Colors.Packed(channels, rowChannels),
+                traces.Draw(frame, Colors.Packed(rowCount, rowChannels),
                     Paused || decimator is null ? -1 : decimator.Cursor, history?.Count ?? 0, FastSweep);
 
                 // NB: a trace that runs off its row may run into its neighbors but not past the rows, which can
                 // end above the plot's bottom when there are few channels.
                 draw.PushClipRect(new Vector2(plotX, layout.Origin),
                     new Vector2(plotX + plotWidth, layout.Origin + layout.Height), true);
-                if (expandedChannel >= 0)
-                    DrawChannelLines(draw, frame, expandedChannel, 1);
-                else if (hovered >= 0 && !ChannelHidden[hovered] && !ShowHeatmap)
-                    DrawChannelLines(draw, frame, hovered, HoverLineWeight);
+                if (expandedRow >= 0)
+                    DrawChannelLines(draw, frame, expandedRow, 1);
+                else if (hoveredRow >= 0 && !RowHidden[hoveredRow] && !ShowHeatmap)
+                    DrawChannelLines(draw, frame, hoveredRow, HoverLineWeight);
                 DrawSweepCursor(draw, frame);
                 draw.PopClipRect();
 
@@ -163,18 +163,18 @@ namespace OpenEphys.EphysVisualization.Design
 
                 // NB: a heatmap row has no line to thicken and covers the band, so the hovered and selected rows
                 // are marked from outside, which also ties a label to its row when rows are far shorter than it.
-                if (ShowHeatmap && expandedChannel < 0 && hovered >= 0 && !ChannelHidden[hovered])
-                    BracketRow(draw, frame, hovered, ColHoveredRow);
-                if (ShowHeatmap && expandedChannel < 0 && selectedChannel >= 0)
-                    BracketRow(draw, frame, selectedChannel, WaveformCursors.Color);
+                if (ShowHeatmap && expandedRow < 0 && hoveredRow >= 0 && !RowHidden[hoveredRow])
+                    BracketRow(draw, frame, hoveredRow, ColHoveredRow);
+                if (ShowHeatmap && expandedRow < 0 && selectedRow >= 0)
+                    BracketRow(draw, frame, selectedRow, WaveformCursors.Color);
                 // NB: ahead of the cursors so the don't compete for a click on [CLIPPING] in the plot area.
                 var cornerTaken = DrawMaximize(draw, frame);
                 DrawClipping(draw, frame, cornerTaken);
                 cursors.Draw(draw, frame);
                 DrawZoomBox(draw, frame);
-                SelectClicked(frame, hovered);
+                SelectClicked(frame, hoveredRow);
                 DrawFrame(draw, plotX, plotWidth, plotTop, plotBottom);
-                DrawReadout(draw, frame, hovered);
+                DrawReadout(draw, frame, hoveredRow);
                 AmplitudeLabels(draw, frame, plotX, plotTop, plotBottom);
                 ImGui.EndTable();
             }
@@ -233,18 +233,18 @@ namespace OpenEphys.EphysVisualization.Design
         /// <remarks>
         /// The time reads as the time axis labels do, and the amplitude from the center of the channel's row.
         /// </remarks>
-        void DrawReadout(ImDrawListPtr draw, in PlotFrame frame, int hovered)
+        void DrawReadout(ImDrawListPtr draw, in PlotFrame frame, int hoveredRow)
         {
             var mouse = ImGui.GetMousePos();
-            if (hovered < 0 || mouse.X < frame.Left || mouse.X >= frame.Left + frame.Width)
+            if (hoveredRow < 0 || mouse.X < frame.Left || mouse.X >= frame.Left + frame.Width)
                 return;
 
             var seconds = SecondsAt(frame, frame.Axis.PositionAt(mouse.X));
-            var amplitude = frame.ValueAt(hovered, mouse.Y);
+            var amplitude = frame.ValueAt(hoveredRow, mouse.Y);
 
             // NB: an expanded channel is named in the plot's top left already.
             var position = $"{seconds:0.0000} s   {amplitude:0.0} {frame.Unit}";
-            var text = frame.Expanded >= 0 ? position : $"Ch {ChannelOf(hovered)}   {position}";
+            var text = frame.Expanded >= 0 ? position : $"Ch {ChannelOf(hoveredRow)}   {position}";
             var corner = new Vector2(frame.Left + frame.Width, frame.Bottom) - ImGui.CalcTextSize(text) -
                 2 * ImGui.GetStyle().FramePadding;
             PlotText.Framed(draw, corner, text);
@@ -325,19 +325,19 @@ namespace OpenEphys.EphysVisualization.Design
             }
 
             public float Height => (LastRow - FirstRow) * RowHeight;
-            public int FirstVisible => Math.Max(FirstRow, ChannelAt(Top));
+            public int FirstVisible => Math.Max(FirstRow, RowAt(Top));
             public int LastVisible => Math.Min(LastRow, FirstRow + (int)Math.Ceiling((Bottom - Origin) / RowHeight));
-            public float RowTop(int channel) => Origin + (channel - FirstRow) * RowHeight;
-            public int ChannelAt(float y) => FirstRow + (int)Math.Floor((y - Origin) / RowHeight);
+            public float RowTop(int row) => Origin + (row - FirstRow) * RowHeight;
+            public int RowAt(float y) => FirstRow + (int)Math.Floor((y - Origin) / RowHeight);
         }
 
         RowLayout LayoutRows(int rows, float top, float bottom, float origin, float available)
         {
-            if (expandedChannel >= rows)
+            if (expandedRow >= rows)
                 Collapse();
 
-            return expandedChannel >= 0
-                ? new RowLayout(expandedChannel, expandedChannel + 1, available, top, bottom, origin)
+            return expandedRow >= 0
+                ? new RowLayout(expandedRow, expandedRow + 1, available, top, bottom, origin)
                 : new RowLayout(0, rows, ChannelHeight, top, bottom, origin);
         }
 
@@ -345,7 +345,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         static readonly int[] LabelSteps = { 1, 2, 5, 10 };
 
-        unsafe void ChannelLabels(in RowLayout layout, int labelDigits, int hovered)
+        unsafe void ChannelLabels(in RowLayout layout, int labelDigits, int hoveredRow)
         {
             var labelBuffer = stackalloc byte[32];
             var label = new StrBuilder(labelBuffer, 32);
@@ -370,12 +370,12 @@ namespace OpenEphys.EphysVisualization.Design
                 }
             }
 
-            var selected = selectedChannel;
-            bool Crowds(int channel, int priority) =>
-                priority >= 0 && priority != channel && Math.Abs(channel - priority) * rowHeight < lineHeight;
+            var selected = selectedRow;
+            bool Crowds(int row, int priority) =>
+                priority >= 0 && priority != row && Math.Abs(row - priority) * rowHeight < lineHeight;
 
             // NB: an expanded channel is named inside the plot instead, by AmplitudeLabels.
-            for (int i = layout.FirstVisible; i < layout.LastVisible && expandedChannel < 0; i++)
+            for (int i = layout.FirstVisible; i < layout.LastVisible && expandedRow < 0; i++)
             {
                 var name = ChannelOf(i);
                 label.Reset();
@@ -395,27 +395,27 @@ namespace OpenEphys.EphysVisualization.Design
                     draw.AddRectFilled(new Vector2(left, markTop), new Vector2(right, markTop + markHeight), ColClipping);
 
                 // Highlight hovered channel and the selected one
-                if ((i == hovered || i == selected) && expandedChannel < 0)
+                if ((i == hoveredRow || i == selected) && expandedRow < 0)
                 {
-                    var fill = Colors.Of(name);
+                    var fill = Colors.Of(i, name);
                     fill.W = HoverFillAlpha;
                     draw.AddRectFilled(new Vector2(left, markTop), new Vector2(right, markTop + markHeight),
                         ImGui.ColorConvertFloat4ToU32(fill));
                 }
 
-                if (i == selected && expandedChannel < 0)
+                if (i == selected && expandedRow < 0)
                 {
                     var boxTop = MathF.Floor(markTop);
                     draw.AddRect(new Vector2(left, boxTop), new Vector2(right, boxTop + markHeight), WaveformCursors.Color);
                 }
 
-                if (i != hovered && i != selected && !clipping &&
-                    (i % step != 0 || Crowds(i, hovered) || Crowds(i, selected)))
+                if (i != hoveredRow && i != selected && !clipping &&
+                    (i % step != 0 || Crowds(i, hoveredRow) || Crowds(i, selected)))
                     continue;
 
                 // NB: drawn rather than laid out, since a label on a row shorter than the text reaches past it,
                 // and on the last rows would stretch what the rows scroll through and bring up a scroll bar.
-                var color = ImGui.GetColorU32(ChannelHidden[i] ? ImGuiCol.TextDisabled : ImGuiCol.Text);
+                var color = ImGui.GetColorU32(RowHidden[i] ? ImGuiCol.TextDisabled : ImGuiCol.Text);
                 draw.AddText(new Vector2(left, labelTop + (i - layout.FirstRow) * layout.RowHeight + textOffset), color, label);
             }
         }
@@ -432,12 +432,12 @@ namespace OpenEphys.EphysVisualization.Design
         /// Outlines a channel's trace, its max and min, or the line through its samples where each column holds
         /// one. Drawn every frame over the traces' texture, for the one channel hovered or expanded.
         /// </summary>
-        unsafe void DrawChannelLines(ImDrawListPtr draw, in PlotFrame frame, int channel, float weight)
+        unsafe void DrawChannelLines(ImDrawListPtr draw, in PlotFrame frame, int row, float weight)
         {
             frame.Envelope.Min.GetRawData(out IntPtr minPtr, out int minStep, out Size shape);
             frame.Envelope.Max.GetRawData(out IntPtr maxPtr, out int maxStep, out Size _);
-            var minLine = (float*)((byte*)minPtr + channel * minStep);
-            var maxLine = (float*)((byte*)maxPtr + channel * maxStep);
+            var minLine = (float*)((byte*)minPtr + row * minStep);
+            var maxLine = (float*)((byte*)maxPtr + row * maxStep);
             var columns = shape.Width;
             var axis = frame.Axis;
 
@@ -450,11 +450,11 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 var (min, max) = axis.Combines ? TraceRaster.Bin(minLine, maxLine, axis, i) : (minLine[i], maxLine[i]);
                 var x = axis.Combines ? axis.Left + i : axis.ColumnX(i);
-                low[i] = new Vector2(x, frame.ValueY(channel, min));
-                high[i] = new Vector2(x, frame.ValueY(channel, max));
+                low[i] = new Vector2(x, frame.ValueY(row, min));
+                high[i] = new Vector2(x, frame.ValueY(row, max));
             }
 
-            var color = ImGui.ColorConvertFloat4ToU32(Colors.Of(ChannelOf(channel)));
+            var color = ImGui.ColorConvertFloat4ToU32(Colors.Of(row, ChannelOf(row)));
             Segments(draw, low, points, color, weight);
             if (frame.Window.Step > 1 || axis.Combines && points < columns)
                 Segments(draw, high, points, color, weight);
@@ -533,16 +533,16 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         // NB: after the cursors, so that a click that grabs a cursor's line does not also select.
-        void SelectClicked(in PlotFrame frame, int hovered)
+        void SelectClicked(in PlotFrame frame, int hoveredRow)
         {
             var pointer = ImGui.GetMousePos();
             var inPlot = ImGui.IsWindowHovered() && !ImGui.IsAnyItemHovered() &&
                 pointer.X >= frame.Left && pointer.X < frame.Left + frame.Width &&
                 pointer.Y >= frame.Top && pointer.Y < frame.Bottom;
-            if (inPlot && !cursors.Dragging && hovered >= 0 && !ChannelHidden[hovered] && expandedChannel < 0 &&
+            if (inPlot && !cursors.Dragging && hoveredRow >= 0 && !RowHidden[hoveredRow] && expandedRow < 0 &&
                 ImGui.IsMouseClicked(ImGuiMouseButton.Left) && Modifiers())
             {
-                selectedChannel = hovered;
+                selectedRow = hoveredRow;
             }
         }
 
@@ -629,25 +629,25 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         // NB: If not expanxed, center the channel. If expanded, show that channel in expanded view.
-        void ShowChannel(int channel, in RowLayout layout)
+        void ShowChannel(int row, in RowLayout layout)
         {
-            if (expandedChannel >= 0)
+            if (expandedRow >= 0)
             {
-                expandedChannel = channel;
+                expandedRow = row;
                 return;
             }
 
-            var center = layout.RowTop(channel) + layout.RowHeight / 2;
+            var center = layout.RowTop(row) + layout.RowHeight / 2;
             ImGui.SetScrollY(ImGui.GetScrollY() + center - (layout.Top + layout.Bottom) / 2);
         }
 
         /// <summary>
         /// Marks a channel's row with a line just above it and another just below, leaving the row as drawn.
         /// </summary>
-        internal static void BracketRow(ImDrawListPtr draw, in PlotFrame frame, int channel, uint color)
+        internal static void BracketRow(ImDrawListPtr draw, in PlotFrame frame, int row, uint color)
         {
-            var top = MathF.Floor(frame.Layout.RowTop(channel));
-            var bottom = MathF.Floor(frame.Layout.RowTop(channel) + frame.Layout.RowHeight);
+            var top = MathF.Floor(frame.Layout.RowTop(row));
+            var bottom = MathF.Floor(frame.Layout.RowTop(row) + frame.Layout.RowHeight);
             var right = frame.Left + frame.Width;
             draw.AddRectFilled(new Vector2(frame.Left, top - 1), new Vector2(right, top), color);
             draw.AddRectFilled(new Vector2(frame.Left, bottom), new Vector2(right, bottom + 1), color);
@@ -702,7 +702,7 @@ namespace OpenEphys.EphysVisualization.Design
                 draw.AddText(new Vector2(x - ImGui.CalcTextSize(label).X / 2, labelY), textColor, label);
             }
 
-            if (expandedChannel < 0)
+            if (expandedRow < 0)
                 return;
 
             // NB: an expanded channel fills the plot, so its row is the plot, and a tenth of the range is a
@@ -729,7 +729,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </remarks>
         void AmplitudeLabels(ImDrawListPtr draw, in PlotFrame frame, float left, float top, float bottom)
         {
-            if (expandedChannel < 0)
+            if (expandedRow < 0)
                 return;
 
             var pad = ImGui.GetStyle().FramePadding;
@@ -744,7 +744,7 @@ namespace OpenEphys.EphysVisualization.Design
             var timeDivision = Timebase / TimeDivisions;
             var time = timeDivision < 1 ? $"{PlotText.Significant(timeDivision * 1000)} ms/div" : $"{PlotText.Significant(timeDivision)} s/div";
             var unit = string.IsNullOrEmpty(Unit) ? "a.u." : Unit;
-            var name = $"Ch {ChannelOf(expandedChannel)}   {PlotText.Significant(frame.Range / AmplitudeDivisions)} {unit}/div   {time}";
+            var name = $"Ch {ChannelOf(expandedRow)}   {PlotText.Significant(frame.Range / AmplitudeDivisions)} {unit}/div   {time}";
             PlotText.Framed(draw, new Vector2(left, top) + 2 * pad, name);
         }
 

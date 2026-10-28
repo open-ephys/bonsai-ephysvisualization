@@ -49,7 +49,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         // NB: the channel under the mouse is found from its y anywhere across the label column and
         // the plot, so a trace can be acted on where it is looked at.
-        static int HoveredChannel(in RowLayout layout)
+        static int HoveredRow(in RowLayout layout)
         {
             var mouse = ImGui.GetMousePos();
             var left = ImGui.GetCursorScreenPos().X;
@@ -64,8 +64,8 @@ namespace OpenEphys.EphysVisualization.Design
                 return -1;
             }
 
-            var channel = layout.ChannelAt(mouse.Y);
-            return channel >= layout.FirstRow && channel < layout.LastRow ? channel : -1;
+            var row = layout.RowAt(mouse.Y);
+            return row >= layout.FirstRow && row < layout.LastRow ? row : -1;
         }
 
         // NB: the scroll clamps to the rows as they were the frame before, which for a collapse is one channel
@@ -80,21 +80,21 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        void HandleChannelInput(int channel)
+        void HandleChannelInput(int row)
         {
             if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
                 dragHidden = null;
-            if (channel < 0)
+            if (row < 0)
                 return;
 
             if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
             {
-                if (expandedChannel >= 0) Collapse();
-                else Expand(channel);
+                if (expandedRow >= 0) Collapse();
+                else Expand(row);
                 return;
             }
 
-            if (expandedChannel >= 0)
+            if (expandedRow >= 0)
                 return;
 
             // NB: only from the labels, which leaves a click on a trace to select it and Shift+Drag there to set
@@ -105,18 +105,18 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 dragOriginal = settings.HiddenChannels ?? Array.Empty<int>();
                 dragHidden = ImGui.GetIO().KeyShift;
-                dragAnchor = channel;
+                dragAnchor = row;
                 if (!ImGui.GetIO().KeyShift)
-                    selectedChannel = channel;
+                    selectedRow = row;
             }
 
             if (dragHidden is bool hide)
             {
-                var lo = Math.Min(dragAnchor, channel);
-                var hi = Math.Max(dragAnchor, channel);
+                var lo = Math.Min(dragAnchor, row);
+                var hi = Math.Max(dragAnchor, row);
                 var dragged = new HashSet<int>();
-                for (int row = lo; row <= hi; row++)
-                    dragged.Add(ChannelOf(row));
+                for (int r = lo; r <= hi; r++)
+                    dragged.Add(ChannelOf(r));
 
                 var hidden = dragOriginal.Where(c => !dragged.Contains(c)).ToList();
                 if (hide)
@@ -129,8 +129,8 @@ namespace OpenEphys.EphysVisualization.Design
                     settings.HiddenChannels = hidden.Count > 0 ? hidden.ToArray() : null;
 
                 // NB: a hidden channel shows nothing to select, and the cursors would read nothing from it.
-                if (selectedChannel >= 0 && ChannelHidden[selectedChannel])
-                    selectedChannel = -1;
+                if (selectedRow >= 0 && RowHidden[selectedRow])
+                    selectedRow = -1;
             }
         }
 
@@ -167,10 +167,10 @@ namespace OpenEphys.EphysVisualization.Design
             (ImGuiKey.E, true, layout => { if (Modifiers()) StepSelection(1, layout); }),
             (ImGuiKey.X, false, layout =>
             {
-                if (selectedChannel < 0 && expandedChannel < 0)
-                    selectedChannel = FirstShownInView(layout);
-                if (expandedChannel >= 0) Collapse();
-                else if (selectedChannel >= 0) Expand(selectedChannel);
+                if (selectedRow < 0 && expandedRow < 0)
+                    selectedRow = FirstShownInView(layout);
+                if (expandedRow >= 0) Collapse();
+                else if (selectedRow >= 0) Expand(selectedRow);
             }),
         };
 
@@ -231,7 +231,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (Modifiers())
             {
-                if (expandedChannel >= 0)
+                if (expandedRow >= 0)
                 {
                     var (center, span) = AmplitudeView;
                     SetAmplitudeView(center + wheel * span / AmplitudeDivisions, 0, span);
@@ -267,13 +267,13 @@ namespace OpenEphys.EphysVisualization.Design
                     StepTimebase(-direction, mouse.X);
                 else if (Modifiers(alt: true))
                     StepRange(-direction);
-                else if (Modifiers(ctrl: true) && expandedChannel < 0 && heightDrag is null)
+                else if (Modifiers(ctrl: true) && expandedRow < 0 && heightDrag is null)
                 {
                     var height = ChannelHeight;
                     var pivot = (mouse.Y - layout.Origin) / layout.RowHeight;
                     SetChannelHeight(StepChannelHeight(height, direction), height, pivot, ImGui.GetScrollY(), layout);
                 }
-                else if (Modifiers(ctrl: true) && expandedChannel >= 0 && amplitudeDrag is null)
+                else if (Modifiers(ctrl: true) && expandedRow >= 0 && amplitudeDrag is null)
                 {
                     var (center, span) = AmplitudeView;
                     var fraction = RowFraction(layout, mouse.Y);
@@ -293,7 +293,7 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.SetScrollY(ImGui.GetScrollY() + direction * ChannelStep(layout));
             else if (Modifiers(alt: true))
                 StepRange(direction);
-            else if (Modifiers(ctrl: true) && expandedChannel < 0)
+            else if (Modifiers(ctrl: true) && expandedRow < 0)
             {
                 var height = ChannelHeight;
                 var pivot = ((layout.Top + layout.Bottom) / 2 - layout.Origin) / layout.RowHeight;
@@ -318,7 +318,7 @@ namespace OpenEphys.EphysVisualization.Design
         void Escape()
         {
             if (zoomBox.Dragging) zoomBox.Cancel();
-            else selectedChannel = -1;
+            else selectedRow = -1;
         }
 
         // NB: Shift steps ten cells, as it makes the other moves larger.
@@ -369,7 +369,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (grabbing && ImGui.IsMouseDragging(ImGuiMouseButton.Middle))
             {
                 var delta = ImGui.GetIO().MouseDelta;
-                if (expandedChannel >= 0)
+                if (expandedRow >= 0)
                 {
                     var (center, span) = AmplitudeView;
                     SetAmplitudeView(center + delta.Y / layout.RowHeight * span, 0, span);
@@ -393,7 +393,7 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 var anchor = Axis.PositionAt(mouse.X);
                 timebaseDrag = (Timebase, mouse.X, anchor, window.FractionOf(anchor));
-                if (expandedChannel < 0)
+                if (expandedRow < 0)
                     heightDrag = (ChannelHeight, mouse.Y, (mouse.Y - layout.Origin) / layout.RowHeight, ImGui.GetScrollY());
                 else
                 {
@@ -413,13 +413,13 @@ namespace OpenEphys.EphysVisualization.Design
                 SetTimebase(Math.Max(ShortestTimeBase, Math.Min(longest, value)), zoom.Anchor, zoom.Fraction);
             }
 
-            if (amplitudeDrag is { } amplitude && expandedChannel >= 0)
+            if (amplitudeDrag is { } amplitude && expandedRow >= 0)
             {
                 var span = PlotText.Significant(amplitude.Span * Math.Exp(Beyond(mouse.Y - amplitude.Y) * RangeDragRate));
                 SetAmplitudeView(amplitude.Value, amplitude.Fraction, span);
             }
 
-            if (heightDrag is { } height && expandedChannel < 0)
+            if (heightDrag is { } height && expandedRow < 0)
             {
                 var delta = (int)Math.Round(-0.2f * Beyond(mouse.Y - height.Y));
                 if (height.Value > 100)
@@ -454,7 +454,7 @@ namespace OpenEphys.EphysVisualization.Design
                 SetTimebase(Math.Max(ShortestTimeBase, Math.Min(longest, value)), Axis.PositionAt(box.Min.X), 0);
             }
 
-            if (box.Tall && expandedChannel >= 0)
+            if (box.Tall && expandedRow >= 0)
             {
                 var (center, span) = AmplitudeView;
                 SetAmplitudeView(center + RowFraction(layout, (box.Min.Y + box.Max.Y) / 2) * span, 0,
@@ -462,8 +462,8 @@ namespace OpenEphys.EphysVisualization.Design
             }
             else if (box.Tall)
             {
-                var first = Math.Max(layout.FirstRow, layout.ChannelAt(box.Min.Y));
-                var last = Math.Min(layout.LastRow - 1, layout.ChannelAt(box.Max.Y - 1));
+                var first = Math.Max(layout.FirstRow, layout.RowAt(box.Min.Y));
+                var last = Math.Min(layout.LastRow - 1, layout.RowAt(box.Max.Y - 1));
                 ChannelHeight = Math.Min(layout.Bottom - layout.Top, MathF.Floor(visibleHeight / (last - first + 1)));
                 pendingScroll = first * ChannelHeight;
             }
@@ -480,7 +480,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             LongestTimebase();
             FitChannels = true;
-            amplitudeView.Channel = -1;
+            amplitudeView.Row = -1;
         }
 
         // NB: while paused, the longest the record can fill, so the whole record is in view.
@@ -490,7 +490,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// How far <paramref name="y"/> lies above the middle of the expanded channel's row, in rows.
         /// </summary>
         float RowFraction(in RowLayout layout, float y) =>
-            (layout.RowTop(expandedChannel) + layout.RowHeight / 2 - y) / layout.RowHeight;
+            (layout.RowTop(expandedRow) + layout.RowHeight / 2 - y) / layout.RowHeight;
 
         // NB: how far a drag has gone along one axis past the drag threshold, so a drag held to one axis does not
         // move the other by the pointer's wobble.
@@ -566,28 +566,28 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         void StepSelection(int direction, in RowLayout layout)
         {
-            var from = expandedChannel >= 0 ? expandedChannel
-                : selectedChannel >= 0 ? selectedChannel
+            var from = expandedRow >= 0 ? expandedRow
+                : selectedRow >= 0 ? selectedRow
                 : layout.FirstVisible - direction;
-            for (var c = from + direction; c >= 0 && c < channels; c += direction)
+            for (var c = from + direction; c >= 0 && c < rowCount; c += direction)
             {
-                if (!ChannelHidden[c])
+                if (!RowHidden[c])
                 {
-                    selectedChannel = c;
+                    selectedRow = c;
                     break;
                 }
             }
 
-            if (selectedChannel < 0)
+            if (selectedRow < 0)
                 return;
 
-            if (expandedChannel >= 0)
+            if (expandedRow >= 0)
             {
-                expandedChannel = selectedChannel;
+                expandedRow = selectedRow;
                 return;
             }
 
-            var top = layout.RowTop(selectedChannel);
+            var top = layout.RowTop(selectedRow);
             if (top < layout.Top)
                 ImGui.SetScrollY(ImGui.GetScrollY() - (layout.Top - top));
             else if (top + layout.RowHeight > layout.Bottom)
@@ -602,16 +602,16 @@ namespace OpenEphys.EphysVisualization.Design
         {
             for (int c = layout.FirstVisible; c < layout.LastVisible; c++)
             {
-                if (!ChannelHidden[c])
+                if (!RowHidden[c])
                     return c;
             }
             return -1;
         }
 
-        void Expand(int channel)
+        void Expand(int row)
         {
             collapsedScroll = ImGui.GetScrollY();
-            expandedChannel = channel;
+            expandedRow = row;
         }
 
         // NB: back where the expand began, moved only as far as brings the channel that was expanded into view,
@@ -622,13 +622,13 @@ namespace OpenEphys.EphysVisualization.Design
                 return;
 
             var height = ChannelHeight;
-            var rowTop = expandedChannel * height;
+            var rowTop = expandedRow * height;
             if (rowTop < collapsedScroll)
                 collapsedScroll = rowTop;
             else if (rowTop + height > collapsedScroll + visibleHeight)
                 collapsedScroll = rowTop + height - visibleHeight;
 
-            expandedChannel = -1;
+            expandedRow = -1;
             pendingScroll = collapsedScroll;
         }
     }

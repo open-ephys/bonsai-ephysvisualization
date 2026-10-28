@@ -50,7 +50,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// The channel the cursors read, or -1 while they are hidden: the selected channel, or an expanded
         /// channel, which is the only one there is to read.
         /// </summary>
-        public int Channel(in PlotFrame frame) => !Show ? -1 : frame.Expanded >= 0 ? frame.Expanded : frame.Selected;
+        public int Row(in PlotFrame frame) => !Show ? -1 : frame.Expanded >= 0 ? frame.Expanded : frame.Selected;
 
         /// <summary>
         /// Moves the cursors to the middle of the window <paramref name="axis"/> shows, keeping their spacing, or
@@ -296,17 +296,17 @@ namespace OpenEphys.EphysVisualization.Design
         bool TryRead(in PlotFrame frame, long position, out double min, out double max)
         {
             min = max = double.NaN;
-            var channel = Channel(frame);
+            var row = Row(frame);
             var (start, end) = frame.Axis.CellColumns(position);
-            if (channel < 0 || frame.Hidden[channel] && channel != frame.Expanded || end <= start)
+            if (row < 0 || frame.Hidden[row] && row != frame.Expanded || end <= start)
                 return false;
 
             min = double.PositiveInfinity;
             max = double.NegativeInfinity;
             for (int c = start; c < end; c++)
             {
-                min = Math.Min(min, frame.Envelope.Min.GetReal(channel, c));
-                max = Math.Max(max, frame.Envelope.Max.GetReal(channel, c));
+                min = Math.Min(min, frame.Envelope.Min.GetReal(row, c));
+                max = Math.Max(max, frame.Envelope.Max.GetReal(row, c));
             }
 
             if (Heatmap(frame))
@@ -322,8 +322,8 @@ namespace OpenEphys.EphysVisualization.Design
         void Values(ImDrawListPtr draw, in PlotFrame frame, double min, double max, float x)
         {
             var layout = frame.Layout;
-            var channel = Channel(frame);
-            var center = layout.RowTop(channel) + layout.RowHeight / 2;
+            var row = Row(frame);
+            var center = layout.RowTop(row) + layout.RowHeight / 2;
             var right = frame.Left + frame.Width;
 
             if (Heatmap(frame))
@@ -334,12 +334,12 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (min == max)
             {
-                Value(draw, new Vector2(x, frame.ValueY(channel, max)), max, frame.Unit, 0, right);
+                Value(draw, new Vector2(x, frame.ValueY(row, max)), max, frame.Unit, 0, right);
                 return;
             }
 
-            Value(draw, new Vector2(x, frame.ValueY(channel, max)), max, frame.Unit, -1, right);
-            Value(draw, new Vector2(x, frame.ValueY(channel, min)), min, frame.Unit, 1, right);
+            Value(draw, new Vector2(x, frame.ValueY(row, max)), max, frame.Unit, -1, right);
+            Value(draw, new Vector2(x, frame.ValueY(row, min)), min, frame.Unit, 1, right);
         }
 
         /// <summary>
@@ -468,8 +468,8 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGuiChildFlags.AlwaysAutoResize;
             if (ImGui.BeginChild("##cursorTable", Vector2.Zero, childFlags, ImGuiWindowFlags.NoScrollbar))
             {
-                var channel = Channel(frame);
-                ImGui.TextUnformatted(channel >= 0 ? $"Ch {frame.ChannelOf(channel)}" : "No channel");
+                var row = Row(frame);
+                ImGui.TextUnformatted(row >= 0 ? $"Ch {frame.ChannelOf(row)}" : "No channel");
 
                 var remove = -1;
                 // NB: a cell of one sample has min and max equal, so it has one value and one difference from C0, as
