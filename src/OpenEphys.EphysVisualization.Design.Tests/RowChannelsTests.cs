@@ -112,6 +112,70 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Throws<ArgumentException>(() => panel.Order = new RowOrder(Reversed, falling));
         }
 
+        // NB: the first half of the rows in one lane and the second half in another.
+        static readonly int[] TwoLanes = Enumerable.Range(0, Channels).Select(row => row < Channels / 2 ? 0 : 1).ToArray();
+
+        [Fact]
+        public void TheRowsOfASecondLane_LieLevelWithTheFirsts_AndThePointerFindsThemThere()
+        {
+            Reorder(Reversed);
+            panel.Order = new RowOrder((int[])Reversed.Clone(), Lanes: TwoLanes);
+            imgui.Frames(3, draw);
+            var columnLeft = Private.Get<float>(panel, "plotColumnLeft");
+            var columnWidth = Private.Get<float>(panel, "plotColumnWidth");
+            var first = panel.Rows();
+
+            imgui.MoveMouse(new Vector2(columnLeft + columnWidth - 10, RowMiddle(first, 0)), draw);
+            imgui.Frames(2, draw);
+
+            var second = panel.Rows();
+            Assert.Equal(Channels / 2, second.FirstRow);
+            Assert.Equal(first.RowTop(0), second.RowTop(Channels / 2));
+            Assert.True(panel.Axis().Left > columnLeft + columnWidth / 2);
+        }
+
+        [Fact]
+        public void TheLaneButton_WidensItsLane_AndAgainGivesTheLanesEqualWidths()
+        {
+            Reorder(Reversed);
+            panel.Order = new RowOrder((int[])Reversed.Clone(), Lanes: TwoLanes);
+            imgui.Frames(3, draw);
+            var equal = panel.Axis().Width;
+            var button = LaneButton();
+
+            imgui.MoveMouse(button, draw);
+            imgui.Click(ImGuiMouseButton.Left, draw);
+            imgui.Frames(2, draw);
+            Assert.Equal(0, Private.Get<int>(panel, "expandedLane"));
+            Assert.True(panel.Axis().Width > equal);
+
+            imgui.MoveMouse(LaneButton(widened: true), draw);
+            imgui.Click(ImGuiMouseButton.Left, draw);
+            imgui.Frames(2, draw);
+            Assert.Equal(-1, Private.Get<int>(panel, "expandedLane"));
+            Assert.Equal(equal, panel.Axis().Width);
+        }
+
+        [Fact]
+        public void Lanes_MustBeOnePerChannel_WithEachLanesRowsTogether()
+        {
+            Assert.Throws<ArgumentException>(() => panel.Order = new RowOrder(Reversed, Lanes: new int[Channels - 1]));
+
+            var split = Enumerable.Range(0, Channels).Select(row => row % 2).ToArray();
+            Assert.Throws<ArgumentException>(() => panel.Order = new RowOrder(Reversed, Lanes: split));
+        }
+
+        // NB: the first lane's button, in its plot's top right corner, left of the maximize button once the first
+        // lane is the only one drawn.
+        Vector2 LaneButton(bool widened = false)
+        {
+            var axis = panel.Axis();
+            var side = ImGui.GetFrameHeight();
+            var pad = ImGui.GetStyle().FramePadding;
+            var right = axis.Left + axis.Width - (widened ? side + pad.X : 0);
+            return new Vector2(right - pad.X - side / 2, panel.Rows().Top + pad.Y + side / 2);
+        }
+
         void Reorder(int[] rowChannels)
         {
             panel.Order = new RowOrder(rowChannels);

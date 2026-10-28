@@ -47,15 +47,24 @@ namespace OpenEphys.EphysVisualization.Design
         float collapsedScroll;
         float? pendingScroll;
 
-        // NB: the channel under the mouse is found from its y anywhere across the label column and
-        // the plot, so a trace can be acted on where it is looked at.
-        static int HoveredRow(in RowLayout layout)
+        // NB: the channel under the mouse is found from its y anywhere across the lane's labels and plot, so a
+        // trace can be acted on where it is looked at. The last lane reaches the window's edge.
+        static int HoveredRow(Lane[] lanes, int lane)
         {
+            var layout = lanes[lane].Rows;
             var mouse = ImGui.GetMousePos();
-            var left = ImGui.GetCursorScreenPos().X;
+            var left = lanes[lane].LabelLeft;
             var right = ImGui.GetWindowPos().X + ImGui.GetWindowSize().X;
             if (ImGui.GetScrollMaxY() > 0)
                 right -= ImGui.GetStyle().ScrollbarSize;
+            for (int next = lane + 1; next < lanes.Length; next++)
+            {
+                if (!lanes[next].Strip)
+                {
+                    right = lanes[lane].Left + lanes[lane].Width;
+                    break;
+                }
+            }
 
             if (!ImGui.IsWindowHovered() ||
                 mouse.X < left || mouse.X >= right ||

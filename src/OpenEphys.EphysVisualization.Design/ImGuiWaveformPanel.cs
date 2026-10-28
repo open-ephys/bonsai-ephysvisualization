@@ -189,30 +189,43 @@ namespace OpenEphys.EphysVisualization.Design
         RowOrder? order;
         int[]? rowChannels;
 
-        // NB: each row's offset from the top of the first, in row heights, or null for row k at k.
+        // NB: each row's offset from the top of the lanes, in row heights, or null for row k at k.
         float[]? rowSlots;
+        float slotExtent;
+
+        // NB: the row each lane starts at, and the row count last, or null for one lane.
+        int[]? laneStarts;
+
+        // NB: the lane given most of the plot's width, the others shrunk to strips, or -1 for equal widths.
+        int expandedLane = -1;
 
         /// <summary>
-        /// The channel each row of the data shows, from the top, and where each row lies, or null for each row
-        /// showing the channel of its own index, the rows evenly spaced.
+        /// The channel each row of the data shows, from the top, where each row lies and which lane it is in, or null
+        /// for each row showing the channel of its own index, the rows evenly spaced in one lane.
         /// </summary>
         /// <remarks>
         /// A change of channels discards the buffers, whose rows then belong to other channels, and keeps the
         /// selected and the expanded channel where they were. A paused view is read from those buffers, so the
-        /// channels are changed only live. A change of positions alone moves the rows and keeps the buffers.
+        /// channels are changed only live. A change of positions or lanes alone keeps the buffers.
         /// </remarks>
         /// <exception cref="ArgumentException">
-        /// The positions are not one per channel, or one is less than the one before it.
+        /// The positions or lanes are not one per channel, a lane's rows do not come together, or a position is less
+        /// than the one before it in its lane.
         /// </exception>
         public RowOrder? Order
         {
             get => order;
             set
             {
+                var (slots, extent, starts) = Arrange(value);
                 var channels = value?.Channels;
-                var slots = Slots(value);
+                if (starts?.Length != laneStarts?.Length)
+                    expandedLane = -1;
+
                 order = value;
                 rowSlots = slots;
+                slotExtent = extent;
+                laneStarts = starts;
                 if (ReferenceEquals(channels, rowChannels) ||
                     channels is not null && rowChannels is not null && channels.SequenceEqual(rowChannels))
                     return;
@@ -226,41 +239,87 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        static float[]? Slots(RowOrder? order)
+        static (float[]? Slots, float Extent, int[]? LaneStarts) Arrange(RowOrder? order)
         {
-            if (order?.Positions is not { } positions)
-                return null;
+            if (order is null)
+                return (null, 0, null);
 
-            if (positions.Length != order.Channels.Length)
+            var count = order.Channels.Length;
+            var positions = order.Positions;
+            var lanes = order.Lanes;
+            if (positions is not null && positions.Length != count)
                 throw new ArgumentException("There must be one position for each channel.", nameof(order));
+            if (lanes is not null && lanes.Length != count)
+                throw new ArgumentException("There must be one lane for each channel.", nameof(order));
 
-            var pitch = float.PositiveInfinity;
-            for (int i = 1; i < positions.Length; i++)
+            var starts = new List<int> { 0 };
+            var seen = new HashSet<int>();
+            for (int i = 0; i < count; i++)
             {
-                var step = positions[i] - positions[i - 1];
-                if (step < 0)
-                    throw new ArgumentException("Each position must be at least the one before it.", nameof(order));
-                if (step > 0)
-                    pitch = Math.Min(pitch, step);
+                if (i > 0 && lanes is not null && lanes[i] != lanes[i - 1])
+                    starts.Add(i);
+                if (lanes is not null && (i == 0 || lanes[i] != lanes[i - 1]) && !seen.Add(lanes[i]))
+                    throw new ArgumentException("A lane's rows must come together.", nameof(order));
+            }
+            starts.Add(count);
+            var laneStarts = starts.Count > 2 ? starts.ToArray() : null;
+            if (positions is null && laneStarts is null)
+                return (null, 0, null);
+
+            bool SameLane(int i) => lanes is null || lanes[i] == lanes[i - 1];
+
+            var slots = new float[count];
+            if (positions is null)
+            {
+                for (int lane = 0; lane < starts.Count - 1; lane++)
+                    for (int i = starts[lane]; i < starts[lane + 1]; i++)
+                        slots[i] = i - starts[lane];
+            }
+            else
+            {
+                var pitch = float.PositiveInfinity;
+                var top = count > 0 ? positions[0] : 0;
+                for (int i = 0; i < count; i++)
+                {
+                    top = Math.Min(top, positions[i]);
+                    if (i == 0 || !SameLane(i))
+                        continue;
+
+                    var step = positions[i] - positions[i - 1];
+                    if (step < 0)
+                        throw new ArgumentException("Each position must be at least the one before it in its lane.",
+                            nameof(order));
+                    if (step > 0)
+                        pitch = Math.Min(pitch, step);
+                }
+
+                if (float.IsPositiveInfinity(pitch))
+                    pitch = 1;
+
+                for (int i = 0; i < count; i++)
+                    slots[i] = (positions[i] - top) / pitch;
             }
 
-            if (float.IsPositiveInfinity(pitch))
-                pitch = 1;
+            var extent = 0f;
+            for (int lane = 0; lane < starts.Count - 1; lane++)
+            {
+                if (starts[lane + 1] > starts[lane])
+                    extent = Math.Max(extent, slots[starts[lane + 1] - 1] + 1);
+            }
 
-            var slots = new float[positions.Length];
-            for (int i = 0; i < positions.Length; i++)
-                slots[i] = (positions[i] - positions[0]) / pitch;
-            return slots;
+            return (slots, extent, laneStarts);
         }
 
-        // NB: positions apply only when the data has a row for each, which a block posted before a new order
-        // may not.
+        // NB: positions and lanes apply only when the data has a row for each, which a block posted before a new
+        // order may not.
         float[]? SlotsFor(int rows) => rowSlots is { } slots && slots.Length == rows ? slots : null;
+
+        int[]? LanesFor(int rows) => laneStarts is { } starts && starts[starts.Length - 1] == rows ? starts : null;
 
         float SlotOf(int row) => RowLayout.SlotOf(SlotsFor(rowCount), row);
 
-        // NB: the rows' total span in row heights, the row count when evenly spaced.
-        float SlotCount => rowCount > 0 ? SlotOf(rowCount - 1) + 1 : 0;
+        // NB: the tallest lane's span in row heights, the row count when evenly spaced in one lane.
+        float SlotCount => SlotsFor(rowCount) is not null ? slotExtent : rowCount;
 
         internal int ChannelOf(int row) => ChannelOf(rowChannels, row);
 
@@ -401,8 +460,14 @@ namespace OpenEphys.EphysVisualization.Design
         /// The channel height at which every channel just fills the plot's visible height, as far as the smallest
         /// height allows. Rows any shorter would leave part of the plot unused.
         /// </summary>
+        /// <remarks>
+        /// Positioned rows may fit below the smallest height, since a probe whose electrodes share depths can need
+        /// several rows to a pixel to be seen whole.
+        /// </remarks>
         float FitHeight => rowCount > 0 && visibleHeight > 0
-            ? Math.Max(MinChannelHeight, visibleHeight / SlotCount)
+            ? SlotsFor(rowCount) is not null
+                ? visibleHeight / SlotCount
+                : Math.Max(MinChannelHeight, visibleHeight / SlotCount)
             : MinChannelHeight;
 
         /// <summary>

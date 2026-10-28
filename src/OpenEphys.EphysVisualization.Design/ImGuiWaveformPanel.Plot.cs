@@ -35,9 +35,15 @@ namespace OpenEphys.EphysVisualization.Design
         public const float FrameWeight = GraticuleWeight;
         const float HoverFillAlpha = 0.65f;
 
+        // NB: the plot of the lane the pointer works in, which every lane's matches in width.
         float plotLeft;
         float plotSpan;
         float visibleHeight;
+
+        // NB: the plot column as last laid out, which the lanes are placed in before the column is entered.
+        float plotColumnLeft;
+        float plotColumnWidth;
+        int inputLane;
 
         readonly TraceRaster traces = new();
 
@@ -56,7 +62,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// The graticules go in this window's draw list rather than the table's, so they stay put while the
-        /// channels scroll, and lie under the traces.
+        /// channels scroll, and lie under the traces. Lanes after the first have their labels in the plot column,
+        /// beside their plots.
         /// </remarks>
         /// <param name="envelope">Per-column minima and maxima, one row per channel.</param>
         /// <param name="shown">The window <paramref name="envelope"/> holds, which the frame is drawn in.</param>
@@ -80,6 +87,7 @@ namespace OpenEphys.EphysVisualization.Design
             var plotBottom = plotTop + tableHeight;
             var plotX = 0f;
             var plotWidth = 0f;
+            var frames = Array.Empty<PlotFrame>();
             var frame = default(PlotFrame);
 
             // NB: ImGui scrolls one pixel at a time, but the panel often scrolls in increments of full rows, for the
@@ -94,7 +102,8 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (rowsOpen && ImGui.BeginTable("##table", 2, ImGuiTableFlags.NoSavedSettings))
             {
-                ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, LabelColumnWidth(labelDigits));
+                var labelWidth = LabelColumnWidth(labelDigits);
+                ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, labelWidth);
                 ImGui.TableSetupColumn(string.Empty);
                 ScrollIfPending();
 
@@ -108,16 +117,28 @@ namespace OpenEphys.EphysVisualization.Design
                 // NB: measured inside the cell, which leaves out the row's padding, so that rows fitted to it fill
                 // the table without scrolling.
                 visibleHeight = ImGui.GetContentRegionAvail().Y;
-                var layout = LayoutRows(rows, plotTop, plotBottom, ImGui.GetCursorScreenPos().Y,
+                var labelsLeft = ImGui.GetCursorScreenPos().X;
+                var labelsRight = labelsLeft + ImGui.GetContentRegionAvail().X;
+                var laneRows = LayoutRows(rows, plotTop, plotBottom, ImGui.GetCursorScreenPos().Y,
                     ImGui.GetContentRegionAvail().Y);
+                var lanes = PlaceLanes(laneRows, labelsLeft, labelsRight - labelsLeft, plotColumnLeft, plotColumnWidth);
+                var lane = InputLane(lanes);
+                plotLeft = lanes[lane].Left;
+                var layout = laneRows[lane];
                 lastLayout = layout;
-                var hoveredRow = HoveredRow(layout);
+                var hoveredRow = HoveredRow(lanes, lane);
                 if (selectedRow >= rows)
                     selectedRow = -1;
                 if (selectOnShow && selectedRow < 0)
                     selectedRow = FirstShownInView(layout);
                 selectOnShow = false;
-                ChannelLabels(layout, labelDigits, hoveredRow);
+                if (lanes[0].Strip)
+                {
+                    DrawLaneButton(ImGui.GetWindowDrawList(), 0, new Vector2(labelsLeft, plotTop), labelsRight - labelsLeft);
+                    DrawFrame(ImGui.GetWindowDrawList(), labelsLeft, labelsRight - labelsLeft, plotTop, plotBottom);
+                }
+                else
+                    ChannelLabels(laneRows[0], labelDigits, hoveredRow, labelsLeft, labelsRight);
                 HandleChannelInput(hoveredRow);
                 AnswerTableKeys(layout);
                 HandleWheel(layout);
@@ -127,53 +148,94 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.TableNextColumn();
                 plotX = ImGui.GetCursorScreenPos().X;
                 plotWidth = ImGui.GetContentRegionAvail().X;
-                var resized = plotWidth != plotSpan;
-                plotLeft = plotX;
-                plotSpan = plotWidth;
+                plotColumnLeft = plotX;
+                plotColumnWidth = plotWidth;
+                lanes = PlaceLanes(laneRows, labelsLeft, labelsRight - labelsLeft, plotX, plotWidth);
+
+                // NB: the first lane's strip button, pressed in the label column, can just have made the input lane
+                // a strip.
+                if (lanes[lane].Strip)
+                    lane = inputLane = FirstFull(lanes);
+                var laneWidth = lanes[FirstFull(lanes)].Width;
+                var resized = laneWidth != plotSpan;
+                plotLeft = lanes[lane].Left;
+                plotSpan = laneWidth;
 
                 // NB: the cells follow the plot's width, so a resized plot puts the window back on a cell boundary.
                 if (resized && CanPan)
                     SetWindow(window);
-                frame = new PlotFrame(
-                    envelope, layout, new PixelAxis(shown, plotLeft, plotSpan), plotTop, plotBottom,
+
+                var full = Enumerable.Range(0, lanes.Length).Where(j => !lanes[j].Strip).ToArray();
+                frames = full.Select(j => new PlotFrame(
+                    envelope, lanes[j].Rows, new PixelAxis(shown, lanes[j].Left, plotSpan), plotTop, plotBottom,
                     sampleRate, Paused, CursorPosition, Timebase, pausedTimebase,
                     AmplitudeView.Span, AmplitudeView.Center, Unit, RowHidden, expandedRow, selectedRow, ShowHeatmap, ColorThreshold,
-                    rowChannels);
+                    rowChannels)).ToArray();
+                frame = frames[Array.IndexOf(full, lane)];
 
-                // NB: an item the height of every row, which is what the table scrolls through. Everything in the
-                // plot is drawn rather than laid out.
-                ImGui.Dummy(new Vector2(plotWidth, layout.Height));
+                // NB: an item the height of the tallest lane, which is what the table scrolls through. Everything in
+                // the plot is drawn rather than laid out.
+                ImGui.Dummy(new Vector2(plotWidth, laneRows.Max(rowsOf => rowsOf.Height)));
                 var draw = ImGui.GetWindowDrawList();
-                DrawRowBand(draw, frame);
-                traces.Draw(frame, Colors.Packed(rowCount, rowChannels),
+                foreach (var j in full.Where(j => j > 0))
+                    ChannelLabels(laneRows[j], labelDigits, hoveredRow, lanes[j].LabelLeft,
+                        lanes[j].LabelLeft + labelsRight - labelsLeft);
+
+                foreach (var f in frames)
+                    DrawRowBand(draw, f);
+                traces.Draw(frames, Colors.Packed(rowCount, rowChannels),
                     Paused || decimator is null ? -1 : decimator.Cursor, history?.Count ?? 0, FastSweep);
 
-                // NB: a trace that runs off its row may run into its neighbors but not past the rows, which can
-                // end above the plot's bottom when there are few channels.
-                draw.PushClipRect(new Vector2(plotX, layout.Origin),
-                    new Vector2(plotX + plotWidth, layout.Origin + layout.Height), true);
-                if (expandedRow >= 0)
-                    DrawChannelLines(draw, frame, expandedRow, 1);
-                else if (hoveredRow >= 0 && !RowHidden[hoveredRow] && !ShowHeatmap)
-                    DrawChannelLines(draw, frame, hoveredRow, HoverLineWeight);
-                DrawSweepCursor(draw, frame);
-                draw.PopClipRect();
+                foreach (var f in frames)
+                {
+                    // NB: a trace that runs off its row may run into its neighbors but not past the rows, which can
+                    // end above the plot's bottom when there are few channels, or past its lane.
+                    var hoveredHere = hoveredRow >= f.Layout.FirstRow && hoveredRow < f.Layout.LastRow;
+                    draw.PushClipRect(new Vector2(f.Left, f.Layout.Origin),
+                        new Vector2(f.Left + f.Width, f.Layout.Origin + f.Layout.Height), true);
+                    if (expandedRow >= 0)
+                        DrawChannelLines(draw, f, expandedRow, 1);
+                    else if (hoveredHere && !RowHidden[hoveredRow] && !ShowHeatmap)
+                        DrawChannelLines(draw, f, hoveredRow, HoverLineWeight);
+                    DrawSweepCursor(draw, f);
+                    draw.PopClipRect();
 
-                ShadeFrozenTail(draw, frame.Axis, plotX, plotWidth, plotTop, plotBottom);
+                    ShadeFrozenTail(draw, f.Axis, f.Left, f.Width, plotTop, plotBottom);
 
-                // NB: a heatmap row has no line to thicken and covers the band, so the hovered and selected rows
-                // are marked from outside, which also ties a label to its row when rows are far shorter than it.
-                if (ShowHeatmap && expandedRow < 0 && hoveredRow >= 0 && !RowHidden[hoveredRow])
-                    BracketRow(draw, frame, hoveredRow, ColHoveredRow);
-                if (ShowHeatmap && expandedRow < 0 && selectedRow >= 0)
-                    BracketRow(draw, frame, selectedRow, WaveformCursors.Color);
+                    // NB: a heatmap row has no line to thicken and covers the band, so the hovered and selected rows
+                    // are marked from outside, which also ties a label to its row when rows are far shorter than it.
+                    var selectedHere = selectedRow >= f.Layout.FirstRow && selectedRow < f.Layout.LastRow;
+                    if (ShowHeatmap && expandedRow < 0 && hoveredHere && !RowHidden[hoveredRow])
+                        BracketRow(draw, f, hoveredRow, ColHoveredRow);
+                    if (ShowHeatmap && expandedRow < 0 && selectedHere)
+                        BracketRow(draw, f, selectedRow, WaveformCursors.Color);
+                }
+
                 // NB: ahead of the cursors so the don't compete for a click on [CLIPPING] in the plot area.
-                var cornerTaken = DrawMaximize(draw, frame);
-                DrawClipping(draw, frame, cornerTaken);
-                cursors.Draw(draw, frame);
+                var corner = frames[frames.Length - 1];
+                var cornerTaken = DrawMaximize(draw, corner);
+                for (int j = 0; j < lanes.Length && lanes.Length > 1; j++)
+                {
+                    var side = ImGui.GetFrameHeight();
+                    var pad = ImGui.GetStyle().FramePadding;
+                    var right = lanes[j].Left + lanes[j].Width - (j == full[full.Length - 1] ? cornerTaken : 0);
+                    if (lanes[j].Strip && j > 0)
+                        DrawLaneButton(draw, j, new Vector2(lanes[j].Left, plotTop), lanes[j].Width);
+                    else if (!lanes[j].Strip)
+                    {
+                        DrawLaneButton(draw, j, new Vector2(right - pad.X - side, plotTop), side);
+                        if (j == full[full.Length - 1])
+                            cornerTaken += side + pad.X;
+                    }
+                }
+
+                DrawClipping(draw, corner, cornerTaken);
+                foreach (var f in frames)
+                    cursors.Draw(draw, f, interactive: f.Left == frame.Left);
                 DrawZoomBox(draw, frame);
                 SelectClicked(frame, hoveredRow);
-                DrawFrame(draw, plotX, plotWidth, plotTop, plotBottom);
+                foreach (var placed in lanes)
+                    DrawFrame(draw, placed.Left, placed.Width, plotTop, plotBottom);
                 DrawReadout(draw, frame, hoveredRow);
                 AmplitudeLabels(draw, frame, plotX, plotTop, plotBottom);
                 ImGui.EndTable();
@@ -182,13 +244,154 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (plotWidth > 0)
             {
-                DrawGraticules(ImGui.GetWindowDrawList(), frame.Axis, plotX, plotWidth, plotTop, plotBottom, labelY);
-                cursors.DrawTimeLabels(ImGui.GetWindowDrawList(), frame, labelY);
+                foreach (var f in frames)
+                {
+                    DrawGraticules(ImGui.GetWindowDrawList(), f.Axis, f.Left, f.Width, plotTop, plotBottom, labelY);
+                    cursors.DrawTimeLabels(ImGui.GetWindowDrawList(), f, labelY);
+                }
                 TimeScrollBar(plotX, plotWidth, plotBottom + scrollGap, scrollHeight);
 
                 // NB: last, so that its window is drawn over the table's and takes the pointer from it.
-                if (cursors.DrawTable(frame) is long center)
+                if (cursors.DrawTable(frames[0]) is long center)
                     CenterOn(center);
+            }
+        }
+
+        /// <summary>
+        /// One lane and where it falls on screen: its labels, then its plot, or a strip in their place while another
+        /// lane is widened.
+        /// </summary>
+        internal readonly struct Lane
+        {
+            public readonly RowLayout Rows;
+            public readonly float LabelLeft;
+            public readonly float Left;
+            public readonly float Width;
+            public readonly bool Strip;
+
+            public Lane(RowLayout rows, float labelLeft, float left, float width, bool strip)
+            {
+                Rows = rows;
+                LabelLeft = labelLeft;
+                Left = left;
+                Width = width;
+                Strip = strip;
+            }
+        }
+
+        // NB: the first lane's labels, or its strip, take the label column, and the rest go in the plot column, each
+        // lane's plot as wide as every other's. Every lane's labels are as far from its plot as the label column is
+        // from the plot column, and that much less from the plot before.
+        Lane[] PlaceLanes(RowLayout[] laneRows, float labelsLeft, float labelWidth, float columnLeft, float columnWidth)
+        {
+            var count = laneRows.Length;
+            if (count == 1)
+                return new[] { new Lane(laneRows[0], labelsLeft, columnLeft, columnWidth, false) };
+
+            var labelGap = Math.Max(0, columnLeft - labelsLeft - labelWidth);
+            var gap = Math.Max(2, ImGui.GetStyle().ItemSpacing.X - labelGap);
+            var stripWidth = ImGui.GetFrameHeight();
+            bool IsStrip(int lane) => expandedLane >= 0 && lane != expandedLane;
+            var fullCount = expandedLane >= 0 ? 1 : count;
+            var laterLabels = fullCount - (IsStrip(0) ? 0 : 1);
+            var laterStrips = count - 1 - laterLabels;
+            var inColumn = count - (IsStrip(0) ? 1 : 0);
+            var width = Math.Max(1, MathF.Floor(
+                (columnWidth - laterLabels * (labelWidth + labelGap) - laterStrips * stripWidth - (inColumn - 1) * gap) /
+                fullCount));
+
+            var lanes = new Lane[count];
+            var x = columnLeft;
+            for (int j = 0; j < count; j++)
+            {
+                if (j == 0 && IsStrip(0))
+                    lanes[0] = new Lane(laneRows[0], labelsLeft, labelsLeft, labelWidth, true);
+                else if (j == 0)
+                {
+                    lanes[0] = new Lane(laneRows[0], labelsLeft, x, width, false);
+                    x += width + gap;
+                }
+                else if (IsStrip(j))
+                {
+                    lanes[j] = new Lane(laneRows[j], x, x, stripWidth, true);
+                    x += stripWidth + gap;
+                }
+                else
+                {
+                    lanes[j] = new Lane(laneRows[j], x, x + labelWidth + labelGap, width, false);
+                    x += labelWidth + labelGap + width + gap;
+                }
+            }
+
+            return lanes;
+        }
+
+        static int FirstFull(Lane[] lanes)
+        {
+            for (int j = 0; j < lanes.Length; j++)
+            {
+                if (!lanes[j].Strip)
+                    return j;
+            }
+            return 0;
+        }
+
+        // NB: the lane under the pointer, kept while a button is held so a drag stays in the lane it began in.
+        int InputLane(Lane[] lanes)
+        {
+            if (!ImGui.IsAnyMouseDown())
+            {
+                var x = ImGui.GetMousePos().X;
+                for (int j = lanes.Length - 1; j >= 0; j--)
+                {
+                    if (!lanes[j].Strip && x >= lanes[j].LabelLeft)
+                    {
+                        inputLane = j;
+                        break;
+                    }
+                }
+            }
+
+            if (inputLane >= lanes.Length || lanes[inputLane].Strip)
+                inputLane = FirstFull(lanes);
+            return inputLane;
+        }
+
+        /// <summary>
+        /// Draws the button that widens lane <paramref name="lane"/>, shrinking the others to strips, or that gives
+        /// the lanes equal widths again while it is the one widened.
+        /// </summary>
+        /// <remarks>
+        /// Faint until hovered, as the maximize button is.
+        /// </remarks>
+        void DrawLaneButton(ImDrawListPtr draw, int lane, Vector2 corner, float width)
+        {
+            var side = Math.Min(width, ImGui.GetFrameHeight());
+            var min = new Vector2(corner.X + (width - side) / 2, corner.Y + ImGui.GetStyle().FramePadding.Y);
+            var max = min + new Vector2(side);
+
+            ImGui.SetCursorScreenPos(min);
+            if (ImGui.InvisibleButton($"##lane{lane}", new Vector2(side)))
+                expandedLane = expandedLane == lane ? -1 : lane;
+            var hovered = ImGui.IsItemHovered();
+            var widened = expandedLane == lane;
+            ImGuiWidgets.Tooltip(widened ? "Give the lanes equal widths again" : "Widen this lane, shrinking the others");
+
+            if (hovered)
+                draw.AddRectFilled(min, max, ImGui.GetColorU32(ImGuiCol.ButtonHovered), ImGui.GetStyle().ChildRounding);
+
+            // NB: arrows out from the middle to widen, and in toward it to give the width back.
+            var color = ImGui.GetColorU32(ImGuiCol.Text, hovered ? 1f : 0.25f);
+            var middle = (min + max) / 2;
+            var reach = MathF.Floor(side * 0.3f);
+            var head = MathF.Floor(side * 0.15f);
+            draw.AddLine(middle - new Vector2(reach, 0), middle + new Vector2(reach, 0), color);
+            foreach (var direction in new[] { -1f, 1f })
+            {
+                var tip = widened ? middle + new Vector2(direction * head, 0) : middle + new Vector2(direction * reach, 0);
+                var back = widened ? head : -head;
+                draw.AddLine(tip, tip + new Vector2(direction * back, -head), color);
+                draw.AddLine(tip, tip + new Vector2(direction * back, head), color);
             }
         }
 
@@ -307,7 +510,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// Each row is one row height tall, at its slot: its offset from the top in row heights, k for row k
-        /// or where the owner's positions put it, which can leave slots empty or stack rows.
+        /// or where the owner's positions put it, which can leave slots empty or stack rows. A lane's layout spans
+        /// its own rows, and its slots count from the top of every lane, so lanes line up.
         /// </remarks>
         internal readonly struct RowLayout
         {
@@ -342,12 +546,15 @@ namespace OpenEphys.EphysVisualization.Design
 
             public float Slot(int row) => SlotOf(Slots, row);
 
+            // NB: the slot at the origin: the first row's when evenly spaced, or else the top of every lane.
+            public float Base => Slots is null ? FirstRow : 0;
+
             /// <summary>
             /// The slot at screen height <paramref name="y"/>, with its fractional part.
             /// </summary>
-            public float SlotAt(float y) => Slot(FirstRow) + (y - Origin) / RowHeight;
+            public float SlotAt(float y) => Base + (y - Origin) / RowHeight;
 
-            public float Height => LastRow > FirstRow ? (Slot(LastRow - 1) + 1 - Slot(FirstRow)) * RowHeight : 0;
+            public float Height => LastRow > FirstRow ? (Slot(LastRow - 1) + 1 - Base) * RowHeight : 0;
 
             public int FirstVisible => Slots is null
                 ? Math.Max(FirstRow, RowAt(Top))
@@ -357,7 +564,7 @@ namespace OpenEphys.EphysVisualization.Design
                 ? Math.Min(LastRow, FirstRow + (int)Math.Ceiling((Bottom - Origin) / RowHeight))
                 : FirstRowFrom(SlotAt(Bottom), inclusive: true);
 
-            public float RowTop(int row) => Origin + (Slot(row) - Slot(FirstRow)) * RowHeight;
+            public float RowTop(int row) => Origin + (Slot(row) - Base) * RowHeight;
 
             /// <summary>
             /// The row at screen height <paramref name="y"/>: the one drawn last if rows share a slot, -1 in a gap,
@@ -398,28 +605,35 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: an expanded channel fills the plot alone, so its layout is one row, wherever its slot.
-        RowLayout LayoutRows(int rows, float top, float bottom, float origin, float available)
+        // NB: an expanded channel fills the plot alone, so its layout is one row, wherever its slot or lane.
+        RowLayout[] LayoutRows(int rows, float top, float bottom, float origin, float available)
         {
             if (expandedRow >= rows)
                 Collapse();
 
-            return expandedRow >= 0
-                ? new RowLayout(expandedRow, expandedRow + 1, available, top, bottom, origin)
-                : new RowLayout(0, rows, ChannelHeight, top, bottom, origin, SlotsFor(rows));
+            if (expandedRow >= 0)
+                return new[] { new RowLayout(expandedRow, expandedRow + 1, available, top, bottom, origin) };
+
+            var slots = SlotsFor(rows);
+            var starts = LanesFor(rows) ?? new[] { 0, rows };
+            var layouts = new RowLayout[starts.Length - 1];
+            for (int lane = 0; lane < layouts.Length; lane++)
+                layouts[lane] = new RowLayout(starts[lane], starts[lane + 1], ChannelHeight, top, bottom, origin, slots);
+
+            if (expandedLane >= layouts.Length)
+                expandedLane = -1;
+            return layouts;
         }
 
         static float LabelColumnWidth(int labelDigits) => labelDigits * ImGui.CalcTextSize("0").X;
 
         static readonly int[] LabelSteps = { 1, 2, 5, 10 };
 
-        unsafe void ChannelLabels(in RowLayout layout, int labelDigits, int hoveredRow)
+        unsafe void ChannelLabels(in RowLayout layout, int labelDigits, int hoveredRow, float left, float right)
         {
             var labelBuffer = stackalloc byte[32];
             var label = new StrBuilder(labelBuffer, 32);
             var textOffset = (layout.RowHeight - ImGui.GetTextLineHeight()) / 2;
-            var left = ImGui.GetCursorScreenPos().X;
-            var right = left + ImGui.GetContentRegionAvail().X;
             var draw = ImGui.GetWindowDrawList();
 
             // NB: rows shorter than the text get every 2nd, 5th or 10th label, the smallest step whose labels
@@ -439,16 +653,27 @@ namespace OpenEphys.EphysVisualization.Design
 
             var selected = selectedRow;
             var rows = layout;
+            // NB: only by rows of this lane, since another lane's labels are beside these rather than over them.
             bool Crowds(int row, int priority) =>
-                priority >= 0 && priority != row && Math.Abs(rows.RowTop(row) - rows.RowTop(priority)) < lineHeight;
+                priority >= rows.FirstRow && priority < rows.LastRow && priority != row &&
+                Math.Abs(rows.RowTop(row) - rows.RowTop(priority)) < lineHeight;
 
             // NB: uneven spacing can put a stepped label nearer the previous one than the step assumes, or on top
             // of it where rows share a slot; skip those too.
             var nextFree = float.NegativeInfinity;
 
+            // NB: counted from the lane's first row, and by height too, so a lane of few or sparse rows still gets
+            // labels.
+            var lastStep = layout.RowTop(layout.FirstRow + (layout.FirstVisible - layout.FirstRow) / step * step);
+
             // NB: an expanded channel is named inside the plot instead, by AmplitudeLabels.
             for (int i = layout.FirstVisible; i < layout.LastVisible && expandedRow < 0; i++)
             {
+                var stepped = (i - layout.FirstRow) % step == 0 ||
+                    layout.RowTop(i) >= lastStep + step * rowHeight - 0.5f;
+                if (stepped)
+                    lastStep = layout.RowTop(i);
+
                 var name = ChannelOf(i);
                 label.Reset();
                 for (var n = DigitCount(name); n < labelDigits; n++)
@@ -483,7 +708,7 @@ namespace OpenEphys.EphysVisualization.Design
 
                 var priority = i == hoveredRow || i == selected || clipping;
                 if (!priority &&
-                    (i % step != 0 || layout.RowTop(i) < nextFree || Crowds(i, hoveredRow) || Crowds(i, selected)))
+                    (!stepped || layout.RowTop(i) < nextFree || Crowds(i, hoveredRow) || Crowds(i, selected)))
                     continue;
 
                 // NB: half a pixel of slack, as rounding can leave evenly spaced labels that much short.
@@ -580,7 +805,9 @@ namespace OpenEphys.EphysVisualization.Design
         /// </remarks>
         static void DrawRowBand(ImDrawListPtr draw, in PlotFrame frame)
         {
-            if (frame.Selected < 0 || frame.Expanded >= 0 || frame.Heatmap)
+            var layout = frame.Layout;
+            if (frame.Selected < layout.FirstRow || frame.Selected >= layout.LastRow || frame.Expanded >= 0 ||
+                frame.Heatmap)
                 return;
 
             var top = MathF.Floor(frame.Layout.RowTop(frame.Selected));
@@ -775,8 +1002,12 @@ namespace OpenEphys.EphysVisualization.Design
                 if (Paused && position > CursorPosition)
                     seconds -= pausedTimebase;
 
-                var label = $"{seconds:g} s";
-                draw.AddText(new Vector2(x - ImGui.CalcTextSize(label).X / 2, labelY), textColor, label);
+                // NB: kept within the plot, since one at an edge would be clipped by the window or run into the
+                // next lane's.
+                var label = $"{seconds:g}";
+                var labelWidth = ImGui.CalcTextSize(label).X;
+                var labelX = Math.Max(left, Math.Min(left + width - labelWidth, x - labelWidth / 2));
+                draw.AddText(new Vector2(labelX, labelY), textColor, label);
             }
 
             if (expandedRow < 0)

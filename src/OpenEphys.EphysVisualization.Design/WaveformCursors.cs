@@ -156,9 +156,10 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Moves a cursor by dragging its line, and draws the cursors.
+        /// Moves a cursor by dragging its line, in the lane that is <paramref name="interactive"/>, and draws the
+        /// cursors in <paramref name="frame"/>'s lane.
         /// </summary>
-        public void Draw(ImDrawListPtr draw, in PlotFrame frame)
+        public void Draw(ImDrawListPtr draw, in PlotFrame frame, bool interactive = true)
         {
             if (!Show)
                 return;
@@ -173,7 +174,7 @@ namespace OpenEphys.EphysVisualization.Design
                 pointer.X >= left && pointer.X < left + width &&
                 pointer.Y >= top && pointer.Y < bottom;
 
-            if (grabbed >= 0)
+            if (interactive && grabbed >= 0)
             {
                 if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
                     grabbed = -1;
@@ -184,7 +185,7 @@ namespace OpenEphys.EphysVisualization.Design
                     ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEw);
                 }
             }
-            else if (inPlot)
+            else if (interactive && inPlot)
             {
                 var near = -1;
                 var nearest = GrabDistance;
@@ -220,7 +221,9 @@ namespace OpenEphys.EphysVisualization.Design
                 else
                     DottedLine(draw, x, top, bottom, weight);
 
-                if (TryRead(frame, positions[i], out var min, out var max))
+                var read = Row(frame);
+                var inLane = read >= frame.Layout.FirstRow && read < frame.Layout.LastRow;
+                if (inLane && TryRead(frame, positions[i], out var min, out var max))
                     Values(draw, frame, min, max, x);
             }
 

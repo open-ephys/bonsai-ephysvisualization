@@ -9,6 +9,8 @@ uniform sampler2D colorTexture;
 uniform sampler2D colormapTexture;
 uniform int colormapLength;
 
+// The pixel column the lane begins at, in the texture that spans every lane.
+uniform int left;
 uniform int firstVisible;
 uniform int lastVisible;
 uniform float origin;
@@ -20,7 +22,7 @@ out vec4 fragmentColor;
 
 void main()
 {
-    int p = int(gl_FragCoord.x);
+    int p = int(gl_FragCoord.x) - left;
     float y = floor(gl_FragCoord.y);
 
     // NB: row edges fall on whole pixels, as the plot's do. The row is the last visible one whose top is at or

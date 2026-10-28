@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using OpenCV.Net;
@@ -33,6 +34,7 @@ namespace OpenEphys.EphysVisualization.Design
         int height;
         int texture;
         Key key;
+        (int Offset, int First, int Last)[] drawnLanes = Array.Empty<(int, int, int)>();
         bool[] drawnHidden = Array.Empty<bool>();
         uint[] drawnColors = Array.Empty<uint>();
         int drawnCursor = -1;
@@ -43,18 +45,21 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// Must run with the plot's GL context current, as it is during a frame. The texture lives in that context
-        /// and goes with it.
+        /// and goes with it. It spans every lane, each drawn in its own stretch of it.
         /// </remarks>
-        /// <param name="frame">The plot as it is drawn this frame.</param>
+        /// <param name="frames">The plot as it is drawn this frame, one for each lane, from the left.</param>
         /// <param name="colors">Each channel's color, packed as RGBA.</param>
         /// <param name="sweepCursor">The column a live sweep is filling, or -1 when not live.</param>
         /// <param name="samples">Samples that have arrived so far, which only grows while live.</param>
         /// <param name="wholeSweeps">
         /// Whether the envelope holds the last whole sweep, as at fast sweeps, rather than the one being written.
         /// </param>
-        public unsafe void Draw(in PlotFrame frame, uint[] colors, int sweepCursor, long samples, bool wholeSweeps)
+        public unsafe void Draw(PlotFrame[] frames, uint[] colors, int sweepCursor, long samples, bool wholeSweeps)
         {
-            var w = (int)frame.Width;
+            var frame = frames[0];
+            var lanes = frames.Select(f => (Offset: (int)(MathF.Floor(f.Left) - MathF.Floor(frame.Left)),
+                f.Layout.FirstVisible, f.Layout.LastVisible)).ToArray();
+            var w = lanes[lanes.Length - 1].Offset + (int)frames[frames.Length - 1].Width;
             var h = (int)(frame.Bottom - frame.Top);
             var layout = frame.Layout;
             var hidden = frame.Hidden;
@@ -84,6 +89,7 @@ namespace OpenEphys.EphysVisualization.Design
             // few frames anyway.
             var columns = frame.Envelope.Cols;
             var all = current != key ||
+                !lanes.AsSpan().SequenceEqual(drawnLanes) ||
                 !hidden.AsSpan().SequenceEqual(drawnHidden) ||
                 !colors.AsSpan().SequenceEqual(drawnColors);
             (int First, int Last) run = (0, -1);
@@ -109,12 +115,13 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 gpu.Upload(frame.Envelope, run.First, run.Last, reallocate: all);
                 gpu.Upload(frame.Envelope, wrapped.First, wrapped.Last, reallocate: false);
-                gpu.Draw(frame, colors, texture, w, h);
+                gpu.Draw(frames, lanes.Select(lane => lane.Offset).ToArray(), colors, texture, w, h);
             }
 
             if (all)
             {
                 key = current;
+                drawnLanes = lanes;
                 drawnHidden = (bool[])hidden.Clone();
                 drawnColors = (uint[])colors.Clone();
             }
@@ -354,15 +361,18 @@ namespace OpenEphys.EphysVisualization.Design
             }
 
             /// <summary>
-            /// Draws the traces or the heatmap into <paramref name="target"/> from the envelope as uploaded.
+            /// Draws the traces or the heatmap into <paramref name="target"/> from the envelope as uploaded, each lane
+            /// at its offset.
             /// </summary>
-            public void Draw(in PlotFrame frame, uint[] colors, int target, int width, int height)
+            public void Draw(PlotFrame[] frames, int[] offsets, uint[] colors, int target, int textureWidth, int height)
             {
+                var frame = frames[0];
                 var layout = frame.Layout;
                 var heatmapView = frame.Heatmap && frame.Expanded < 0;
+                var width = (int)frame.Width;
 
-                // NB: which columns each pixel takes its min and max from is the same for every channel, so it is
-                // worked out once a frame, here, rather than by every channel's pass in the shaders.
+                // NB: which columns each pixel takes its min and max from is the same for every channel and every
+                // lane, so it is worked out once a frame, here, rather than by every channel's pass in the shaders.
                 if (cellData.Length != width * 3)
                     cellData = new float[width * 3];
                 for (int p = 0; p < width; p++)
@@ -412,7 +422,7 @@ namespace OpenEphys.EphysVisualization.Design
                     return;
                 }
 
-                GL.Viewport(0, 0, width, height);
+                GL.Viewport(0, 0, textureWidth, height);
                 GL.Disable(EnableCap.ScissorTest);
                 GL.Disable(EnableCap.Blend);
                 GL.Disable(EnableCap.DepthTest);
@@ -429,32 +439,40 @@ namespace OpenEphys.EphysVisualization.Design
                 Bind(program, "colorTexture", 3, colorTexture);
                 Bind(program, "slotTexture", 5, slotTexture);
                 GL.Uniform1(GL.GetUniformLocation(program, "combines"), frame.Axis.Combines ? 1 : 0);
-                GL.Uniform1(GL.GetUniformLocation(program, "firstSlot"), layout.Slot(layout.FirstRow));
-                GL.Uniform1(GL.GetUniformLocation(program, "firstVisible"), layout.FirstVisible);
+                GL.Uniform1(GL.GetUniformLocation(program, "firstSlot"), layout.Base);
                 GL.Uniform1(GL.GetUniformLocation(program, "origin"), Origin(frame));
                 GL.Uniform1(GL.GetUniformLocation(program, "rowHeight"), layout.RowHeight);
 
-                var visible = layout.LastVisible - layout.FirstVisible;
-                if (heatmapView)
+                for (int lane = 0; lane < frames.Length; lane++)
                 {
-                    Bind(program, "colormapTexture", 4, colormap);
-                    GL.Uniform1(GL.GetUniformLocation(program, "colormapLength"), Icefire.Map.Length);
-                    GL.Uniform1(GL.GetUniformLocation(program, "lastVisible"), layout.LastVisible);
-                    GL.Uniform1(GL.GetUniformLocation(program, "range"), (float)frame.Range);
-                    GL.Uniform1(GL.GetUniformLocation(program, "threshold"), (float)frame.ColorThreshold);
-                    GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
-                }
-                else if (visible > 0)
-                {
-                    var (_, scale) = frame.ValueMapping(layout.FirstVisible);
-                    GL.Uniform1(GL.GetUniformLocation(program, "width"), width);
-                    GL.Uniform1(GL.GetUniformLocation(program, "height"), height);
-                    GL.Uniform1(GL.GetUniformLocation(program, "center"), (float)frame.Center);
-                    GL.Uniform1(GL.GetUniformLocation(program, "scale"), scale);
+                    var rows = frames[lane].Layout;
+                    GL.Viewport(offsets[lane], 0, width, height);
+                    GL.Uniform1(GL.GetUniformLocation(program, "firstVisible"), rows.FirstVisible);
 
-                    // NB: an expanded channel is drawn alone and translucent, under the outlines that show its shape.
-                    GL.Uniform1(GL.GetUniformLocation(program, "alpha"), frame.Expanded >= 0 ? 0x40 / 255f : 1f);
-                    GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, visible * width);
+                    var visible = rows.LastVisible - rows.FirstVisible;
+                    if (heatmapView)
+                    {
+                        Bind(program, "colormapTexture", 4, colormap);
+                        GL.Uniform1(GL.GetUniformLocation(program, "colormapLength"), Icefire.Map.Length);
+                        GL.Uniform1(GL.GetUniformLocation(program, "left"), offsets[lane]);
+                        GL.Uniform1(GL.GetUniformLocation(program, "lastVisible"), rows.LastVisible);
+                        GL.Uniform1(GL.GetUniformLocation(program, "range"), (float)frame.Range);
+                        GL.Uniform1(GL.GetUniformLocation(program, "threshold"), (float)frame.ColorThreshold);
+                        GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
+                    }
+                    else if (visible > 0)
+                    {
+                        var (_, scale) = frame.ValueMapping(rows.FirstVisible);
+                        GL.Uniform1(GL.GetUniformLocation(program, "width"), width);
+                        GL.Uniform1(GL.GetUniformLocation(program, "height"), height);
+                        GL.Uniform1(GL.GetUniformLocation(program, "center"), (float)frame.Center);
+                        GL.Uniform1(GL.GetUniformLocation(program, "scale"), scale);
+
+                        // NB: an expanded channel is drawn alone and translucent, under the outlines that show its
+                        // shape.
+                        GL.Uniform1(GL.GetUniformLocation(program, "alpha"), frame.Expanded >= 0 ? 0x40 / 255f : 1f);
+                        GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, visible * width);
+                    }
                 }
 
                 GL.BindVertexArray(0);

@@ -27,7 +27,9 @@ OpenEphys.EphysVisualization.Design.RowOrder.Channels.get -> int[]!
 OpenEphys.EphysVisualization.Design.RowOrder.Channels.init -> void
 OpenEphys.EphysVisualization.Design.RowOrder.Positions.get -> float[]?
 OpenEphys.EphysVisualization.Design.RowOrder.Positions.init -> void
-OpenEphys.EphysVisualization.Design.RowOrder.RowOrder(int[]! Channels, float[]? Positions = null) -> void
+OpenEphys.EphysVisualization.Design.RowOrder.Lanes.get -> int[]?
+OpenEphys.EphysVisualization.Design.RowOrder.Lanes.init -> void
+OpenEphys.EphysVisualization.Design.RowOrder.RowOrder(int[]! Channels, float[]? Positions = null, int[]? Lanes = null) -> void
 OpenEphys.EphysVisualization.Design.WaveformScope
 OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.get -> float
 OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.set -> void
