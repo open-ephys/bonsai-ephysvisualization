@@ -627,7 +627,21 @@ namespace OpenEphys.EphysVisualization.Design
 
         static float LabelColumnWidth(int labelDigits) => labelDigits * ImGui.CalcTextSize("0").X;
 
-        static readonly int[] LabelSteps = { 1, 2, 5, 10 };
+        static readonly int[] LabelSteps = { 1, 2, 5 };
+
+        // NB: the half pixel of slack is as much as rounding can leave evenly spaced labels short.
+        static int GridStep(float rowHeight, float lineHeight)
+        {
+            for (var decade = 1; decade < 1_000_000; decade *= 10)
+            {
+                foreach (var factor in LabelSteps)
+                {
+                    if (factor * decade * rowHeight >= lineHeight - 0.5f)
+                        return factor * decade;
+                }
+            }
+            return 1_000_000;
+        }
 
         unsafe void ChannelLabels(in RowLayout layout, int labelDigits, int hoveredRow, float left, float right)
         {
@@ -636,20 +650,12 @@ namespace OpenEphys.EphysVisualization.Design
             var textOffset = (layout.RowHeight - ImGui.GetTextLineHeight()) / 2;
             var draw = ImGui.GetWindowDrawList();
 
-            // NB: rows shorter than the text get every 2nd, 5th or 10th label, the smallest step whose labels
-            // clear each other. The hovered channel and the one the cursors read are always labeled, and the
-            // stepped labels they would overlap give way to them.
+            // NB: rows shorter than the text are labeled on a grid of 1, 2, 5, 10, 20, ... slots, the finest whose
+            // cells are a line tall, each cell labeling its first row. The grid is fixed to the slots, so labels
+            // keep their places as the rows scroll, and fall at even depths where rows lie unevenly. The hovered
+            // channel and the one the cursors read are always labeled, and hide only the grid labels they overlap.
             var lineHeight = ImGui.GetTextLineHeight();
-            var rowHeight = layout.RowHeight;
-            var step = LabelSteps[LabelSteps.Length - 1];
-            foreach (var candidate in LabelSteps)
-            {
-                if (candidate * rowHeight >= lineHeight)
-                {
-                    step = candidate;
-                    break;
-                }
-            }
+            var step = GridStep(layout.RowHeight, lineHeight);
 
             var selected = selectedRow;
             var rows = layout;
@@ -658,21 +664,24 @@ namespace OpenEphys.EphysVisualization.Design
                 priority >= rows.FirstRow && priority < rows.LastRow && priority != row &&
                 Math.Abs(rows.RowTop(row) - rows.RowTop(priority)) < lineHeight;
 
-            // NB: uneven spacing can put a stepped label nearer the previous one than the step assumes, or on top
-            // of it where rows share a slot; skip those too.
+            // NB: the slack keeps a slot computed as 2.9999 in the cell of 3.
+            int Cell(int row) => (int)MathF.Floor(rows.Slot(row) / step + 0.001f);
+
+            // NB: a cell's first row can lie near its end, and the next cell's near its start; the second is skipped.
             var nextFree = float.NegativeInfinity;
 
-            // NB: counted from the lane's first row, and by height too, so a lane of few or sparse rows still gets
-            // labels.
-            var lastStep = layout.RowTop(layout.FirstRow + (layout.FirstVisible - layout.FirstRow) / step * step);
+            // NB: from the first row whose label reaches into view, so that the grid labels in view are spaced as
+            // they would be scrolled further down.
+            var first = layout.FirstVisible;
+            while (first > layout.FirstRow && layout.RowTop(first - 1) + lineHeight > layout.Top)
+                first--;
 
             // NB: an expanded channel is named inside the plot instead, by AmplitudeLabels.
-            for (int i = layout.FirstVisible; i < layout.LastVisible && expandedRow < 0; i++)
+            for (int i = first; i < layout.LastVisible && expandedRow < 0; i++)
             {
-                var stepped = (i - layout.FirstRow) % step == 0 ||
-                    layout.RowTop(i) >= lastStep + step * rowHeight - 0.5f;
-                if (stepped)
-                    lastStep = layout.RowTop(i);
+                var gridded = (i == layout.FirstRow || Cell(i) != Cell(i - 1)) && layout.RowTop(i) >= nextFree;
+                if (gridded)
+                    nextFree = layout.RowTop(i) + lineHeight - 0.5f;
 
                 var name = ChannelOf(i);
                 label.Reset();
@@ -707,13 +716,8 @@ namespace OpenEphys.EphysVisualization.Design
                 }
 
                 var priority = i == hoveredRow || i == selected || clipping;
-                if (!priority &&
-                    (!stepped || layout.RowTop(i) < nextFree || Crowds(i, hoveredRow) || Crowds(i, selected)))
+                if (!priority && (!gridded || Crowds(i, hoveredRow) || Crowds(i, selected)))
                     continue;
-
-                // NB: half a pixel of slack, as rounding can leave evenly spaced labels that much short.
-                if (!priority)
-                    nextFree = layout.RowTop(i) + lineHeight - 0.5f;
 
                 // NB: drawn rather than laid out, since a label on a row shorter than the text reaches past it,
                 // and on the last rows would stretch what the rows scroll through and bring up a scroll bar.
