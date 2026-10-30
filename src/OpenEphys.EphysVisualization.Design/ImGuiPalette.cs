@@ -67,7 +67,7 @@ namespace OpenEphys.EphysVisualization.Design
         public static readonly uint Grey0xCC = 0xFFCCCCCCu;
 
         /// <summary>
-        /// Gets the Open Ephys GUI's classic sixteen-color LFP viewer channel palette.
+        /// Gets the Open Ephys GUI's classic sixteen-color waveform scope channel palette.
         /// </summary>
         public static IReadOnlyList<uint> OpenEphysGuiLfp { get; } = new[]
         {

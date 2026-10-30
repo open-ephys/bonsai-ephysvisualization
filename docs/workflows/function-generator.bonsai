@@ -18,14 +18,14 @@
           <dsp:Phase>0</dsp:Phase>
         </Combinator>
       </Expression>
-      <Expression xsi:type="ephysviz:LfpViewer">
+      <Expression xsi:type="ephysviz:WaveformScope">
         <ephysviz:Timebase>0.5</ephysviz:Timebase>
         <ephysviz:RangeAmplitude>1000</ephysviz:RangeAmplitude>
         <ephysviz:ChannelHeight>838</ephysviz:ChannelHeight>
         <ephysviz:Palette>Custom</ephysviz:Palette>
         <ephysviz:SampleRate>44100</ephysviz:SampleRate>
-        <ephysviz:SaturationLow xsi:nil="true" />
-        <ephysviz:SaturationHigh xsi:nil="true" />
+        <ephysviz:SaturationLow>0</ephysviz:SaturationLow>
+        <ephysviz:SaturationHigh>255</ephysviz:SaturationHigh>
       </Expression>
     </Nodes>
     <Edges>

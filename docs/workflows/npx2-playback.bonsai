@@ -18,9 +18,10 @@
           <dsp:Layout>ColumnMajor</dsp:Layout>
         </Combinator>
       </Expression>
-      <Expression xsi:type="ephysviz:LfpViewer">
-        <ephysviz:Timebase>5</ephysviz:Timebase>
+      <Expression xsi:type="ephysviz:WaveformScope">
+        <ephysviz:Timebase>0.25</ephysviz:Timebase>
         <ephysviz:RangeAmplitude>250</ephysviz:RangeAmplitude>
+        <ephysviz:RangeHeatmap>111</ephysviz:RangeHeatmap>
         <ephysviz:ChannelHeight>30</ephysviz:ChannelHeight>
         <ephysviz:Scale>0.195</ephysviz:Scale>
         <ephysviz:SaturationLow xsi:nil="true" />

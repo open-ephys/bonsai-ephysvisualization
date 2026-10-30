@@ -55,7 +55,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         [Fact]
         public void Timebase_IsNoLongerThanThePausedRecordCanFill()
         {
-            var settings = new LfpViewer { Timebase = 10 };
+            var settings = new WaveformScope { Timebase = 10 };
             using var panel = Panel(historySeconds: 12, settings);
             Write(panel, samples: 3200);
             Assert.Equal(10, panel.Timebase, 12);
@@ -66,8 +66,8 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(10, settings.Timebase, 12);
         }
 
-        static ImGuiWaveformPanel Panel(double historySeconds, LfpViewer? settings = null) =>
-            new(settings ?? new LfpViewer(), (long)(historySeconds * SampleRate * sizeof(float)), maxColumns: 1000);
+        static ImGuiWaveformPanel Panel(double historySeconds, WaveformScope? settings = null) =>
+            new(settings ?? new WaveformScope(), (long)(historySeconds * SampleRate * sizeof(float)), maxColumns: 1000);
 
         static void Write(ImGuiWaveformPanel panel, int samples)
         {

@@ -1,16 +1,16 @@
-# LFP Viewer
+# Waveform Scope
 
-The [LfpViewer](xref:OpenEphys.EphysVisualization.Design.LfpViewer) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. Data in .NET arrays can be converted to matrices first (see [Array input](#array-input)). The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
+The [WaveformScope](xref:OpenEphys.EphysVisualization.Design.WaveformScope) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. Data in .NET arrays can be converted to matrices first (see [Array input](#array-input)). The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
 
 ## Getting started
 
 This workflow plays back a NeuropixelsV2 recording, saved by the Open Ephys GUI as 384 channels of signed 16-bit samples at 30 kHz, with MatrixReader, and loops it with Repeat. To use it, set the reader's Path to a recording of your own, and its ChannelCount, SampleRate and Depth to match it.
 
 :::workflow
-![A Neuropixels recording played from a file into LfpViewer](~/workflows/npx2-playback.bonsai)
+![A Neuropixels recording played from a file into WaveformScope](~/workflows/npx2-playback.bonsai)
 :::
 
-The LfpViewer's settings describe the samples it is given:
+The WaveformScope's settings describe the samples it is given:
 
 - SampleRate is left at its default of 30000, the recording's rate.
 - Scale is 0.195, the microvolts each count stands for in this recording, so the amplitudes shown are in microvolts, though they are shown without a unit, since the viewer cannot know that.
@@ -28,7 +28,7 @@ Every control has a tooltip saying what it does and naming its keys and gestures
 The viewer takes OpenCV matrices. Data held in .NET arrays, such as arrays from a device or a script that never uses OpenCV, can be converted into matrices by Bonsai.Dsp's [ConvertFromArray](xref:Bonsai.Dsp.ConvertFromArray) placed before the viewer. Its Size gives the matrix's width, which is its number of columns, and its height, which is its number of rows. When each channel's samples are stored together, the width is the number of samples in each array and the height is the number of channels:
 
 :::workflow
-![Arrays with each channel's samples together, converted for LfpViewer](~/workflows/array-input.bonsai)
+![Arrays with each channel's samples together, converted for WaveformScope](~/workflows/array-input.bonsai)
 :::
 
 Here the arrays come from FunctionGenerator and ConvertToArray, so the workflow runs as it is. Each array holds 300 samples of one sine wave, which ConvertFromArray cuts into 10 rows of 30 samples, so the viewer shows 10 channels sampled at 3 kHz.
@@ -36,7 +36,7 @@ Here the arrays come from FunctionGenerator and ConvertToArray, so the workflow 
 When each sample's channels are stored together, so that the channels are interleaved, Size is the other way round, with the channels as the width. Transpose then turns the matrix so that its rows are the channels:
 
 :::workflow
-![Interleaved arrays, converted and transposed for LfpViewer](~/workflows/array-input-interleaved.bonsai)
+![Interleaved arrays, converted and transposed for WaveformScope](~/workflows/array-input-interleaved.bonsai)
 :::
 
 Here the arrays come from the same kind of generator, making a 100 Hz sine wave. Its consecutive values go to the 10 channels in turn, so each channel holds every tenth value, and the viewer shows 10 channels sampled at 3 kHz.
@@ -54,10 +54,10 @@ The display's settings are properties of the node, saved with the workflow. The 
 
 | Property | Description |
 |---|---|
-| [SampleRate](xref:OpenEphys.EphysVisualization.Design.LfpViewer.SampleRate) | Each channel is sampled at this rate, in Hz, which sets the time axis. |
-| [Scale](xref:OpenEphys.EphysVisualization.Design.LfpViewer.Scale), [Offset](xref:OpenEphys.EphysVisualization.Design.LfpViewer.Offset) | What is drawn is (sample − Offset) × Scale, as when turning ADC counts into microvolts. The viewer cannot know what unit that gives, so amplitudes are shown without a unit. The expanded channel's amplitude per division is the one exception, which reads a.u./div, for arbitrary units. |
-| [SaturationLow](xref:OpenEphys.EphysVisualization.Design.LfpViewer.SaturationLow), [SaturationHigh](xref:OpenEphys.EphysVisualization.Design.LfpViewer.SaturationHigh) | A channel is marked as clipping when a sample, before Offset and Scale are applied, reaches either of these values (see [Clipping](#clipping)). When they are left empty, the limits of the input's integer type are used, such as 0 and 65535 for unsigned 16-bit samples, and floating point input is not checked. An ADC that does not fill its type, such as a 10-bit ADC in 16-bit samples, never reaches those limits, so for it they need to be set. |
-| [HistorySize](xref:OpenEphys.EphysVisualization.Design.LfpViewer.HistorySize) | This is the memory, in megabytes, given to the record of recent signal that a paused view is redrawn from. How many seconds that holds depends on the channel count and sample rate, and is shown in the control panel. |
+| [SampleRate](xref:OpenEphys.EphysVisualization.Design.WaveformScope.SampleRate) | Each channel is sampled at this rate, in Hz, which sets the time axis. |
+| [Scale](xref:OpenEphys.EphysVisualization.Design.WaveformScope.Scale), [Offset](xref:OpenEphys.EphysVisualization.Design.WaveformScope.Offset) | What is drawn is (sample − Offset) × Scale, as when turning ADC counts into microvolts. The viewer cannot know what unit that gives, so amplitudes are shown without a unit. The expanded channel's amplitude per division is the one exception, which reads a.u./div, for arbitrary units. |
+| [SaturationLow](xref:OpenEphys.EphysVisualization.Design.WaveformScope.SaturationLow), [SaturationHigh](xref:OpenEphys.EphysVisualization.Design.WaveformScope.SaturationHigh) | A channel is marked as clipping when a sample, before Offset and Scale are applied, reaches either of these values (see [Clipping](#clipping)). When they are left empty, the limits of the input's integer type are used, such as 0 and 65535 for unsigned 16-bit samples, and floating point input is not checked. An ADC that does not fill its type, such as a 10-bit ADC in 16-bit samples, never reaches those limits, so for it they need to be set. |
+| [HistorySize](xref:OpenEphys.EphysVisualization.Design.WaveformScope.HistorySize) | This is the memory, in megabytes, given to the record of recent signal that a paused view is redrawn from. How many seconds that holds depends on the channel count and sample rate, and is shown in the control panel. |
 
 ### Display
 
@@ -65,16 +65,16 @@ Each of these is also a control in the viewer (see [Control panel](#control-pane
 
 | Property | Control |
 |---|---|
-| [Timebase](xref:OpenEphys.EphysVisualization.Design.WaveformScope.Timebase) | Timebase |
-| [RangeAmplitude](xref:OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude) | Range |
-| [RangeHeatmap](xref:OpenEphys.EphysVisualization.Design.WaveformScope.RangeHeatmap) | The range box in Color |
-| [ChannelHeight](xref:OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight), [FitChannels](xref:OpenEphys.EphysVisualization.Design.WaveformScope.FitChannels) | Chan. Height and Fit |
-| [Palette](xref:OpenEphys.EphysVisualization.Design.WaveformScope.Palette), [CustomColor](xref:OpenEphys.EphysVisualization.Design.WaveformScope.CustomColor) | Palette |
-| [ColorGroupingEnabled](xref:OpenEphys.EphysVisualization.Design.LfpViewer.ColorGroupingEnabled), [ColorGrouping](xref:OpenEphys.EphysVisualization.Design.LfpViewer.ColorGrouping) | Color Groups |
-| [ShowHeatmap](xref:OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap), [ColorThreshold](xref:OpenEphys.EphysVisualization.Design.WaveformScope.ColorThreshold) | Heatmap and Color |
-| [ShowClipping](xref:OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping) | Clipping |
-| [HiddenChannels](xref:OpenEphys.EphysVisualization.Design.WaveformScope.HiddenChannels) | The channel labels |
-| [Maximized](xref:OpenEphys.EphysVisualization.Design.WaveformScope.Maximized) | The maximize button |
+| [Timebase](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Timebase) | Timebase |
+| [RangeAmplitude](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.RangeAmplitude) | Range |
+| [RangeHeatmap](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.RangeHeatmap) | The range box in Color |
+| [ChannelHeight](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ChannelHeight), [FitChannels](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.FitChannels) | Chan. Height and Fit |
+| [Palette](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Palette), [CustomColor](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColor) | Palette |
+| [ColorGroupingEnabled](xref:OpenEphys.EphysVisualization.Design.WaveformScope.ColorGroupingEnabled), [ColorGrouping](xref:OpenEphys.EphysVisualization.Design.WaveformScope.ColorGrouping) | Color Groups |
+| [ShowHeatmap](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ShowHeatmap), [ColorThreshold](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ColorThreshold) | Heatmap and Color |
+| [ShowClipping](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ShowClipping) | Clipping |
+| [HiddenChannels](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.HiddenChannels) | The channel labels |
+| [Maximized](xref:OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Maximized) | The maximize button |
 
 ## Keys and mouse
 
@@ -93,7 +93,7 @@ Every key and gesture acts on a setting that a control in the control panel show
 [](#fig-stacked-gestures) runs through them on a recording.
 
 ^^^
-<video id="fig-stacked-gestures" controls preload="metadata" src="../images/lfp-viewer/npx2_stacked-view-gestures.webm"></video>
+<video id="fig-stacked-gestures" controls preload="metadata" src="../images/waveform-scope/npx2_stacked-view-gestures.webm"></video>
 ^^^ The keys and mouse are used on a NeuropixelsV2 recording. The wheel, then W and S, move through the channels, and Shift+W and Shift+S move most of a screen at a time. Ctrl+Wheel, then Ctrl+W and Ctrl+S, set the channel height, and Alt+Wheel, then Alt+W and Alt+S, set the gain. Space pauses the display, and Shift+Wheel, A and D, and Shift+A and Shift+D move back and forth through time. A middle-drag moves through the channels and time at once, and a Ctrl+drag zooms in on a pair of large spikes. The keys and buttons pressed are shown as they are used.
 
 ### Keys
@@ -153,7 +153,7 @@ Dragged zooms and gain round to three significant figures, and an axis answers o
 The control panel is the row of controls under the plot ([](#fig-control-panel)). Each control shows and sets one of the node's display settings.
 
 ^^^
-![LfpViewer control panel with numbered controls](~/images/lfp-viewer/control-strip.png){#fig-control-panel}
+![WaveformScope control panel with numbered controls](~/images/waveform-scope/control-strip.png){#fig-control-panel}
 ^^^ The control panel is shown in trace view, with color groups of 10 channels. Its numbers match those in the table below.
 
 | Control | Description |
@@ -170,7 +170,7 @@ The control panel is the row of controls under the plot ([](#fig-control-panel))
 | 9. Record bar and Record Length | The record of recent signal, which a paused view is redrawn from, is a ring buffer whose size is set by the node's HistorySize. The bar shows how full it is, and Record Length gives the seconds it holds out of the seconds it can hold. Once it is full, each new sample replaces the oldest, so it always holds the most recent signal, and the bar stays full. |
 
 ^^^
-![Traces in color groups](~/images/lfp-viewer/npx2_color-groups.png){#fig-color-groups}
+![Traces in color groups](~/images/waveform-scope/npx2_color-groups.png){#fig-color-groups}
 ^^^ Channels share colors in groups of 4, on the Open Ephys GUI palette. At 10 px a row, only every 2nd channel is labeled.
 
 ## Reading the plot
@@ -182,7 +182,7 @@ The plot shows each channel as a trace, or as a row of color in the heatmap, aga
 When the display is live, new samples are written across the plot from left to right, in sweeps. At short timebases, where a sweep would be too fast to follow, each frame instead shows the last whole sweep, so the traces appear complete at once, as on a triggered scope (see [How the display is drawn](#how-the-display-is-drawn)). When the display is paused, it holds still, and can be moved back through the record of recent signal ([](#fig-paused)).
 
 ^^^
-![A paused view with hidden and selected channels](~/images/lfp-viewer/npx2_plot-paused.png){#fig-paused}
+![A paused view with hidden and selected channels](~/images/waveform-scope/npx2_plot-paused.png){#fig-paused}
 ^^^ The view is paused and scrolled back through the record. Channels 6, 11, 12, 19 and 20 are hidden, so their labels are dimmed and their rows are empty. Channel 14 is selected, so its label is boxed and a band lies behind its row.
 
 | Element | Description |
@@ -211,11 +211,11 @@ Each channel's second starts again whenever it clips, and counts data, not wall 
 The examples below come from a live NeuropixelsV1 probe left floating, out of tissue, with its gain set to 3000 so that its channels would clip. That is not a sensible way to run a probe; it was done only to show the warning.
 
 ^^^
-![The clipping warning](~/images/lfp-viewer/npx1_clipping.png){#fig-clipping}
+![The clipping warning](~/images/waveform-scope/npx1_clipping.png){#fig-clipping}
 ^^^ CLIPPING shows in the plot's top right, and the labels of channels 32 and 37, which clipped, flash red.
 
 ^^^
-![An expanded clipping channel](~/images/lfp-viewer/npx1_clipping-expanded.png){#fig-clipping-expanded}
+![An expanded clipping channel](~/images/waveform-scope/npx1_clipping-expanded.png){#fig-clipping-expanded}
 ^^^ With a clipping channel expanded, its trace runs flat along the top of the ADC's range while it clips.
 
 ### Maximize
@@ -231,7 +231,7 @@ The expanded channel's row spans the range, as each row of the stacked view does
 [](#fig-selection-expansion) selects channels, expands them and zooms in on their spikes.
 
 ^^^
-<video id="fig-selection-expansion" controls preload="metadata" src="../images/lfp-viewer/npx2_selection-expansion.webm"></video>
+<video id="fig-selection-expansion" controls preload="metadata" src="../images/waveform-scope/npx2_selection-expansion.webm"></video>
 ^^^ A few channels of a NeuropixelsV2 recording are selected by clicking, the selection is cleared with Escape and stepped with Q and E, and channel 8 is expanded with a double-click. Alt+Wheel fits its spikes to the range, which still holds when the channel is collapsed and expanded again with X. The display is paused, A and D move back to a prominent spike, and the wheel moves the channel up and down its amplitudes. Two right-drags zoom in on the spike, and Q and E show it on neighboring channels. A right double-click zooms back out. On channel 12, a flat right-drag zooms in time alone, a tall one in amplitude alone, and another flat one further in time, before Q and E show this spike on other channels. X collapses to the stacked view, fitted at the short timebase, F turns Fit off, and T brings back the longest timebase. The keys and buttons pressed are shown as they are used.
 
 | Element | Description |
@@ -246,7 +246,7 @@ The heatmap draws each channel's row as a strip of color instead of a trace, whi
 [](#fig-heatmap) uses the range and threshold to bring out spikes and slower waves in the heatmap.
 
 ^^^
-<video id="fig-heatmap" controls preload="metadata" src="../images/lfp-viewer/npx2_heatmap.webm"></video>
+<video id="fig-heatmap" controls preload="metadata" src="../images/waveform-scope/npx2_heatmap.webm"></video>
 ^^^ A NeuropixelsV2 recording is shown at a 1 s timebase and a 500 µV range. H switches from the stacked traces to the heatmap, where the overall structure is hard to see at this range. F fits every channel to the plot, which makes the heatmap visible but fairly dark. An Alt+Drag narrows the heatmap's range to raise the contrast, so that spikes saturate nearly to white and slower signals show as waves that travel across the probe's depth. Space pauses the display, and A moves back through the record. A double-click near some active channels expands one, and Q and E step through the channels around it. X collapses the channel, and T sets the 10 s timebase. The threshold is raised to remove the subthreshold activity and leave the spikes. Another channel near the active ones is expanded, Q and E again step through its neighbors, and X collapses it. Space resumes the live display. H returns to the stacked traces, still fitted, so every channel is shown, and the traces are drawn at their own 500 µV range rather than the heatmap's narrowed one. F turns Fit off, which leaves readable stacked traces at the 10 s timebase. The keys and buttons pressed are shown as they are used.
 
 | Element | Description |
@@ -261,13 +261,13 @@ The heatmap draws each channel's row as a strip of color instead of a trace, whi
 Up to four cursors measure time and amplitude on the selected channel ([](#fig-cursors)).
 
 ^^^
-![Cursors on an expanded channel](~/images/lfp-viewer/npx2_cursors.png){#fig-cursors}
+![Cursors on an expanded channel](~/images/waveform-scope/npx2_cursors.png){#fig-cursors}
 ^^^ Four cursors sit on successive spikes of channel 131, each measured from C0, the reference. Their dimensions are drawn above, and the cursor table below.
 
 [](#fig-cursors-video) places cursors on the spikes of one channel and steps them onto their peaks.
 
 ^^^
-<video id="fig-cursors-video" controls preload="metadata" src="../images/lfp-viewer/npx2_cursors.webm"></video>
+<video id="fig-cursors-video" controls preload="metadata" src="../images/waveform-scope/npx2_cursors.webm"></video>
 ^^^ Cursors are placed on spikes of a NeuropixelsV2 recording and stepped onto their peaks. The viewer starts live in the stacked view, at a 10 s timebase and a 30 px channel height, and is paused with channel 16 selected for the cursors to read. C shows the cursors, and Home brings in the first, which starts outside the view. It is dragged roughly onto a spike, and two more are added and dragged roughly onto other spikes. The Left and Right keys step each onto its spike. At this timebase each pixel column holds many samples, so each cursor reads two values, the maximum and minimum of its column, which span the spike's full swing, and it can reach the column that holds the peak but not the peak sample itself. Channel 16 is expanded, a cursor's button in the cursor table centers the view on that cursor, and clicking a cursor's time label makes it the reference. The view is then centered on C1 and the timebase shortened until each pixel column holds a single sample. C1 now reads one value, which shows that it sits slightly off the peak, and the Left and Right keys move it a sample at a time onto it. Q and E then step through the channels, showing where the cursors fall on each. The keys and buttons pressed are shown as they are used.
 
 | Element | Description |
@@ -285,7 +285,7 @@ Up to four cursors measure time and amplitude on the selected channel ([](#fig-c
 The cursor table, in the lower left of the plot, gives each cursor's readings on the selected channel, one row per cursor ([](#fig-cursor-table)).
 
 ^^^
-![Cursor table with numbered elements](~/images/lfp-viewer/cursor-table.png){#fig-cursor-table}
+![Cursor table with numbered elements](~/images/waveform-scope/cursor-table.png){#fig-cursor-table}
 ^^^ The cursor table is shown with four cursors, at several samples per pixel. C0 is both the reference and the active cursor. Its numbers match those in the table below.
 
 | Element | Description |
@@ -320,9 +320,9 @@ With one channel, the viewer always shows it expanded (see [Expanded channel](#e
 The workflow below makes one: it generates a sine wave with FunctionGenerator, as 8-bit samples at 44.1 kHz, so it needs no hardware or recording.
 
 :::workflow
-![Function generator into LfpViewer](~/workflows/function-generator.bonsai)
+![Function generator into WaveformScope](~/workflows/function-generator.bonsai)
 :::
 
 ^^^
-![A single expanded channel](~/images/lfp-viewer/sine-gen_expanded.png){#fig-single-channel}
+![A single expanded channel](~/images/waveform-scope/sine-gen_expanded.png){#fig-single-channel}
 ^^^ The generated sine wave's one channel is shown expanded, with Chan. Height, Fit and Heatmap disabled.

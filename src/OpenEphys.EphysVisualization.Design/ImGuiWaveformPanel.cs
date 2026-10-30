@@ -28,7 +28,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// </remarks>
     internal sealed partial class ImGuiWaveformPanel : IDisposable
     {
-        readonly WaveformScope settings;
+        readonly WaveformScopeBuilder settings;
         readonly long historyBytes;
         readonly int maxColumns;
 
@@ -44,7 +44,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="historyBytes"/> is not positive, or <paramref name="maxColumns"/> is less than one.
         /// </exception>
-        public ImGuiWaveformPanel(WaveformScope settings, long historyBytes, int maxColumns)
+        public ImGuiWaveformPanel(WaveformScopeBuilder settings, long historyBytes, int maxColumns)
         {
             if (historyBytes <= 0)
                 throw new ArgumentOutOfRangeException(nameof(historyBytes));

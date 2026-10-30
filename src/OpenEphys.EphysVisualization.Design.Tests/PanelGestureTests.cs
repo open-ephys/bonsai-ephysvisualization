@@ -13,7 +13,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         const int SampleRate = 1000;
 
         readonly ImGuiHarness imgui = new();
-        readonly LfpViewer settings = new() { Timebase = 1 };
+        readonly WaveformScope settings = new() { Timebase = 1 };
         readonly ImGuiWaveformPanel panel;
         readonly Action draw;
 

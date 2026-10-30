@@ -16,7 +16,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         static readonly int[] Reversed = Enumerable.Range(0, Channels).Reverse().ToArray();
 
         readonly ImGuiHarness imgui = new();
-        readonly LfpViewer settings = new() { Timebase = 1 };
+        readonly WaveformScope settings = new() { Timebase = 1 };
         readonly ImGuiWaveformPanel panel;
         readonly Action draw;
 

@@ -6,13 +6,13 @@ using Xunit;
 
 namespace OpenEphys.EphysVisualization.Design.Tests
 {
-    public class LfpViewerTests
+    public class WaveformScopeTests
     {
         [Fact]
         public void Build_PassesEachMatrixThroughUnchanged()
         {
             var source = Expression.Parameter(typeof(IObservable<Mat>));
-            var body = new LfpViewer().Build(new[] { source });
+            var body = new WaveformScope().Build(new[] { source });
             var process = Expression.Lambda<Func<IObservable<Mat>, IObservable<Mat>>>(body, source).Compile();
 
             using var first = new Mat(2, 3, Depth.S16, 1);
@@ -27,7 +27,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         {
             var source = Expression.Parameter(typeof(IObservable<int>));
 
-            Assert.Throws<InvalidOperationException>(() => new LfpViewer().Build(new[] { source }));
+            Assert.Throws<InvalidOperationException>(() => new WaveformScope().Build(new[] { source }));
         }
     }
 }

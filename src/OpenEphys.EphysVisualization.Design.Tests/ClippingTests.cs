@@ -65,9 +65,9 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         static (double? Low, double? High) DepthLimits(Depth depth) =>
-            Private.Call<(double?, double?)>(typeof(LfpViewerVisualizer), nameof(DepthLimits), depth);
+            Private.Call<(double?, double?)>(typeof(WaveformScopeVisualizer), nameof(DepthLimits), depth);
 
         static bool[]? ClippedRows(Mat raw, double? low, double? high) =>
-            Private.Call<bool[]?>(typeof(LfpViewerVisualizer), nameof(ClippedRows), raw, low, high);
+            Private.Call<bool[]?>(typeof(WaveformScopeVisualizer), nameof(ClippedRows), raw, low, high);
     }
 }

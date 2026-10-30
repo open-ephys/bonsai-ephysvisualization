@@ -27,12 +27,12 @@ namespace OpenEphys.EphysVisualization.Design
     {
         const int PaletteSteps = 16;
 
-        readonly WaveformScope settings;
+        readonly WaveformScopeBuilder settings;
 
         uint[] packed = Array.Empty<uint>();
 
         /// <param name="settings">The node whose palette and custom color are read and written.</param>
-        public TraceColors(WaveformScope settings) => this.settings = settings;
+        public TraceColors(WaveformScopeBuilder settings) => this.settings = settings;
 
         /// <summary>
         /// The group a channel takes its color from, which channels sharing a color share, or null for each row

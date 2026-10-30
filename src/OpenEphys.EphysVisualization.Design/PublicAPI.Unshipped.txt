@@ -2,26 +2,26 @@
 OpenEphys.EphysVisualization.Design.ColorPalette
 OpenEphys.EphysVisualization.Design.ColorPalette.Custom = 1 -> OpenEphys.EphysVisualization.Design.ColorPalette
 OpenEphys.EphysVisualization.Design.ColorPalette.OpenEphysGui = 0 -> OpenEphys.EphysVisualization.Design.ColorPalette
-OpenEphys.EphysVisualization.Design.LfpViewer
-OpenEphys.EphysVisualization.Design.LfpViewer.ColorGrouping.get -> int
-OpenEphys.EphysVisualization.Design.LfpViewer.ColorGrouping.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.ColorGroupingEnabled.get -> bool
-OpenEphys.EphysVisualization.Design.LfpViewer.ColorGroupingEnabled.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.HistorySize.get -> int
-OpenEphys.EphysVisualization.Design.LfpViewer.HistorySize.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.LfpViewer() -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.Offset.get -> double
-OpenEphys.EphysVisualization.Design.LfpViewer.Offset.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.SampleRate.get -> int
-OpenEphys.EphysVisualization.Design.LfpViewer.SampleRate.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.SaturationHigh.get -> double?
-OpenEphys.EphysVisualization.Design.LfpViewer.SaturationHigh.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.SaturationLow.get -> double?
-OpenEphys.EphysVisualization.Design.LfpViewer.SaturationLow.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewer.Scale.get -> double
-OpenEphys.EphysVisualization.Design.LfpViewer.Scale.set -> void
-OpenEphys.EphysVisualization.Design.LfpViewerVisualizer
-OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.LfpViewerVisualizer() -> void
+OpenEphys.EphysVisualization.Design.WaveformScope
+OpenEphys.EphysVisualization.Design.WaveformScope.ColorGrouping.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScope.ColorGrouping.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.ColorGroupingEnabled.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScope.ColorGroupingEnabled.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.HistorySize.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScope.HistorySize.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.WaveformScope() -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.Offset.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScope.Offset.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.SampleRate.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScope.SampleRate.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.SaturationHigh.get -> double?
+OpenEphys.EphysVisualization.Design.WaveformScope.SaturationHigh.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.SaturationLow.get -> double?
+OpenEphys.EphysVisualization.Design.WaveformScope.SaturationLow.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScope.Scale.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScope.Scale.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.WaveformScopeVisualizer() -> void
 OpenEphys.EphysVisualization.Design.RowOrder
 OpenEphys.EphysVisualization.Design.RowOrder.Channels.get -> int[]!
 OpenEphys.EphysVisualization.Design.RowOrder.Channels.init -> void
@@ -30,36 +30,36 @@ OpenEphys.EphysVisualization.Design.RowOrder.Positions.init -> void
 OpenEphys.EphysVisualization.Design.RowOrder.Lanes.get -> int[]?
 OpenEphys.EphysVisualization.Design.RowOrder.Lanes.init -> void
 OpenEphys.EphysVisualization.Design.RowOrder.RowOrder(int[]! Channels, float[]? Positions = null, int[]? Lanes = null) -> void
-OpenEphys.EphysVisualization.Design.WaveformScope
-OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.get -> float
-OpenEphys.EphysVisualization.Design.WaveformScope.ChannelHeight.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.ColorThreshold.get -> double
-OpenEphys.EphysVisualization.Design.WaveformScope.ColorThreshold.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.CustomColor.get -> System.Drawing.Color
-OpenEphys.EphysVisualization.Design.WaveformScope.CustomColor.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.CustomColorHtml.get -> string!
-OpenEphys.EphysVisualization.Design.WaveformScope.CustomColorHtml.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.FitChannels.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScope.FitChannels.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.HiddenChannels.get -> int[]?
-OpenEphys.EphysVisualization.Design.WaveformScope.HiddenChannels.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.Maximized.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScope.Maximized.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.Palette.get -> OpenEphys.EphysVisualization.Design.ColorPalette
-OpenEphys.EphysVisualization.Design.WaveformScope.Palette.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude.get -> double
-OpenEphys.EphysVisualization.Design.WaveformScope.RangeAmplitude.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.RangeHeatmap.get -> double
-OpenEphys.EphysVisualization.Design.WaveformScope.RangeHeatmap.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScope.ShowClipping.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScope.ShowHeatmap.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.Timebase.get -> double
-OpenEphys.EphysVisualization.Design.WaveformScope.Timebase.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScope.WaveformScope() -> void
-override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Load(System.IServiceProvider! provider) -> void
-override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ChannelHeight.get -> float
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ChannelHeight.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ColorThreshold.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ColorThreshold.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColor.get -> System.Drawing.Color
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColor.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColorHtml.get -> string!
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColorHtml.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.FitChannels.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.FitChannels.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.HiddenChannels.get -> int[]?
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.HiddenChannels.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Maximized.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Maximized.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Palette.get -> OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Palette.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.RangeAmplitude.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.RangeAmplitude.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.RangeHeatmap.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.RangeHeatmap.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ShowClipping.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ShowClipping.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ShowHeatmap.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.ShowHeatmap.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Timebase.get -> double
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Timebase.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.WaveformScopeBuilder() -> void
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Load(System.IServiceProvider! provider) -> void
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
 OpenEphys.EphysVisualization.Design.ImGuiColormapRangeSlider
 OpenEphys.EphysVisualization.Design.ImGuiWidgets
 OpenEphys.EphysVisualization.Design.ImGuiPalette
@@ -177,41 +177,41 @@ OpenEphys.EphysVisualization.Design.ControlStripColumn
 OpenEphys.EphysVisualization.Design.ControlStripColumn.ControlStripColumn() -> void
 OpenEphys.EphysVisualization.Design.ControlStripColumn.Draw.get -> System.Action<float>!
 OpenEphys.EphysVisualization.Design.ControlStripColumn.Label.get -> string!
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.ChannelGroup.get -> System.Func<int, int>?
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.ChannelGroup.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.ControlStripHeight.get -> float
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.DrawPlot(System.Numerics.Vector2 size) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Fail(string! message) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Faulted.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Maximized.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Paused.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Post(System.Action! action) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostClipping(bool[]! rows) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostData(OpenCV.Net.Mat! data, int sampleRate) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Order.get -> OpenEphys.EphysVisualization.Design.RowOrder?
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Order.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HoveredChannel.get -> int
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HoveredChannel.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Reveal(int channel) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.KeysElsewhere.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.KeysElsewhere.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.ZoomTo(System.Collections.Generic.IEnumerable<int>! channels) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.SelectedChannel.get -> int
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.SelectedChannel.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Scope.get -> OpenEphys.EphysVisualization.Design.WaveformScope!
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.WaveformScopeVisualizer() -> void
-abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HistoryBytes.get -> long
-override abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
-override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.FaultHint.get -> string!
-override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.HistoryBytes.get -> long
-override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Load(System.IServiceProvider! provider) -> void
-override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Unload() -> void
-override sealed OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Show(object! value) -> void
-virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.DrawFrame() -> void
-virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.FaultHint.get -> string!
-virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Hotkeys.get -> System.Collections.Generic.IEnumerable<Hexa.NET.ImGui.ImGuiKey>!
-virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Unit.get -> string!
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.get -> System.Func<int, int>?
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ControlStripHeight.get -> float
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawPlot(System.Numerics.Vector2 size) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Fail(string! message) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Faulted.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Maximized.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Paused.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Post(System.Action! action) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.PostClipping(bool[]! rows) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.PostData(OpenCV.Net.Mat! data, int sampleRate) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Order.get -> OpenEphys.EphysVisualization.Design.RowOrder?
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Order.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HoveredChannel.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HoveredChannel.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Reveal(int channel) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.KeysElsewhere.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.KeysElsewhere.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ZoomTo(System.Collections.Generic.IEnumerable<int>! channels) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.SelectedChannel.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.SelectedChannel.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Scope.get -> OpenEphys.EphysVisualization.Design.WaveformScopeBuilder!
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.WaveformScopeVisualizerBase() -> void
+abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HistoryBytes.get -> long
+override abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.FaultHint.get -> string!
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HistoryBytes.get -> long
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Load(System.IServiceProvider! provider) -> void
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Unload() -> void
+override sealed OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Show(object! value) -> void
+virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawFrame() -> void
+virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.FaultHint.get -> string!
+virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Hotkeys.get -> System.Collections.Generic.IEnumerable<Hexa.NET.ImGui.ImGuiKey>!
+virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Unit.get -> string!
 OpenEphys.EphysVisualization.Design.ControlStripColumn.ControlStripColumn(string! label, System.Action<float>! draw) -> void
 OpenEphys.EphysVisualization.Design.StandardColumns
 OpenEphys.EphysVisualization.Design.StandardColumns.All.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.ControlStripColumn>!
@@ -220,9 +220,9 @@ OpenEphys.EphysVisualization.Design.StandardColumns.Display.get -> OpenEphys.Eph
 OpenEphys.EphysVisualization.Design.StandardColumns.Palette.get -> OpenEphys.EphysVisualization.Design.ControlStripColumn
 OpenEphys.EphysVisualization.Design.StandardColumns.Range.get -> OpenEphys.EphysVisualization.Design.ControlStripColumn
 OpenEphys.EphysVisualization.Design.StandardColumns.Timebase.get -> OpenEphys.EphysVisualization.Design.ControlStripColumn
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.DrawControlStrip(System.Collections.Generic.IEnumerable<OpenEphys.EphysVisualization.Design.ControlStripColumn>! columns) -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.StandardColumns.get -> OpenEphys.EphysVisualization.Design.StandardColumns!
-override OpenEphys.EphysVisualization.Design.LfpViewerVisualizer.DrawFrame() -> void
-OpenEphys.EphysVisualization.Design.WaveformScope<TSource>
-OpenEphys.EphysVisualization.Design.WaveformScope<TSource>.WaveformScope() -> void
-override OpenEphys.EphysVisualization.Design.WaveformScope<TSource>.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawControlStrip(System.Collections.Generic.IEnumerable<OpenEphys.EphysVisualization.Design.ControlStripColumn>! columns) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.StandardColumns.get -> OpenEphys.EphysVisualization.Design.StandardColumns!
+override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.DrawFrame() -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder<TSource>
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder<TSource>.WaveformScopeBuilder() -> void
+override OpenEphys.EphysVisualization.Design.WaveformScopeBuilder<TSource>.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
