@@ -122,6 +122,7 @@ Each key has a single owner in the window, so a key does the same thing wherever
 | Q / E | Select the previous or next channel, skipping hidden channels. With a channel expanded, expand that one instead | Always |
 | Escape | Clear the selection, or cancel a zoom box being dragged, leaving the selection | Always |
 | X | Expand the selected channel, selecting the first shown channel in view if none is, or collapse the expanded one, returning to the view from before the expand, moved only as far as brings the channel into view | More than one channel |
+| L | Widen the lane under the pointer, or the selected channel's lane, shrinking the others, or give the lanes equal widths again if it is the one widened, as the lane's button does | The rows shown in lanes, which a viewer built on this one may do |
 
 ### Mouse
 

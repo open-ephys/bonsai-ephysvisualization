@@ -157,6 +157,27 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void L_TogglesTheLaneUnderThePointer_OrElseTheSelectedChannels()
+        {
+            Reorder(Reversed);
+            panel.Order = new RowOrder((int[])Reversed.Clone(), Lanes: TwoLanes);
+            imgui.Frames(3, draw);
+            var rows = panel.Rows();
+
+            imgui.MoveMouse(new Vector2(panel.Axis().Left + 10, RowMiddle(rows, 2)), draw);
+            imgui.Key(ImGuiKey.L, draw);
+            Assert.Equal(0, Private.Get<int>(panel, "expandedLane"));
+            imgui.Key(ImGuiKey.L, draw);
+            Assert.Equal(-1, Private.Get<int>(panel, "expandedLane"));
+
+            // NB: channel 3 is in the second lane.
+            panel.SelectedChannel = 3;
+            imgui.MoveMouse(new Vector2(-100, -100), draw);
+            imgui.Key(ImGuiKey.L, draw);
+            Assert.Equal(1, Private.Get<int>(panel, "expandedLane"));
+        }
+
+        [Fact]
         public void RevealingAChannelInAStrip_WidensItsLane()
         {
             Reorder(Reversed);

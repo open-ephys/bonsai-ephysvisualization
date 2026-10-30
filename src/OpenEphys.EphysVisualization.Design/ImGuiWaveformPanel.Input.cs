@@ -174,6 +174,7 @@ namespace OpenEphys.EphysVisualization.Design
             (ImGuiKey.S, true, layout => ChannelKey(1, layout)),
             (ImGuiKey.Q, true, layout => { if (Modifiers()) StepSelection(-1, layout); }),
             (ImGuiKey.E, true, layout => { if (Modifiers()) StepSelection(1, layout); }),
+            (ImGuiKey.L, false, LaneKey),
             (ImGuiKey.X, false, layout =>
             {
                 if (selectedRow < 0 && expandedRow < 0)

@@ -44,6 +44,7 @@ namespace OpenEphys.EphysVisualization.Design
         float plotColumnLeft;
         float plotColumnWidth;
         int inputLane;
+        Lane[] placedLanes = Array.Empty<Lane>();
 
         readonly TraceRaster traces = new();
 
@@ -122,6 +123,7 @@ namespace OpenEphys.EphysVisualization.Design
                 var laneRows = LayoutRows(rows, plotTop, plotBottom, ImGui.GetCursorScreenPos().Y,
                     ImGui.GetContentRegionAvail().Y);
                 var lanes = PlaceLanes(laneRows, labelsLeft, labelsRight - labelsLeft, plotColumnLeft, plotColumnWidth);
+                placedLanes = lanes;
                 var lane = InputLane(lanes);
                 plotLeft = lanes[lane].Left;
                 var layout = laneRows[lane];
@@ -380,10 +382,11 @@ namespace OpenEphys.EphysVisualization.Design
 
             ImGui.SetCursorScreenPos(min);
             if (ImGui.InvisibleButton($"##lane{lane}", new Vector2(side)))
-                expandedLane = expandedLane == lane ? -1 : lane;
+                ToggleLane(lane);
             var hovered = ImGui.IsItemHovered();
             var widened = expandedLane == lane;
-            ImGuiWidgets.Tooltip(widened ? "Give the lanes equal widths again" : "Widen this lane, shrinking the others");
+            ImGuiWidgets.Tooltip((widened ? "Give the lanes equal widths again" : "Widen this lane, shrinking the others") +
+                "\nKey: L over the lane");
 
             if (hovered)
                 draw.AddRectFilled(min, max, ImGui.GetColorU32(ImGuiCol.ButtonHovered), ImGui.GetStyle().ChildRounding);
@@ -401,6 +404,33 @@ namespace OpenEphys.EphysVisualization.Design
                 draw.AddLine(tip, tip + new Vector2(direction * back, -head), color);
                 draw.AddLine(tip, tip + new Vector2(direction * back, head), color);
             }
+        }
+
+        void ToggleLane(int lane) => expandedLane = expandedLane == lane ? -1 : lane;
+
+        // NB: what the button of the lane under the pointer does, or else the selected channel's lane's, as when the
+        // pointer is over the control strip. A gap between lanes belongs to the lane on its left.
+        void LaneKey(RowLayout layout)
+        {
+            var lanes = placedLanes;
+            if (lanes.Length < 2)
+                return;
+
+            var mouse = ImGui.GetMousePos();
+            var last = lanes[lanes.Length - 1];
+            var lane = -1;
+            if (mouse.Y >= layout.Top && mouse.Y < layout.Bottom &&
+                mouse.X >= lanes[0].LabelLeft && mouse.X < last.Left + last.Width)
+            {
+                lane = lanes.Length - 1;
+                while (mouse.X < lanes[lane].LabelLeft)
+                    lane--;
+            }
+            else if (selectedRow >= 0)
+                lane = LaneOf(selectedRow);
+
+            if (lane >= 0)
+                ToggleLane(lane);
         }
 
         /// <summary>
