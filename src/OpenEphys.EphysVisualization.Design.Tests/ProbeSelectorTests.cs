@@ -168,6 +168,19 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Select_ReplacesOrAddsToTheSelection_SkippingBlockedContacts()
+        {
+            selector.Blocked = i => i == 7;
+
+            selector.Select(new[] { 4, 5 });
+            Assert.Equal(new[] { 4, 5 }, Selected());
+
+            selector.Select(new[] { 7, 9, 999 }, add: true);
+            Assert.Equal(new[] { 4, 5, 9 }, Selected());
+            Assert.Equal(2, selectionChanges);
+        }
+
+        [Fact]
         public void Escape_AwayFromTheView_KeepsTheSelection()
         {
             Drag(contacts[4].Center, contacts[9].Center);

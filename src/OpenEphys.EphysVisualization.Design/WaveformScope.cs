@@ -87,9 +87,9 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Gets or sets the number of neighboring channels sharing a color when grouping is enabled.
         /// </summary>
-        [DefaultValue(1)]
+        [DefaultValue(4)]
         [Description("The number of neighboring channels sharing a color when grouping is enabled.")]
-        public int ColorGrouping { get; set; } = 1;
+        public int ColorGrouping { get; set; } = 4;
 
         internal long HistoryBytes => (long)Math.Max(1, HistorySize) * 1024 * 1024;
     }

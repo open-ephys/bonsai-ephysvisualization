@@ -26,3 +26,5 @@ The library runs on Windows with OpenGL 3.3 or later. A package that draws with 
 ## Acknowledgments
 
 The waveform scope grew out of the [WaveformVisualizer](https://github.com/bonsai-rx/ephys/blob/main/src/Bonsai.Ephys.Design/WaveformVisualizer.cs) in Bonsai.Ephys.
+
+The colors of channel groups are Glasbey's category10 palette from [colorcet](https://colorcet.holoviz.org), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), with its grey and its darkest colors left out.

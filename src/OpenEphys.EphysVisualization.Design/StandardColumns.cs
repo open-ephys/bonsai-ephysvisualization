@@ -211,27 +211,32 @@ namespace OpenEphys.EphysVisualization.Design
                 if (ImGui.ColorEdit3("##customColor", ref customColor,
                     ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoTooltip))
                     panel.Colors.CustomColor = customColor;
-                ImGuiWidgets.Tooltip("The color the custom palette is made from. Click to choose another.");
+                ImGuiWidgets.Tooltip("The color every channel is drawn in. Click to choose another.");
             }
         }
 
+        static readonly (ColorPalette Palette, string Name)[] Palettes =
+        {
+            (ColorPalette.OpenEphysGui, "Open Ephys GUI"),
+            (ColorPalette.Glasbey, "Glasbey"),
+            (ColorPalette.Custom, "Custom"),
+        };
+
         void PaletteCombo()
         {
-            var preview = panel.Colors.Palette == ColorPalette.OpenEphysGui ? "Open Ephys GUI" : "Custom";
-            var open = ImGui.BeginCombo("##palette", preview);
-            ImGuiWidgets.Tooltip("Colors the channels are drawn in: the Open Ephys GUI's, or shades of one color you " +
-                "choose.");
+            var current = panel.Colors.Palette;
+            var open = ImGui.BeginCombo("##palette", Array.Find(Palettes, p => p.Palette == current).Name ?? string.Empty);
+            ImGuiWidgets.Tooltip("Colors the channels are drawn in while they are not grouped: the Open Ephys GUI's, " +
+                "colors chosen to be told apart, or one color you choose.");
             if (open)
             {
-                if (ImGui.Selectable("Open Ephys GUI", panel.Colors.Palette == ColorPalette.OpenEphysGui))
-                    panel.Colors.Palette = ColorPalette.OpenEphysGui;
-                if (panel.Colors.Palette == ColorPalette.OpenEphysGui)
-                    ImGui.SetItemDefaultFocus();
-
-                if (ImGui.Selectable("Custom", panel.Colors.Palette == ColorPalette.Custom))
-                    panel.Colors.Palette = ColorPalette.Custom;
-                if (panel.Colors.Palette == ColorPalette.Custom)
-                    ImGui.SetItemDefaultFocus();
+                foreach (var (palette, name) in Palettes)
+                {
+                    if (ImGui.Selectable(name, palette == current))
+                        panel.Colors.Palette = palette;
+                    if (palette == current)
+                        ImGui.SetItemDefaultFocus();
+                }
 
                 ImGui.EndCombo();
             }

@@ -15,7 +15,13 @@ namespace OpenEphys.EphysVisualization.Design
         OpenEphysGui,
 
         /// <summary>
-        /// Shades of one chosen color.
+        /// The colors channel groups are drawn in, chosen to be told apart: Glasbey's category10 palette, without its
+        /// grey and its colors too dark for the plot.
+        /// </summary>
+        Glasbey,
+
+        /// <summary>
+        /// One chosen color.
         /// </summary>
         Custom,
     }
@@ -25,8 +31,6 @@ namespace OpenEphys.EphysVisualization.Design
     /// </summary>
     internal sealed class TraceColors
     {
-        const int PaletteSteps = 16;
-
         readonly WaveformScopeBuilder settings;
 
         uint[] packed = Array.Empty<uint>();
@@ -39,9 +43,10 @@ namespace OpenEphys.EphysVisualization.Design
         /// to take the next color of the palette.
         /// </summary>
         /// <remarks>
-        /// Without one, the colors follow the rows rather than the channels, since the palette is there to tell
-        /// neighboring rows apart, whichever channels an owner's order puts side by side. Read for every channel
-        /// every frame, so an assignment that reads its owner's settings live never has to be told they changed.
+        /// Groups take their colors from <see cref="ImGuiPalette.Categorical"/> whatever the palette, which is there
+        /// to tell neighboring rows apart rather than groups. Without one, the colors follow the rows rather than the
+        /// channels, whichever channels an owner's order puts side by side. Read for every channel every frame, so an
+        /// assignment that reads its owner's settings live never has to be told they changed.
         /// </remarks>
         public Func<int, int>? GroupOf { get; set; }
 
@@ -55,7 +60,7 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Hue the <see cref="ColorPalette.Custom"/> palette is built from.
+        /// Color the <see cref="ColorPalette.Custom"/> palette draws every row in.
         /// </summary>
         public Vector3 CustomColor
         {
@@ -75,7 +80,10 @@ namespace OpenEphys.EphysVisualization.Design
         /// <remarks>
         /// Read by the trace, its outline and its label's highlight alike, so they always agree.
         /// </remarks>
-        public Vector4 Of(int row, int channel) => Group(GroupOf is { } group ? group(channel) : row);
+        public Vector4 Of(int row, int channel) => GroupOf is { } group ? Group(group(channel)) : Row(row);
+
+        // NB: neutral, so that the groups stand out, but light enough to read as a trace on the black plot.
+        static readonly uint Ungrouped = ImGuiPalette.Grey0xCC;
 
         /// <summary>
         /// The colors of the first <paramref name="count"/> rows, each its channel's, packed as RGBA, for drawing in
@@ -98,29 +106,20 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// The color for channel group <paramref name="group"/> under the selected <see cref="Palette"/>.
+        /// The color for channel group <paramref name="group"/>, or a neutral grey for a negative group, which is none.
+        /// Groups past the last of <see cref="ImGuiPalette.Categorical"/> reuse its colors in order.
         /// </summary>
-        /// <remarks>
-        /// In <see cref="ColorPalette.Custom"/>, groups are shades of the picked hue, taken out of order from
-        /// <see cref="PaletteSteps"/> saturation and value steps so that neighboring groups differ clearly.
-        /// Group 0 is the picked color itself.
-        /// </remarks>
-        Vector4 Group(int group)
+        public Vector4 Group(int group) => ImGui.ColorConvertU32ToFloat4(
+            group < 0 ? Ungrouped : ImGuiPalette.Categorical[group % ImGuiPalette.Categorical.Count]);
+
+        /// <summary>
+        /// The color for row <paramref name="row"/> under the selected <see cref="Palette"/>.
+        /// </summary>
+        Vector4 Row(int row) => Palette switch
         {
-            if (Palette == ColorPalette.OpenEphysGui)
-                return ImGui.ColorConvertU32ToFloat4(ImGuiPalette.OpenEphysGuiLfp[group % ImGuiPalette.OpenEphysGuiLfp.Count]);
-
-            float hue = 0, saturation = 0, value = 0;
-            ImGui.ColorConvertRGBtoHSV(CustomColor.X, CustomColor.Y, CustomColor.Z, ref hue, ref saturation, ref value);
-
-            var step = group * 7 % PaletteSteps;
-            var fraction = step / (float)(PaletteSteps - 1);
-            saturation = Math.Min(1f, saturation + 0.4f * fraction);
-            value *= 1f - 0.6f * fraction;
-
-            float r = 0, g = 0, b = 0;
-            ImGui.ColorConvertHSVtoRGB(hue, saturation, value, ref r, ref g, ref b);
-            return new Vector4(r, g, b, 1f);
-        }
+            ColorPalette.Custom => new Vector4(CustomColor, 1f),
+            ColorPalette.Glasbey => ImGui.ColorConvertU32ToFloat4(ImGuiPalette.Categorical[row % ImGuiPalette.Categorical.Count]),
+            _ => ImGui.ColorConvertU32ToFloat4(ImGuiPalette.OpenEphysGuiLfp[row % ImGuiPalette.OpenEphysGuiLfp.Count]),
+        };
     }
 }

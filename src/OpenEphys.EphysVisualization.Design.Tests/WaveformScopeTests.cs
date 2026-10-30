@@ -1,6 +1,9 @@
 using System;
+using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reactive.Linq;
+using System.Xml.Serialization;
 using OpenCV.Net;
 using Xunit;
 
@@ -28,6 +31,31 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             var source = Expression.Parameter(typeof(IObservable<int>));
 
             Assert.Throws<InvalidOperationException>(() => new WaveformScope().Build(new[] { source }));
+        }
+
+        [Fact]
+        public void ChannelSettings_AreSavedAsOneElementEach_LeavingOutTheirDefaults()
+        {
+            var scope = new WaveformScope
+            {
+                Channels = new[]
+                {
+                    new ChannelSettings { Index = 3, Hidden = true },
+                    new ChannelSettings { Index = 9, Group = 2 },
+                },
+            };
+            var serializer = new XmlSerializer(typeof(WaveformScope));
+            using var writer = new StringWriter();
+
+            serializer.Serialize(writer, scope);
+            var xml = writer.ToString();
+            var read = (WaveformScope)serializer.Deserialize(new StringReader(xml));
+
+            Assert.Contains("<Channel Index=\"3\" Hidden=\"true\" />", xml);
+            Assert.Contains("<Channel Index=\"9\" Group=\"2\" />", xml);
+            var channels = Assert.IsType<ChannelSettings[]>(read.Channels);
+            Assert.Equal(new[] { (3, true, 0), (9, false, 2) },
+                channels.Select(channel => (channel.Index, channel.Hidden, channel.Group)));
         }
     }
 }

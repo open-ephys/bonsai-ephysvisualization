@@ -25,8 +25,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             base.Load(provider);
             var viewer = Viewer;
-            ChannelGroup = channel =>
-                viewer.ColorGroupingEnabled ? channel / Math.Max(1, viewer.ColorGrouping) : channel;
+            grouping = channel => channel / Math.Max(1, viewer.ColorGrouping);
 
             var standard = StandardColumns;
             columns = new[]
@@ -37,6 +36,7 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         ControlStripColumn[] columns = Array.Empty<ControlStripColumn>();
+        Func<int, int>? grouping;
 
         /// <inheritdoc/>
         /// <remarks>
@@ -44,6 +44,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// </remarks>
         protected override void DrawFrame()
         {
+            // NB: none while grouping is off, so the rows take the palette's colors rather than the groups'.
+            ChannelGroup = Viewer.ColorGroupingEnabled ? grouping : null;
             var plotHeight = ImGui.GetContentRegionAvail().Y - (Maximized ? 0 : ControlStripHeight);
             DrawPlot(new System.Numerics.Vector2(0, plotHeight));
             if (!Maximized)

@@ -74,10 +74,10 @@ namespace OpenEphys.EphysVisualization.Design
         public ColorPalette Palette { get; set; } = ColorPalette.OpenEphysGui;
 
         /// <summary>
-        /// Gets or sets the color the custom palette is built from.
+        /// Gets or sets the color the custom palette draws every channel in.
         /// </summary>
         [XmlIgnore]
-        [Description("The color the custom palette is built from.")]
+        [Description("The color the custom palette draws every channel in.")]
         public Color CustomColor { get; set; } = Color.FromArgb(0x8C, 0xDB, 0x8E);
 
         /// <summary>
@@ -122,10 +122,12 @@ namespace OpenEphys.EphysVisualization.Design
         public bool Maximized { get; set; }
 
         /// <summary>
-        /// Gets or sets the channels not drawn, by index.
+        /// Gets or sets the settings of each channel whose settings differ from the defaults, such as a hidden
+        /// channel.
         /// </summary>
-        [Description("The channels not drawn, by index.")]
-        public int[]? HiddenChannels { get; set; }
+        [XmlArrayItem("Channel")]
+        [Description("The settings of each channel whose settings differ from the defaults, such as a hidden channel.")]
+        public ChannelSettings[]? Channels { get; set; }
     }
 
     /// <summary>

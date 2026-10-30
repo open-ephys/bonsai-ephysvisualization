@@ -101,6 +101,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                 Keys.Left => ImGuiKey.LeftArrow,
                 Keys.Right => ImGuiKey.RightArrow,
                 >= Keys.A and <= Keys.Z => ImGuiKey.A + (key - Keys.A),
+                >= Keys.D0 and <= Keys.D9 => ImGuiKey.Key0 + (key - Keys.D0),
                 _ => ImGuiKey.None,
             };
 

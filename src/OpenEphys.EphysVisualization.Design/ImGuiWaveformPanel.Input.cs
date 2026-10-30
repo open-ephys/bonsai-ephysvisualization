@@ -112,7 +112,7 @@ namespace OpenEphys.EphysVisualization.Design
             var onLabels = ImGui.GetMousePos().X < plotLeft;
             if (onLabels && ImGui.IsMouseClicked(ImGuiMouseButton.Left) && (Modifiers() || Modifiers(shift: true)))
             {
-                dragOriginal = settings.HiddenChannels ?? Array.Empty<int>();
+                dragOriginal = ChannelSettings.HiddenOf(settings.Channels);
                 dragHidden = ImGui.GetIO().KeyShift;
                 dragAnchor = row;
                 if (!ImGui.GetIO().KeyShift)
@@ -134,8 +134,8 @@ namespace OpenEphys.EphysVisualization.Design
                     hidden.Sort();
                 }
 
-                if (!hidden.SequenceEqual(settings.HiddenChannels ?? Array.Empty<int>()))
-                    settings.HiddenChannels = hidden.Count > 0 ? hidden.ToArray() : null;
+                if (!hidden.SequenceEqual(ChannelSettings.HiddenOf(settings.Channels)))
+                    settings.Channels = ChannelSettings.WithHidden(settings.Channels, hidden);
 
                 // NB: a hidden channel shows nothing to select, and the cursors would read nothing from it.
                 if (selectedRow >= 0 && RowHidden[selectedRow])

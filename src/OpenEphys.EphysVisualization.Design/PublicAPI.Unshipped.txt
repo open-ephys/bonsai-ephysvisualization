@@ -1,6 +1,7 @@
 #nullable enable
 OpenEphys.EphysVisualization.Design.ColorPalette
-OpenEphys.EphysVisualization.Design.ColorPalette.Custom = 1 -> OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.ColorPalette.Custom = 2 -> OpenEphys.EphysVisualization.Design.ColorPalette
+OpenEphys.EphysVisualization.Design.ColorPalette.Glasbey = 1 -> OpenEphys.EphysVisualization.Design.ColorPalette
 OpenEphys.EphysVisualization.Design.ColorPalette.OpenEphysGui = 0 -> OpenEphys.EphysVisualization.Design.ColorPalette
 OpenEphys.EphysVisualization.Design.WaveformScope
 OpenEphys.EphysVisualization.Design.WaveformScope.ColorGrouping.get -> int
@@ -41,8 +42,8 @@ OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColorHtml.get -> 
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.CustomColorHtml.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.FitChannels.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.FitChannels.set -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.HiddenChannels.get -> int[]?
-OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.HiddenChannels.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Channels.get -> OpenEphys.EphysVisualization.Design.ChannelSettings![]?
+OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Channels.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Maximized.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Maximized.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder.Palette.get -> OpenEphys.EphysVisualization.Design.ColorPalette
@@ -178,8 +179,6 @@ OpenEphys.EphysVisualization.Design.ControlStripColumn.ControlStripColumn() -> v
 OpenEphys.EphysVisualization.Design.ControlStripColumn.Draw.get -> System.Action<float>!
 OpenEphys.EphysVisualization.Design.ControlStripColumn.Label.get -> string!
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.get -> System.Func<int, int>?
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ControlStripHeight.get -> float
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawPlot(System.Numerics.Vector2 size) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Fail(string! message) -> void
@@ -226,3 +225,16 @@ override OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.DrawFrame()
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder<TSource>
 OpenEphys.EphysVisualization.Design.WaveformScopeBuilder<TSource>.WaveformScopeBuilder() -> void
 override OpenEphys.EphysVisualization.Design.WaveformScopeBuilder<TSource>.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
+OpenEphys.EphysVisualization.Design.ChannelSettings
+OpenEphys.EphysVisualization.Design.ChannelSettings.ChannelSettings() -> void
+OpenEphys.EphysVisualization.Design.ChannelSettings.Group.get -> int
+OpenEphys.EphysVisualization.Design.ChannelSettings.Group.set -> void
+OpenEphys.EphysVisualization.Design.ChannelSettings.Hidden.get -> bool
+OpenEphys.EphysVisualization.Design.ChannelSettings.Hidden.set -> void
+OpenEphys.EphysVisualization.Design.ChannelSettings.Index.get -> int
+OpenEphys.EphysVisualization.Design.ChannelSettings.Index.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.get -> System.Func<int, int>?
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.GroupColor(int group) -> uint
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Select(System.Collections.Generic.IEnumerable<int>! contacts, bool add = false) -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RulerSelected.get -> bool

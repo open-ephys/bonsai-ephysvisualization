@@ -402,23 +402,23 @@ namespace OpenEphys.EphysVisualization.Design
         int RowOf(int channel) => rowChannels is { } map ? Array.IndexOf(map, channel) : channel;
 
         // NB: the node's hidden channels as a mask by row, for looking a row up, worked out again whenever the node's
-        // array or the row order is replaced or the channel count changes. Never written to: hiding and showing
-        // replace the array.
+        // channel settings or the row order is replaced or the channel count changes. Never written to: hiding and
+        // showing replace the settings.
         bool[] hiddenMask = Array.Empty<bool>();
-        int[]? maskedFrom;
+        ChannelSettings[]? maskedFrom;
         int[]? maskedRows;
 
         bool[] RowHidden
         {
             get
             {
-                if (hiddenMask.Length != rowCount || !ReferenceEquals(maskedFrom, settings.HiddenChannels) ||
+                if (hiddenMask.Length != rowCount || !ReferenceEquals(maskedFrom, settings.Channels) ||
                     !ReferenceEquals(maskedRows, rowChannels))
                 {
-                    maskedFrom = settings.HiddenChannels;
+                    maskedFrom = settings.Channels;
                     maskedRows = rowChannels;
                     hiddenMask = new bool[rowCount];
-                    var hidden = new HashSet<int>(maskedFrom ?? Array.Empty<int>());
+                    var hidden = new HashSet<int>(ChannelSettings.HiddenOf(maskedFrom));
                     for (int row = 0; row < rowCount; row++)
                         hiddenMask[row] = hidden.Contains(ChannelOf(row));
                 }

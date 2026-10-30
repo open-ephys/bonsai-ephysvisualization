@@ -36,7 +36,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         [Fact]
         public void AHiddenChannel_IsHiddenInTheRowThatShowsIt()
         {
-            settings.HiddenChannels = new[] { 3 };
+            settings.Channels = new[] { new ChannelSettings { Index = 3, Hidden = true } };
             Reorder(Reversed);
 
             Assert.Equal(new[] { Channels - 1 - 3 }, HiddenRows());
@@ -56,7 +56,26 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             imgui.Button(ImGuiMouseButton.Left, false, draw);
             imgui.Hold(ImGuiKey.ModShift, false, draw);
 
-            Assert.Equal(new[] { 12, 13, 14 }, settings.HiddenChannels);
+            var channels = Assert.IsType<ChannelSettings[]>(settings.Channels);
+            Assert.Equal(new[] { 12, 13, 14 }, channels.Select(channel => channel.Index));
+            Assert.All(channels, channel => Assert.True(channel.Hidden));
+        }
+
+        [Fact]
+        public void ShowingAHiddenChannel_KeepsItsGroup_AndDropsAChannelLeftAtItsDefaults()
+        {
+            settings.Channels = new[]
+            {
+                new ChannelSettings { Index = 2, Hidden = true, Group = 4 },
+                new ChannelSettings { Index = 7, Hidden = true },
+            };
+
+            var shown = ChannelSettings.WithHidden(settings.Channels, Array.Empty<int>());
+
+            var only = Assert.Single(shown!);
+            Assert.Equal((2, false, 4), (only.Index, only.Hidden, only.Group));
+            Assert.Null(ChannelSettings.WithHidden(new[] { new ChannelSettings { Index = 7, Hidden = true } },
+                Array.Empty<int>()));
         }
 
         [Fact]
@@ -204,7 +223,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(Channels - 1 - 3, Private.Get<int>(panel, "selectedRow"));
             Assert.Equal(3, panel.SelectedChannel);
 
-            settings.HiddenChannels = new[] { 5 };
+            settings.Channels = new[] { new ChannelSettings { Index = 5, Hidden = true } };
             panel.SelectedChannel = 5;
             Assert.Equal(-1, panel.SelectedChannel);
         }

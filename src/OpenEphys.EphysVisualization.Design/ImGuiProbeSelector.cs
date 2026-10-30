@@ -441,6 +441,26 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
+        /// Selects contacts in place of the selection, or adds them to it, as a gesture would, and raises
+        /// <see cref="SelectionChanged"/>. Blocked contacts are left out where <see cref="SelectionSkipsBlocked"/>.
+        /// </summary>
+        /// <param name="contacts">The contacts, by their place in <see cref="Contacts"/>. Any out of range are left out.</param>
+        /// <param name="add">Whether to add them to the selection rather than replace it.</param>
+        public void Select(IEnumerable<int> contacts, bool add = false)
+        {
+            if (!add)
+                Array.Clear(selected, 0, selected.Length);
+
+            foreach (var i in contacts)
+            {
+                if ((uint)i < (uint)selected.Length && !(SelectionSkipsBlocked && Blocked(this.contacts[i].Index)))
+                    selected[i] = true;
+            }
+
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
         /// Draws the minimap of the whole probe, filling the current child window, with a box showing what the
         /// zoomed view shows. Dragging in it moves the zoomed view. Call once per frame.
         /// </summary>
@@ -693,6 +713,12 @@ namespace OpenEphys.EphysVisualization.Design
         /// The number of rulers placed.
         /// </summary>
         public int RulerCount => ruler.Count;
+
+        /// <summary>
+        /// Whether a ruler is selected, which Delete removes, for an owner that gives Delete a meaning of its own
+        /// only while none is.
+        /// </summary>
+        public bool RulerSelected => ruler.HasSelection;
 
         /// <summary>
         /// Arms a ruler for the zoomed view, as R does, or cancels one waiting to be placed. The next drag in the

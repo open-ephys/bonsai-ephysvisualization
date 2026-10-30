@@ -79,12 +79,14 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Gets or sets the function giving the group a channel takes its color from, or null, the default, for
-        /// each row to take the next color of the palette. Channels sharing a group share a color.
+        /// each row to take the next color of the palette. Channels sharing a group share a color, and a channel in a
+        /// negative group, which is none, is drawn in a neutral grey.
         /// </summary>
         /// <remarks>
-        /// Without one, the colors follow the rows, so that neighboring rows differ whichever channels <see
-        /// cref="Order"/> puts side by side. Called for every channel every frame, so a function that reads
-        /// settings as it goes never has to be told they changed.
+        /// Groups take their colors from a categorical palette, chosen to tell groups apart, whatever palette the
+        /// rows are drawn in. Without one, the colors follow the rows, so that neighboring rows differ whichever
+        /// channels <see cref="Order"/> puts side by side. Called for every channel every frame, so a function that
+        /// reads settings as it goes never has to be told they changed.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
         protected Func<int, int>? ChannelGroup
@@ -92,6 +94,15 @@ namespace OpenEphys.EphysVisualization.Design
             get => Panel.Colors.GroupOf;
             set => Panel.Colors.GroupOf = value;
         }
+
+        /// <summary>
+        /// Returns the color a group's channels are drawn in, so that what the owner draws for the group, such as a
+        /// probe's contacts, matches its traces.
+        /// </summary>
+        /// <param name="group">The group, as <see cref="ChannelGroup"/> gives it, negative for none.</param>
+        /// <returns>The color in packed <c>0xAABBGGRR</c> format.</returns>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected uint GroupColor(int group) => ImGui.ColorConvertFloat4ToU32(Panel.Colors.Group(group));
 
         /// <summary>
         /// Gets or sets the channel each row of the posted data shows, from the top, and where each row lies, or null
