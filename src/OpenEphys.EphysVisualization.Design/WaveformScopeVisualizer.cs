@@ -114,6 +114,73 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
+        /// Gets or sets the channel selected in the plot, which the cursors read, or -1 for none. Setting it to a
+        /// hidden channel, or one the data does not show, selects none.
+        /// </summary>
+        /// <remarks>
+        /// Read and set it while drawing, as from <see cref="DrawFrame"/>, to follow or make a selection elsewhere,
+        /// such as on a probe.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected int SelectedChannel
+        {
+            get => Panel.SelectedChannel;
+            set => Panel.SelectedChannel = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the channel hovered in the plot as of the last frame drawn, or -1 for none: the one under the
+        /// pointer, or else the one set. A channel set is drawn as one under the pointer is, and not scrolled to.
+        /// </summary>
+        /// <remarks>
+        /// Set it each frame, as from <see cref="DrawFrame"/>, to the channel hovered elsewhere, such as on a probe,
+        /// or to -1 when there is none.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected int HoveredChannel
+        {
+            get => Panel.HoveredChannel;
+            set => Panel.HoveredChannel = value;
+        }
+
+        /// <summary>
+        /// Brings a channel into view in the plot on the next frame drawn: centered, in its lane widened if that is
+        /// shrunk to a strip, or expanded in place of the channel that is. Does nothing for a channel the data does
+        /// not show.
+        /// </summary>
+        /// <param name="channel">The channel to show.</param>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected void Reveal(int channel) => Panel.Reveal(channel);
+
+        /// <summary>
+        /// Fits channels to the plot's height, as a zoom box over them does: the rows from the highest of them to the
+        /// lowest fill the plot, with no channel expanded and, where they span lanes, every lane widened. Hidden
+        /// channels, and ones the data does not show, are left out.
+        /// </summary>
+        /// <remarks>
+        /// The rows between them are shown too, so channels close together on a probe fit tightly only in an order
+        /// that keeps them together, such as by depth.
+        /// </remarks>
+        /// <param name="channels">The channels to fit.</param>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected void ZoomTo(IEnumerable<int> channels) => Panel.ZoomTo(channels);
+
+        /// <summary>
+        /// Gets or sets whether the pointer is over a pane beside the plot that answers keys of its own, such as a
+        /// probe, so the plot leaves every key to it. Elsewhere in the window, the control strip included, the plot
+        /// answers its keys.
+        /// </summary>
+        /// <remarks>
+        /// Set it each frame, as from <see cref="DrawFrame"/>, before <see cref="DrawPlot"/>.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected bool KeysElsewhere
+        {
+            get => Panel.KeysElsewhere;
+            set => Panel.KeysElsewhere = value;
+        }
+
+        /// <summary>
         /// Gets a value indicating whether a fault has been reported, after which the viewer shows it in place of
         /// the plot until it is closed.
         /// </summary>

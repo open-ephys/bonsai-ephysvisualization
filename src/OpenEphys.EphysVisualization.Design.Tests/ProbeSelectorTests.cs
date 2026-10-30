@@ -180,6 +180,21 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Reveal_CentersAContactOutOfView_AndLeavesOneInView()
+        {
+            RightDrag(contacts[4].Center, contacts[9].Center);
+            Assert.Empty(ImGuiHarness.Rects(Fill(18)));
+            var scroll = Private.Get<float>(selector, "scrollY");
+
+            selector.Reveal(6);
+            Assert.Equal(scroll, Private.Get<float>(selector, "scrollY"));
+
+            selector.Reveal(18);
+            imgui.Frames(1, draw);
+            Assert.Single(ImGuiHarness.Rects(Fill(18)));
+        }
+
+        [Fact]
         public void R_ArmsOneRuler_WhichADragPlaces()
         {
             PlaceRuler(0, 18);

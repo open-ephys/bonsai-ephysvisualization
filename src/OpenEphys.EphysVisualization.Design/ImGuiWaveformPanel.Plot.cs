@@ -126,7 +126,12 @@ namespace OpenEphys.EphysVisualization.Design
                 plotLeft = lanes[lane].Left;
                 var layout = laneRows[lane];
                 lastLayout = layout;
-                var hoveredRow = HoveredRow(lanes, lane);
+                // NB: only the row under the pointer takes input, so a click on whatever set the hovered channel is
+                // not taken for a click on its row.
+                var pointerRow = HoveredRow(lanes, lane);
+                var elsewhere = hoveredElsewhere >= 0 ? RowOf(hoveredElsewhere) : -1;
+                var hoveredRow = pointerRow >= 0 ? pointerRow : elsewhere < rows ? elsewhere : -1;
+                lastHoveredRow = hoveredRow;
                 if (selectedRow >= rows)
                     selectedRow = -1;
                 if (selectOnShow && selectedRow < 0)
@@ -139,11 +144,14 @@ namespace OpenEphys.EphysVisualization.Design
                 }
                 else
                     ChannelLabels(laneRows[0], labelDigits, hoveredRow, labelsLeft, labelsRight);
-                HandleChannelInput(hoveredRow);
+                HandleChannelInput(pointerRow);
                 AnswerTableKeys(layout);
                 HandleWheel(layout);
                 HandleDrags(layout);
                 HandleZoomBox(layout);
+                if (pendingReveal >= 0 && pendingReveal < rows)
+                    ShowChannel(pendingReveal, layout);
+                pendingReveal = -1;
 
                 ImGui.TableNextColumn();
                 plotX = ImGui.GetCursorScreenPos().X;
@@ -233,10 +241,10 @@ namespace OpenEphys.EphysVisualization.Design
                 foreach (var f in frames)
                     cursors.Draw(draw, f, interactive: f.Left == frame.Left);
                 DrawZoomBox(draw, frame);
-                SelectClicked(frame, hoveredRow);
+                SelectClicked(frame, pointerRow);
                 foreach (var placed in lanes)
                     DrawFrame(draw, placed.Left, placed.Width, plotTop, plotBottom);
-                DrawReadout(draw, frame, hoveredRow);
+                DrawReadout(draw, frame, pointerRow);
                 AmplitudeLabels(draw, frame, plotX, plotTop, plotBottom);
                 ImGui.EndTable();
             }
@@ -855,10 +863,6 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Flashes CLIPPING in the plot's top right corner while any channel is clipping, as a scope's overload
-        /// light does, as a button that brings the first clipping channel into view.
-        /// </summary>
-        /// <summary>
         /// Draws the button in the plot's top right corner that gives the plot the whole window or gives the rest
         /// back, and returns the width it takes from the corner.
         /// </summary>
@@ -904,6 +908,10 @@ namespace OpenEphys.EphysVisualization.Design
             return side + pad.X;
         }
 
+        /// <summary>
+        /// Flashes CLIPPING in the plot's top right corner while any channel is clipping, as a scope's overload
+        /// light does, as a button that brings the first clipping channel into view.
+        /// </summary>
         void DrawClipping(ImDrawListPtr draw, in PlotFrame frame, float right)
         {
             var first = -1;
@@ -936,7 +944,7 @@ namespace OpenEphys.EphysVisualization.Design
                 draw.AddText(corner, ColClipping, Text);
         }
 
-        // NB: If not expanxed, center the channel. If expanded, show that channel in expanded view.
+        // NB: If not expanded, center the channel. If expanded, show that channel in expanded view.
         void ShowChannel(int row, in RowLayout layout)
         {
             if (expandedRow >= 0)
@@ -944,6 +952,10 @@ namespace OpenEphys.EphysVisualization.Design
                 expandedRow = row;
                 return;
             }
+
+            // NB: rows lie level across lanes, so the scroll below holds whichever lane the row is in.
+            if (expandedLane >= 0)
+                expandedLane = LaneOf(row);
 
             var center = layout.RowTop(row) + layout.RowHeight / 2;
             ImGui.SetScrollY(ImGui.GetScrollY() + center - (layout.Top + layout.Bottom) / 2);

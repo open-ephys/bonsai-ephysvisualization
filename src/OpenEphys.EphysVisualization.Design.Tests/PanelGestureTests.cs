@@ -106,6 +106,20 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Keys_AreLeftToAPaneThatAnswersItsOwn()
+        {
+            settings.FitChannels = false;
+
+            panel.KeysElsewhere = true;
+            imgui.Key(ImGuiKey.F, draw);
+            Assert.False(panel.FitChannels);
+
+            panel.KeysElsewhere = false;
+            imgui.Key(ImGuiKey.F, draw);
+            Assert.True(panel.FitChannels);
+        }
+
+        [Fact]
         public void ATallRightDrag_WhilePaused_FitsTheChannelsItSpansToThePlot()
         {
             panel.Paused = true;

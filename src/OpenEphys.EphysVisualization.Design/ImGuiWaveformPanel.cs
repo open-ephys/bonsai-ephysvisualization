@@ -128,9 +128,6 @@ namespace OpenEphys.EphysVisualization.Design
         public bool SingleChannel => rowCount == 1;
 
         /// <summary>
-        /// Whether clipping channels are marked and CLIPPING shown.
-        /// </summary>
-        /// <summary>
         /// Whether the plot is given the whole window, its owner hiding whatever else it draws beside it, such as a
         /// control strip.
         /// </summary>
@@ -140,6 +137,9 @@ namespace OpenEphys.EphysVisualization.Design
             set => settings.Maximized = value;
         }
 
+        /// <summary>
+        /// Whether clipping channels are marked and CLIPPING shown.
+        /// </summary>
         public bool ShowClipping
         {
             get => settings.ShowClipping;
@@ -175,6 +175,70 @@ namespace OpenEphys.EphysVisualization.Design
         /// it.
         /// </summary>
         int selectedRow = -1;
+
+        /// <summary>
+        /// The channel selected by clicking its trace or label or stepping with Q and E, or -1. Setting it to a
+        /// hidden channel, or one the data does not show, selects none.
+        /// </summary>
+        public int SelectedChannel
+        {
+            get => selectedRow >= 0 ? ChannelOf(selectedRow) : -1;
+            set
+            {
+                var row = value >= 0 ? RowOf(value) : -1;
+                selectedRow = row >= 0 && row < rowCount && !RowHidden[row] ? row : -1;
+            }
+        }
+
+        /// <summary>
+        /// The channel hovered as of the last frame drawn, or -1: the one under the pointer, or else the one set, as
+        /// from a probe the pointer is over. A channel set is drawn as one under the pointer is, and not scrolled to.
+        /// </summary>
+        public int HoveredChannel
+        {
+            get => lastHoveredRow >= 0 ? ChannelOf(lastHoveredRow) : -1;
+            set => hoveredElsewhere = value;
+        }
+        int hoveredElsewhere = -1;
+
+        /// <summary>
+        /// Brings a channel into view on the next frame drawn, as CLIPPING does: centered, in its lane widened if
+        /// that is shrunk to a strip, or expanded in place of the channel that is.
+        /// </summary>
+        public void Reveal(int channel)
+        {
+            var row = RowOf(channel);
+            if (row >= 0 && row < rowCount)
+                pendingReveal = row;
+        }
+
+        /// <summary>
+        /// Fits channels to the plot's height, as a zoom box over them does: the rows from the highest of them to the
+        /// lowest fill the plot, with no channel expanded and, where they span lanes, every lane widened. Hidden
+        /// channels, and ones the data does not show, are left out.
+        /// </summary>
+        public void ZoomTo(IEnumerable<int> channels)
+        {
+            var rows = channels.Select(RowOf).Where(row => row >= 0 && row < rowCount && !RowHidden[row]).ToArray();
+            if (rows.Length == 0 || SingleChannel || visibleHeight <= 0)
+                return;
+
+            // NB: counted in whole slots from the top of the lanes, as the zoom box counts them, so a row placed
+            // between two is shown whole. Evenly spaced lanes each count from their own first row.
+            var starts = LanesFor(rowCount);
+            float Slot(int row) =>
+                SlotsFor(rowCount) is null && starts is not null ? row - starts[LaneOf(row)] : SlotOf(row);
+            var first = (int)Math.Floor(rows.Min(Slot));
+            var end = (int)Math.Ceiling(rows.Max(Slot) + 1);
+            expandedRow = -1;
+            if (expandedLane >= 0)
+                expandedLane = rows.Select(LaneOf).Distinct().Count() == 1 ? LaneOf(rows[0]) : -1;
+            ChannelHeight = Math.Min(visibleHeight, MathF.Floor(visibleHeight / (end - first)));
+            pendingScroll = first * ChannelHeight;
+        }
+
+        int lastHoveredRow = -1;
+        int pendingReveal = -1;
 
         Decimator? decimator;
         int sampleRate = 30000;
@@ -315,6 +379,15 @@ namespace OpenEphys.EphysVisualization.Design
         float[]? SlotsFor(int rows) => rowSlots is { } slots && slots.Length == rows ? slots : null;
 
         int[]? LanesFor(int rows) => laneStarts is { } starts && starts[starts.Length - 1] == rows ? starts : null;
+
+        int LaneOf(int row)
+        {
+            var starts = LanesFor(rowCount);
+            var lane = 0;
+            while (starts is not null && lane + 2 < starts.Length && starts[lane + 1] <= row)
+                lane++;
+            return lane;
+        }
 
         float SlotOf(int row) => RowLayout.SlotOf(SlotsFor(rowCount), row);
 

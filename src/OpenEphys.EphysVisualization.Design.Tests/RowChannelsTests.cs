@@ -157,6 +157,94 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void RevealingAChannelInAStrip_WidensItsLane()
+        {
+            Reorder(Reversed);
+            panel.Order = new RowOrder((int[])Reversed.Clone(), Lanes: TwoLanes);
+            imgui.Frames(3, draw);
+            imgui.MoveMouse(LaneButton(), draw);
+            imgui.Click(ImGuiMouseButton.Left, draw);
+            imgui.Frames(2, draw);
+            Assert.Equal(0, Private.Get<int>(panel, "expandedLane"));
+
+            // NB: channel 0 is in the last row, in the second lane.
+            panel.Reveal(0);
+            imgui.Frames(2, draw);
+
+            Assert.Equal(1, Private.Get<int>(panel, "expandedLane"));
+        }
+
+        [Fact]
+        public void TheSelectedChannel_IsSetByChannel_AndAHiddenOneSelectsNone()
+        {
+            Reorder(Reversed);
+
+            panel.SelectedChannel = 3;
+            Assert.Equal(Channels - 1 - 3, Private.Get<int>(panel, "selectedRow"));
+            Assert.Equal(3, panel.SelectedChannel);
+
+            settings.HiddenChannels = new[] { 5 };
+            panel.SelectedChannel = 5;
+            Assert.Equal(-1, panel.SelectedChannel);
+        }
+
+        [Fact]
+        public void ZoomingToChannels_FitsTheRowsFromTheHighestToTheLowest()
+        {
+            Reorder(Reversed);
+            var visible = Private.Get<float>(panel, "visibleHeight");
+
+            // NB: channels 5 and 3 are in rows 10 and 12.
+            panel.ZoomTo(new[] { 5, 3 });
+            imgui.Frames(2, draw);
+
+            Assert.False(panel.FitChannels);
+            Assert.Equal(MathF.Floor(visible / 3), panel.ChannelHeight);
+            var rows = panel.Rows();
+            Assert.Equal(rows.Top, rows.RowTop(10), 1);
+        }
+
+        [Fact]
+        public void ZoomingToChannelsInTwoLanes_WidensEveryLane()
+        {
+            Reorder(Reversed);
+            panel.Order = new RowOrder((int[])Reversed.Clone(), Lanes: TwoLanes);
+            imgui.Frames(3, draw);
+            imgui.MoveMouse(LaneButton(), draw);
+            imgui.Click(ImGuiMouseButton.Left, draw);
+            imgui.Frames(2, draw);
+            Assert.Equal(0, Private.Get<int>(panel, "expandedLane"));
+            var visible = Private.Get<float>(panel, "visibleHeight");
+
+            // NB: channel 13 is the third row of the first lane, and channel 3 the fifth of the second.
+            panel.ZoomTo(new[] { 13, 3 });
+            imgui.Frames(2, draw);
+
+            Assert.Equal(-1, Private.Get<int>(panel, "expandedLane"));
+            Assert.Equal(MathF.Floor(visible / 3), panel.ChannelHeight);
+        }
+
+        [Fact]
+        public void AChannelHoveredElsewhere_IsHovered_ButTakesNoClick()
+        {
+            Reorder(Reversed);
+            imgui.MoveMouse(new Vector2(-100, -100), draw);
+
+            panel.HoveredChannel = 3;
+            imgui.Frames(1, draw);
+            Assert.Equal(3, panel.HoveredChannel);
+
+            // NB: a double-click on a hovered row would expand it.
+            imgui.Click(ImGuiMouseButton.Left, draw);
+            imgui.Click(ImGuiMouseButton.Left, draw);
+            Assert.Equal(-1, Private.Get<int>(panel, "expandedRow"));
+
+            panel.HoveredChannel = -1;
+            imgui.Frames(1, draw);
+            Assert.Equal(-1, panel.HoveredChannel);
+        }
+
+        [Fact]
         public void Lanes_MustBeOnePerChannel_WithEachLanesRowsTogether()
         {
             Assert.Throws<ArgumentException>(() => panel.Order = new RowOrder(Reversed, Lanes: new int[Channels - 1]));

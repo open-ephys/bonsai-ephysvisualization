@@ -188,6 +188,12 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public IEnumerable<ImGuiKey> Hotkeys => frameKeys.Select(k => k.Key).Concat(tableKeys.Select(k => k.Key));
 
+        /// <summary>
+        /// Whether the pointer is over a pane beside the panel that answers keys of its own, which the panel then
+        /// leaves to it. Set by the host each frame, before the panel is drawn.
+        /// </summary>
+        public bool KeysElsewhere { get; set; }
+
         void AnswerFrameKeys()
         {
             foreach (var key in frameKeys)
@@ -207,8 +213,8 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         // NB: not a key typed into a text field.
-        static bool Pressed(ImGuiKey key, bool repeat) =>
-            !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(key, repeat);
+        bool Pressed(ImGuiKey key, bool repeat) =>
+            !KeysElsewhere && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(key, repeat);
 
         /// <summary>
         /// Whether exactly the named modifiers are down and the rest are up.

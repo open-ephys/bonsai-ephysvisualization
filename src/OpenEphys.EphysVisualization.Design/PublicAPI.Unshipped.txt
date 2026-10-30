@@ -160,6 +160,7 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.MinimapWidth(float height
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.PlacingRuler.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Refresh(OpenEphys.ProbeInterface.NET.SingleProbeGroup? probeGroup) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RemoveRulers() -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Reveal(int contact) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RulerCount.get -> int
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionChanged -> System.EventHandler?
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.get -> bool
@@ -190,6 +191,14 @@ OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostClipping(bool[]!
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.PostData(OpenCV.Net.Mat! data, int sampleRate) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Order.get -> OpenEphys.EphysVisualization.Design.RowOrder?
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Order.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HoveredChannel.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HoveredChannel.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Reveal(int channel) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.KeysElsewhere.get -> bool
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.KeysElsewhere.set -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.ZoomTo(System.Collections.Generic.IEnumerable<int>! channels) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.SelectedChannel.get -> int
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.SelectedChannel.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.Scope.get -> OpenEphys.EphysVisualization.Design.WaveformScope!
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.WaveformScopeVisualizer() -> void
 abstract OpenEphys.EphysVisualization.Design.WaveformScopeVisualizer.HistoryBytes.get -> long

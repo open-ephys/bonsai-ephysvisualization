@@ -192,7 +192,7 @@ namespace OpenEphys.EphysVisualization.Design
         public bool Hovered { get; private set; }
 
         /// <summary>
-        /// Gets or sets the legend drawn in the zoomed view.
+        /// Gets or sets the legend drawn above the zoomed view.
         /// </summary>
         public IReadOnlyList<LegendEntry> Legend { get; set; } = Array.Empty<LegendEntry>();
 
@@ -307,11 +307,14 @@ namespace OpenEphys.EphysVisualization.Design
         const float RulerMinorTickLen   = 3f;
         static readonly uint  ColDragSelect       = ImGuiPalette.Yellow;
         static readonly uint  ColDragDeselect     = ImGuiPalette.Red;
-        static readonly uint ColCoordOverlayBg = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0xBB);
         static readonly uint  ColBottomInfoText   = ImGuiPalette.White;
         static readonly uint  ColCrosshair        = ImGuiPalette.WithAlpha(ImGuiPalette.White, 0xC0);
         const float GridMarginHPx       = 60f;
         const float GridMarginVPx       = 60f;
+        const float GridLabelInsetPx    = 8f;
+        const float GridLabelGapPx      = 5f;
+        const float LegendPadPx         = 5f;
+        const float LegendGapPx         = 15f;
         static readonly uint ColContourFill = ImGuiPalette.WithAlpha(ImGuiPalette.Black, 0xBB);
 
         /// <summary>
@@ -527,14 +530,19 @@ namespace OpenEphys.EphysVisualization.Design
             HoveredContactIndex = -1;
 
             var region = ImGui.GetContentRegionAvail();
-            UpdateLayout(region.Y, region.X);
+            var regionTop = ImGui.GetCursorScreenPos();
+            float marginH = ShowGrid ? GridMarginHPx : 0f;
+            float marginV = ShowGrid ? GridMarginVPx : 0f;
+            float legendWidth = region.X - 2f * GridLabelInsetPx;
+            float header = LegendHeader(legendWidth);
+            var avail = new Vector2(region.X, Math.Max(0f, region.Y - header));
+            UpdateLayout(avail.Y, avail.X);
             if (ImGui.IsWindowHovered())
                 HandleWheel();
 
             float xLow = scrollX - effectiveXWindow / 2f;
             float yLow = scrollY - zoomWindow       / 2f;
 
-            var avail  = ImGui.GetContentRegionAvail();
             float zW   = avail.X;
             float scaleXY = effectiveXWindow > 0 && zoomWindow > 0
                 ? Math.Min(zW / effectiveXWindow, avail.Y / zoomWindow) : 1f;
@@ -542,13 +550,11 @@ namespace OpenEphys.EphysVisualization.Design
             float drawH = zoomWindow       * scaleXY;
 
             var dl = ImGui.GetWindowDrawList();
-            var cp = ImGui.GetCursorScreenPos();
+            var cp = regionTop + new Vector2(0f, header);
             float viewLeft = cp.X + (zW - drawW) / 2f;
             float viewTop  = cp.Y + (avail.Y - drawH) / 2f;
             float viewBot  = viewTop + drawH;
 
-            float marginH = ShowGrid ? GridMarginHPx : 0f;
-            float marginV = ShowGrid ? GridMarginVPx : 0f;
             float gridLeft  = cp.X + marginH;
             float gridRight = cp.X + avail.X - marginH;
             float gridTop   = cp.Y + marginV;
@@ -651,17 +657,6 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (inCanvas)
             {
-                if (ShowCoordinateReadout)
-                {
-                    string coord = $"({mousePx:0.##} {units}, {mousePy:0.##} {units})";
-                    var sz  = ImGui.CalcTextSize(coord);
-                    const float pad = 5f;
-                    float refBot  = cp.Y + avail.Y - 18f;
-                    var bgMin = new Vector2(cp.X + avail.X - sz.X - pad * 3f, refBot - sz.Y - pad);
-                    var bgMax = new Vector2(cp.X + avail.X - pad, refBot);
-                    dl.AddText(new Vector2(bgMin.X + pad, bgMin.Y + pad), ColBottomInfoText, coord);
-                }
-
                 for (int i = 0; i < contacts.Count; i++)
                 {
                     var c = contacts[i];
@@ -672,7 +667,13 @@ namespace OpenEphys.EphysVisualization.Design
                 }
             }
 
-            DrawLegend(dl, cp, avail);
+            DrawLegend(dl, regionTop + new Vector2(GridLabelInsetPx, LegendPadPx), legendWidth);
+            if (ShowCoordinateReadout && inCanvas)
+            {
+                var coord = $"({mousePx:0.##}, {mousePy:0.##}) {units}";
+                var size = ImGui.CalcTextSize(coord);
+                dl.AddText(cp + avail - size - new Vector2(GridLabelInsetPx, LegendPadPx), ColBottomInfoText, coord);
+            }
             ruler.Draw(dl, viewLeft, viewBot, xLow, yLow, scaleXY);
             if (ruler.Placing && inCanvas)
             {
@@ -680,7 +681,7 @@ namespace OpenEphys.EphysVisualization.Design
                 dl.AddLine(new Vector2(gridLeft, mp.Y), new Vector2(gridRight, mp.Y), ColCrosshair);
             }
 
-            ImGui.Dummy(avail);
+            ImGui.Dummy(region);
         }
 
         /// <summary>
@@ -707,6 +708,28 @@ namespace OpenEphys.EphysVisualization.Design
         /// Removes every ruler, as Shift+Delete does.
         /// </summary>
         public void RemoveRulers() => ruler.RemoveAll();
+
+        /// <summary>
+        /// Scrolls the zoomed view to center a contact, unless the whole contact is already in view.
+        /// </summary>
+        /// <param name="contact">The contact's index into the probe's contacts.</param>
+        public void Reveal(int contact)
+        {
+            if (contact < 0 || contact >= contacts.Count)
+                return;
+
+            var c = contacts[contact];
+            if (Math.Abs(c.Position.Y - scrollY) + c.Size.Y / 2f > zoomWindow / 2f)
+            {
+                scrollY = c.Position.Y;
+                ClampScroll();
+            }
+            if (Math.Abs(c.Position.X - scrollX) + c.Size.X / 2f > effectiveXWindow / 2f)
+            {
+                scrollX = c.Position.X;
+                ClampScrollX();
+            }
+        }
 
         void HandleKeys(bool selectionEnabled)
         {
@@ -1107,8 +1130,8 @@ namespace OpenEphys.EphysVisualization.Design
                     if (sy < lineTop - 1f || sy > lineBot + 1f) continue;
                     string lbl = FormatInterval(y, major, units);
                     var tsz = ImGui.CalcTextSize(lbl);
-                    DrawGridLabel(dl, lbl, tsz, lblLeft  + 8f,         sy - tsz.Y / 2f);
-                    DrawGridLabel(dl, lbl, tsz, lblRight - tsz.X - 8f, sy - tsz.Y / 2f);
+                    DrawGridLabel(dl, lbl, tsz, lblLeft  + GridLabelInsetPx,         sy - tsz.Y / 2f);
+                    DrawGridLabel(dl, lbl, tsz, lblRight - tsz.X - GridLabelInsetPx, sy - tsz.Y / 2f);
                 }
             }
 
@@ -1123,8 +1146,8 @@ namespace OpenEphys.EphysVisualization.Design
                     if (sx < lineLeft - 1f || sx > lineRight + 1f) continue;
                     string lbl = FormatInterval(x, major, units);
                     var tsz = ImGui.CalcTextSize(lbl);
-                    DrawGridLabel(dl, lbl, tsz, sx - tsz.X / 2f, lineTop - tsz.Y - 5f);
-                    DrawGridLabel(dl, lbl, tsz, sx - tsz.X / 2f, lineBot + 5f);
+                    DrawGridLabel(dl, lbl, tsz, sx - tsz.X / 2f, lineTop - tsz.Y - GridLabelGapPx);
+                    DrawGridLabel(dl, lbl, tsz, sx - tsz.X / 2f, lineBot + GridLabelGapPx);
                 }
             }
         }
@@ -1210,36 +1233,54 @@ namespace OpenEphys.EphysVisualization.Design
             return value.ToString("F" + decimals) + units;
         }
 
-        void DrawLegend(ImDrawListPtr dl, Vector2 cp, Vector2 avail)
+        // NB: the legend lies above the view rather than over it, where in a narrow view it would hide the probe,
+        // and not beneath it, so the view keeps its base level with the minimap's. It takes the room the grid's
+        // top margin leaves above the axis labels before it pushes the view down.
+        float LegendHeader(float width)
         {
-            if (Legend.Count == 0) return;
+            float lineH = ImGui.GetTextLineHeight();
+            var lines = LegendLines(width);
+            if (lines == 0) return 0f;
 
-            const float pad = 5f;
-            float lineH = ImGui.CalcTextSize("A").Y;
-            float swatchSz = lineH;
-            float rowH = lineH + pad;
+            float spare = ShowGrid ? GridMarginVPx - lineH - GridLabelGapPx : 0f;
+            return Math.Max(0f, lines * (lineH + LegendPadPx) + LegendPadPx - spare);
+        }
 
-            float maxEntryW = 0f;
-            foreach (var e in Legend)
-                maxEntryW = Math.Max(maxEntryW, swatchSz + pad + ImGui.CalcTextSize(e.Label).X);
-            float boxW = maxEntryW + pad * 4f;
-            float boxH = Legend.Count * rowH + pad * 3f;
+        int LegendLines(float width)
+        {
+            var lines = 0;
+            foreach (var (_, _, line) in LegendFlow(width))
+                lines = line + 1;
+            return lines;
+        }
 
-            // Anchor inside the grid contact area (bottom-left), clear of axis-label margins
-            float boxLeft = cp.X + GridMarginHPx + pad;
-            float boxBottom = cp.Y + avail.Y - GridMarginVPx - pad;
-            float boxTop = boxBottom - boxH;
-            float boxRight  = boxLeft + boxW;
-
-            dl.AddRectFilled(new Vector2(boxLeft, boxTop), new Vector2(boxRight, boxBottom), ColCoordOverlayBg, 3f);
-
-            float x = boxLeft + pad * 2f;
-            float y = boxTop + pad * 2f;
-
+        // NB: the entries wrap, so a narrow view stacks them rather than clipping them.
+        IEnumerable<(LegendEntry Entry, float X, int Line)> LegendFlow(float width)
+        {
+            float lineH = ImGui.GetTextLineHeight();
+            float x = 0f;
+            var line = 0;
             foreach (var e in Legend)
             {
-                var sMin = new Vector2(x, y);
-                var sMax = new Vector2(x + swatchSz, y + swatchSz);
+                float w = lineH + LegendPadPx + ImGui.CalcTextSize(e.Label).X;
+                if (x > 0f && x + w > width)
+                {
+                    x = 0f;
+                    line++;
+                }
+                yield return (e, x, line);
+                x += w + LegendGapPx;
+            }
+        }
+
+        void DrawLegend(ImDrawListPtr dl, Vector2 origin, float width)
+        {
+            float lineH = ImGui.GetTextLineHeight();
+            float rowH = lineH + LegendPadPx;
+            foreach (var (e, x, line) in LegendFlow(width))
+            {
+                var sMin = origin + new Vector2(x, line * rowH);
+                var sMax = sMin + new Vector2(lineH, lineH);
                 if (e.OutlineOnly)
                 {
                     dl.AddRect(sMin, sMax, e.Color, 0f, ContactSelBorderWidth);
@@ -1250,8 +1291,7 @@ namespace OpenEphys.EphysVisualization.Design
                     if (e.DottedOutline)
                         DrawDottedRect(dl, sMin, sMax, ColBlockedOutline);
                 }
-                dl.AddText(new Vector2(x + swatchSz + pad, y), ColBottomInfoText, e.Label);
-                y += rowH;
+                dl.AddText(new Vector2(sMax.X + LegendPadPx, sMin.Y), ColBottomInfoText, e.Label);
             }
         }
 

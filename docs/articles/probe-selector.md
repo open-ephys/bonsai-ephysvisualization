@@ -11,7 +11,7 @@ The selector draws the probe and handles input gestures, while its owner decides
 
 The minimap shows the whole probe, with a depth scale beside it. A yellow box marks the part of the probe the zoomed view shows. Dragging in the minimap moves the zoomed view to the pointer.
 
-The zoomed view shows part of the probe at one scale on both axes, so the contacts keep their true shape. Its grid and axis labels are in the probe file's units, usually micrometers. While the pointer is over the probe, its position is shown in the lower right. An owner can also show a legend for the colors it uses, which is drawn in the lower left.
+The zoomed view shows part of the probe at one scale on both axes, so the contacts keep their true shape. Its grid and axis labels are in the probe file's units, usually micrometers. While the pointer is over the probe, its position is shown in the lower right. An owner can also show a legend for the colors it uses, which is drawn above the view.
 
 ^^^
 ![The minimap and zoomed view of a probe](~/images/probe-selector/npx2_overview.png){#fig-overview}
@@ -77,4 +77,5 @@ A package that shows a probe creates an ImGuiProbeSelector and calls it each fra
 - [ToggleRuler](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ToggleRuler) and [RemoveRulers](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RemoveRulers) do what R and Shift+Delete do, and [PlacingRuler](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.PlacingRuler) and [RulerCount](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RulerCount) give the state the owner's own controls for them show.
 - [FillColor](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor), [Blocked](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Blocked) and [Legend](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend) say what the contacts mean.
 - [Contacts](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Contacts) gives each contact's place in the selection, and [SelectionChanged](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionChanged) is raised when a gesture has changed it.
+- [Reveal](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Reveal(System.Int32)) scrolls a contact into the middle of the zoomed view, so the probe can follow a selection made elsewhere, such as a channel in a plot.
 - [Hotkeys](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hotkeys) lists the keys the view answers, for a host that routes keys by pointer, and [Hovered](xref:OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hovered) says whether the pointer is over the view, for an owner whose own keys should work only there.
