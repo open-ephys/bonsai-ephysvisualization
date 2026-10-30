@@ -168,6 +168,18 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Escape_AwayFromTheView_KeepsTheSelection()
+        {
+            Drag(contacts[4].Center, contacts[9].Center);
+
+            imgui.MoveMouse(new Vector2(-100, -100), draw);
+            imgui.Key(ImGuiKey.Escape, draw);
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, Selected());
+            Assert.Equal(1, selectionChanges);
+        }
+
+        [Fact]
         public void NothingIsSelected_WhileSelectionIsDisabled()
         {
             selectionEnabled = false;

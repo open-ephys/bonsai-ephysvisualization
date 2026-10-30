@@ -279,8 +279,8 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Every key the probe view answers: R arms a ruler, which the next drag or pair of clicks places, Delete
-        /// removes the selected ruler and Shift+Delete all of them, and Escape cancels a zoom box or a ruler being
-        /// placed, then deselects a ruler, then clears the selection.
+        /// removes the selected ruler and Shift+Delete all of them, and Escape cancels a zoom box, a selection box or
+        /// a ruler being placed, or else, over the view, deselects a ruler, then clears the selection.
         /// </summary>
         public IEnumerable<ImGuiKey> Hotkeys => new[] { ImGuiKey.R, ImGuiKey.Delete, ImGuiKey.Escape };
 
@@ -734,16 +734,18 @@ namespace OpenEphys.EphysVisualization.Design
         void HandleKeys(bool selectionEnabled)
         {
             // NB: Escape backs out of the most recent thing first, so cancelling a ruler doesn't also lose the
-            // selection.
+            // selection. A gesture in progress is cancelled wherever the pointer is, since a drag can carry it out of
+            // the view and a ruler is armed from outside it, but what is selected is cleared only over the view, so
+            // Escape over a pane beside it clears that pane's selection and not this one.
             if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
             {
                 if (zoomBox.Dragging)
                     zoomBox.Cancel();
                 else if (ruler.Placing)
                     ruler.Cancel();
-                else if (ruler.HasSelection)
+                else if (Hovered && ruler.HasSelection)
                     ruler.Deselect();
-                else if (selectionEnabled)
+                else if ((Hovered || selectBox.Dragging) && selectionEnabled)
                     ClearOnEscape();
             }
 

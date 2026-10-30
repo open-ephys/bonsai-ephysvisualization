@@ -21,7 +21,7 @@ Selected contacts are outlined in yellow. A contact that its owner blocks from s
 
 ## Keys and mouse
 
-The minimap and the zoomed view both answer the wheel. The other gestures and the keys act in the zoomed view. R and Delete work only while the pointer is over it, and Escape works wherever the pointer is.
+The minimap and the zoomed view both answer the wheel. The other gestures and the keys act in the zoomed view. R and Delete work only while the pointer is over it. Escape cancels a gesture in progress wherever the pointer is, since a drag can carry it out of the view, but deselects a ruler or clears the selection only while the pointer is over the view.
 
 ### Mouse
 
@@ -52,7 +52,7 @@ When its owner turns selection off, a click or a left drag only selects a ruler.
 | R | Arms a ruler, or cancels one being placed (see [Rulers](#rulers)). |
 | Delete | Removes the selected ruler. |
 | Shift+Delete | Removes every ruler. |
-| Escape | Cancels the most recent thing first: a zoom box being dragged or a ruler being placed, then the selected ruler, then the contact selection. |
+| Escape | Cancels the most recent thing first: a zoom box or selection box being dragged or a ruler being placed, then, over the view, the selected ruler, then the contact selection. |
 
 ## Rulers
 
