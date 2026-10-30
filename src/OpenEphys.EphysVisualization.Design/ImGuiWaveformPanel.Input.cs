@@ -445,9 +445,12 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Right click and drag a zoom box. Paused only, as Ctrl+Drag is. A double-click zooms all the way
-        /// out, which a live view can do too.
+        /// Right click and drag a zoom box. A double-click zooms all the way out.
         /// </summary>
+        /// <remarks>
+        /// Live, only the box's height counts: its rows hold still, but the sweep moves under its left and right
+        /// edges, so it zooms the rows or the expanded channel's amplitude and leaves the timebase as it is.
+        /// </remarks>
         void HandleZoomBox(in RowLayout layout)
         {
             var mouse = ImGui.GetMousePos();
@@ -457,13 +460,13 @@ namespace OpenEphys.EphysVisualization.Design
                 zoomBox.Cancel();
                 ZoomAll();
             }
-            else if (onPlot && Paused && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+            else if (onPlot && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
                 zoomBox.Begin();
 
-            if (!zoomBox.Released(PlotMin(layout.Top), PlotMax(layout.Bottom), out var box) || !Paused)
+            if (!zoomBox.Released(PlotMin(layout.Top), PlotMax(layout.Bottom), out var box))
                 return;
 
-            if (box.Wide)
+            if (box.Wide && Paused)
             {
                 var longest = standardTimeBases[ServableTimeBases - 1];
                 var value = PlotText.Significant(Timebase * (box.Max.X - box.Min.X) / plotSpan);

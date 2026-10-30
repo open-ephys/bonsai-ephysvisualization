@@ -862,18 +862,21 @@ namespace OpenEphys.EphysVisualization.Design
         /// Draws the box a right-drag is zooming to, while it is held.
         /// </summary>
         /// <remarks>
-        /// An axis the box is too short along to zoom is drawn across the whole plot, since the zoom leaves it as it
-        /// is, so the box shows what letting go will do.
+        /// An axis the box is too short along to zoom, or time while live, is drawn across the whole plot, since the
+        /// zoom leaves it as it is, so the box shows what letting go will do.
         /// </remarks>
         void DrawZoomBox(ImDrawListPtr draw, in PlotFrame frame)
         {
             var plotMin = PlotMin(frame.Top);
             var plotMax = PlotMax(frame.Bottom);
-            if (zoomBox.Current(plotMin, plotMax) is not { } box || !box.Wide && !box.Tall)
+            if (zoomBox.Current(plotMin, plotMax) is not { } box)
+                return;
+            var wide = box.Wide && Paused;
+            if (!wide && !box.Tall)
                 return;
 
-            var min = new Vector2(box.Wide ? box.Min.X : plotMin.X, box.Tall ? box.Min.Y : plotMin.Y);
-            var max = new Vector2(box.Wide ? box.Max.X : plotMax.X, box.Tall ? box.Max.Y : plotMax.Y);
+            var min = new Vector2(wide ? box.Min.X : plotMin.X, box.Tall ? box.Min.Y : plotMin.Y);
+            var max = new Vector2(wide ? box.Max.X : plotMax.X, box.Tall ? box.Max.Y : plotMax.Y);
             PixelRect.Fill(draw, min, max, ColZoomBoxFill);
             PixelRect.Outline(draw, min, max, ColZoomBox);
         }

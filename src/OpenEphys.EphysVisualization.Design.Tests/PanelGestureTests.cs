@@ -139,6 +139,23 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void ARightDrag_WhileLive_FitsTheChannelsItSpans_AndLeavesTheTimebase()
+        {
+            imgui.Frame(draw);
+            var rows = panel.Rows();
+            var timebase = panel.Timebase;
+            var left = panel.Axis().Left + 10;
+            var visible = rows.Bottom - rows.Top;
+
+            RightDrag(new Vector2(left, RowMiddle(rows, 4)), new Vector2(left + panel.Axis().Width / 4, RowMiddle(rows, 7)));
+
+            Assert.Equal(timebase, panel.Timebase, 12);
+            Assert.True(4 * panel.ChannelHeight <= visible && 5 * panel.ChannelHeight > visible,
+                $"height {panel.ChannelHeight}, visible {visible}");
+            Assert.Equal(4, panel.Rows().FirstVisible);
+        }
+
+        [Fact]
         public void ATallRightDrag_OnAnExpandedChannel_ZoomsItsAmplitudeToTheBox()
         {
             panel.Paused = true;
