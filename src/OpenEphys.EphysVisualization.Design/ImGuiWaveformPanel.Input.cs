@@ -498,10 +498,18 @@ namespace OpenEphys.EphysVisualization.Design
         /// Shows everything: the longest timebase, every channel fitted to the plot, and an expanded channel's
         /// whole range.
         /// </summary>
+        /// <remarks>
+        /// Fitted once rather than by turning Fit on, so a gesture does not change a setting it does not show. Fit
+        /// left on is left on.
+        /// </remarks>
         void ZoomAll()
         {
             LongestTimebase();
-            FitChannels = true;
+            if (!FitChannels)
+            {
+                ChannelHeight = FitHeight;
+                pendingScroll = 0;
+            }
             amplitudeView.Row = -1;
         }
 

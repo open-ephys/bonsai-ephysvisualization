@@ -93,15 +93,33 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
-        public void ARightDoubleClick_ZoomsAllTheWayOut()
+        public void ARightDoubleClick_ZoomsAllTheWayOut_FittingTheChannelsOnce()
         {
             settings.FitChannels = false;
+            settings.ChannelHeight = 200;
+            imgui.MoveMouse(new Vector2(panel.Axis().Left + panel.Axis().Width / 2, ImGuiHarness.DisplaySize.Y / 2), draw);
+
+            imgui.Click(ImGuiMouseButton.Right, draw);
+            imgui.Click(ImGuiMouseButton.Right, draw);
+            imgui.Frames(2, draw);
+
+            Assert.Equal(10, panel.Timebase, 12);
+            Assert.False(panel.FitChannels);
+            var rows = panel.Rows();
+            Assert.Equal(0, rows.FirstVisible);
+            Assert.True(rows.RowTop(rows.LastRow - 1) + rows.RowHeight <= rows.Bottom + 1,
+                $"last row ends at {rows.RowTop(rows.LastRow - 1) + rows.RowHeight}, plot at {rows.Bottom}");
+        }
+
+        [Fact]
+        public void ARightDoubleClick_LeavesFitOn()
+        {
+            settings.FitChannels = true;
             imgui.MoveMouse(new Vector2(panel.Axis().Left + panel.Axis().Width / 2, ImGuiHarness.DisplaySize.Y / 2), draw);
 
             imgui.Click(ImGuiMouseButton.Right, draw);
             imgui.Click(ImGuiMouseButton.Right, draw);
 
-            Assert.Equal(10, panel.Timebase, 12);
             Assert.True(panel.FitChannels);
         }
 
