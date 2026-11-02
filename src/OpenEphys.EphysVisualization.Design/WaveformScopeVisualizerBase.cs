@@ -105,6 +105,29 @@ namespace OpenEphys.EphysVisualization.Design
         protected uint GroupColor(int group) => ImGui.ColorConvertFloat4ToU32(Panel.Colors.Group(group));
 
         /// <summary>
+        /// Returns the color the plot draws a channel in, under the palette or, with <see cref="ChannelGroup"/> set,
+        /// its group's, so that what the owner draws for the channel matches its trace.
+        /// </summary>
+        /// <param name="channel">The channel.</param>
+        /// <returns>The color in packed <c>0xAABBGGRR</c> format.</returns>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected uint ChannelColor(int channel) => Panel.ChannelColor(channel);
+
+        /// <summary>
+        /// Gets the value at the middle of a channel's row and the amplitude the row spans, as the plot draws them:
+        /// zero and the range, or an expanded channel's zoom, so that what the owner draws of a channel's values can
+        /// share the plot's axis.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected (double Center, double Range) Amplitude => Panel.Amplitude;
+
+        /// <summary>
+        /// Gets the channel drawn alone in the plot and where its row lay on screen, as of the last frame drawn, or
+        /// null while no channel is expanded, so that what the owner draws of the channel can line up with it.
+        /// </summary>
+        protected (int Channel, float Top, float Height)? ExpandedRow => panel?.Expanded;
+
+        /// <summary>
         /// Gets or sets the channel each row of the posted data shows, from the top, and where each row lies, or null
         /// for each row showing the channel of its own index, the rows evenly spaced.
         /// </summary>
@@ -272,11 +295,12 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Hands over a block of samples to be shown, from any thread. Blocks are shown in the order they are posted.
+        /// Posts a block of samples to be shown, from any thread. Blocks are shown in the order they are posted.
         /// </summary>
         /// <param name="data">
-        /// A channel-by-sample matrix of 32-bit floats, one row per channel. The viewer takes ownership of it and
-        /// disposes it once shown, so it must not be used again.
+        /// A channel-by-sample matrix of 32-bit floats, one row per channel. The viewer reads it on the next frame and
+        /// never disposes it, so it can be shared with other subscribers, and must not be changed or disposed until
+        /// it has been shown.
         /// </param>
         /// <param name="sampleRate">The rate, in Hz, at which each channel is sampled.</param>
         protected void PostData(Mat data, int sampleRate) => pending.Enqueue(new(data, sampleRate, null, null));
@@ -306,10 +330,7 @@ namespace OpenEphys.EphysVisualization.Design
             while (pending.TryDequeue(out var item))
             {
                 if (item.Data is { } data)
-                {
-                    using (data)
-                        panel?.Update(data, item.SampleRate);
-                }
+                    panel?.Update(data, item.SampleRate);
                 else if (item.Clipping is { } rows)
                     panel?.MarkClipping(rows);
                 else

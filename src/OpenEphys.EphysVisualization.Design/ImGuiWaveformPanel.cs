@@ -202,6 +202,22 @@ namespace OpenEphys.EphysVisualization.Design
         int hoveredElsewhere = -1;
 
         /// <summary>
+        /// The color a channel's trace is drawn in, under the palette or its group's.
+        /// </summary>
+        public uint ChannelColor(int channel) =>
+            ImGui.ColorConvertFloat4ToU32(Colors.Of(Math.Max(0, RowOf(channel)), channel));
+
+        /// <summary>
+        /// The value at the middle of a channel's row and the amplitude the row spans, as the plot draws them.
+        /// </summary>
+        public (double Center, double Range) Amplitude => AmplitudeView;
+
+        /// <summary>
+        /// The channel drawn alone and where its row lay on screen, as of the last frame drawn, or null while none was.
+        /// </summary>
+        public (int Channel, float Top, float Height)? Expanded { get; private set; }
+
+        /// <summary>
         /// Brings a channel into view on the next frame drawn, as CLIPPING does: centered, in its lane widened if
         /// that is shrunk to a strip, or expanded in place of the channel that is.
         /// </summary>

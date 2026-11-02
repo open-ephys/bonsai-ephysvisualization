@@ -14,8 +14,8 @@ namespace OpenEphys.EphysVisualization.Design
         // visual constants
         static readonly uint ColSweepCursor = ImGuiPalette.Yellow;
         const float SweepCursorWeight = 1;
-        static readonly uint ColGraticule = ImGuiPalette.Grey0x88;
-        const float GraticuleWeight = 1;
+        internal static readonly uint ColGraticule = ImGuiPalette.Grey0x88;
+        internal const float GraticuleWeight = 1;
         const int AmplitudeDivisions = 10;
         static readonly uint ColDivision = ImGuiPalette.Grey0x55;
         const float DivisionDotGap = 3;
@@ -101,6 +101,7 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);
             ImGui.PopStyleVar();
 
+            Expanded = null;
             if (rowsOpen && ImGui.BeginTable("##table", 2, ImGuiTableFlags.NoSavedSettings))
             {
                 var labelWidth = LabelColumnWidth(labelDigits);
@@ -182,6 +183,8 @@ namespace OpenEphys.EphysVisualization.Design
                     AmplitudeView.Span, AmplitudeView.Center, Unit, RowHidden, expandedRow, selectedRow, ShowHeatmap, ColorThreshold,
                     rowChannels)).ToArray();
                 frame = frames[Array.IndexOf(full, lane)];
+                if (expandedRow >= 0)
+                    Expanded = (ChannelOf(expandedRow), layout.RowTop(expandedRow), layout.RowHeight);
 
                 // NB: an item the height of the tallest lane, which is what the table scrolls through. Everything in
                 // the plot is drawn rather than laid out.

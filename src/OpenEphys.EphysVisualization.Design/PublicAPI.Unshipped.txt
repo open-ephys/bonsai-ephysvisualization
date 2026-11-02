@@ -236,5 +236,18 @@ OpenEphys.EphysVisualization.Design.ChannelSettings.Index.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.get -> System.Func<int, int>?
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.GroupColor(int group) -> uint
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelColor(int channel) -> uint
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Amplitude.get -> (double Center, double Range)
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ExpandedRow.get -> (int Channel, float Top, float Height)?
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Select(System.Collections.Generic.IEnumerable<int>! contacts, bool add = false) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RulerSelected.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Add(int channel, float[]! waveform) -> void
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Clear() -> void
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Draw(int channel, System.Numerics.Vector2 size, uint color, double center, double range, double? threshold = null) -> double?
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Flush() -> void
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Reshape(int length, int delay, double sampleRate) -> void
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.ImGuiSpikeView(int channels, int length, int delay, double sampleRate, double span) -> void
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.SpikeCount(int channel) -> long
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Unit.get -> string!
+OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Unit.set -> void
