@@ -54,5 +54,24 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(100.5f + width - 1, points[points.Count - 3]);
             Assert.Equal(4f, points[points.Count - 1]);
         }
+
+        [Fact]
+        public void Waveforms_AddedWhileNoneAreDrawn_AreHeldOnlyUpToTheLimit_AndClearReleasesThem()
+        {
+            const int Length = 45;
+            var view = new ImGuiSpikeView(4, Length, 15, 30000, Span);
+            var waveform = new float[Length];
+
+            for (int i = 0; i < 2 * ImGuiSpikeView.MostPendingSamples / Length; i++)
+                view.Add(i % 4, waveform);
+
+            Assert.True(view.PendingSamples <= ImGuiSpikeView.MostPendingSamples, $"{view.PendingSamples} held");
+            Assert.True(view.PendingSamples > ImGuiSpikeView.MostPendingSamples - Length, $"{view.PendingSamples} held");
+
+            view.Clear();
+            Assert.Equal(0, view.PendingSamples);
+            view.Add(0, waveform);
+            Assert.Equal(Length, view.PendingSamples);
+        }
     }
 }

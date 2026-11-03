@@ -81,6 +81,23 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         }
 
         /// <summary>
+        /// Makes the control's GL context current outside a frame, for drawing off screen while the control is not
+        /// painted, and returns whether it did.
+        /// </summary>
+        /// <remarks>
+        /// Only the GL context, which a frame makes current again as it starts. Not while a frame is being drawn,
+        /// whose contexts must not change under it, nor whenever a frame would not be drawn.
+        /// </remarks>
+        internal bool MakeCurrentOutsideFrame()
+        {
+            if (!initialized || renderDepth > 0 || disposed || DesignMode || !HasValidContext || resizing)
+                return false;
+
+            base.MakeCurrent();
+            return true;
+        }
+
+        /// <summary>
         /// Raises the <see cref="Render"/> event.
         /// </summary>
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>

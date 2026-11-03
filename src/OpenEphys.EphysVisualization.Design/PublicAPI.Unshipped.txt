@@ -211,6 +211,7 @@ virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawFram
 virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.FaultHint.get -> string!
 virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Hotkeys.get -> System.Collections.Generic.IEnumerable<Hexa.NET.ImGui.ImGuiKey>!
 virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Unit.get -> string!
+virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawOffscreen() -> void
 OpenEphys.EphysVisualization.Design.ControlStripColumn.ControlStripColumn(string! label, System.Action<float>! draw) -> void
 OpenEphys.EphysVisualization.Design.StandardColumns
 OpenEphys.EphysVisualization.Design.StandardColumns.All.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.ControlStripColumn>!

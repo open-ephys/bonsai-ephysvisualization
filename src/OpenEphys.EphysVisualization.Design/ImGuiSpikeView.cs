@@ -25,7 +25,8 @@ namespace OpenEphys.EphysVisualization.Design
     /// <para>
     /// The view detects nothing itself. Its owner adds waveforms with <see cref="Add"/>, from any thread, and draws a
     /// channel's density wherever it chooses with <see cref="Draw"/>. Every channel accumulates whether or not it is
-    /// drawn, as long as <see cref="Flush"/> or <see cref="Draw"/> is called each frame.
+    /// drawn, as long as <see cref="Flush"/> or <see cref="Draw"/> is called each frame. Waveforms added while too
+    /// many wait to be drawn are dropped, so a window that paints nothing for a while cannot run out of memory.
     /// </para>
     /// </remarks>
     public sealed class ImGuiSpikeView
@@ -40,7 +41,12 @@ namespace OpenEphys.EphysVisualization.Design
         readonly int channels;
         readonly float span;
         readonly float knee;
+        // NB: the most samples, summed over the waveforms waiting to be drawn, that are held, 16 MB of them.
+        internal const int MostPendingSamples = 1 << 22;
+
         readonly ConcurrentQueue<(int Channel, float[] Waveform, Shape Shape)> pending = new();
+        // NB: counted alongside the queue, since ConcurrentQueue.Count walks its segments.
+        int pendingSamples;
         readonly long[] spikeCounts;
         int clearRequested;
 
@@ -115,17 +121,35 @@ namespace OpenEphys.EphysVisualization.Design
         /// <param name="channel">The channel it was detected on. One out of range is ignored.</param>
         /// <param name="waveform">
         /// Its samples, at least the view's length of them. A copy is kept until it is drawn, so the array can be
-        /// reused at once.
+        /// reused at once. It is dropped instead while too many wait to be drawn.
         /// </param>
         public void Add(int channel, float[] waveform)
         {
             var s = shape;
-            if ((uint)channel < (uint)channels && waveform.Length >= s.Length)
+            if ((uint)channel >= (uint)channels || waveform.Length < s.Length)
+                return;
+            if (Interlocked.Add(ref pendingSamples, s.Length) > MostPendingSamples)
             {
-                var copy = new float[s.Length];
-                Array.Copy(waveform, copy, s.Length);
-                pending.Enqueue((channel, copy, s));
+                Interlocked.Add(ref pendingSamples, -s.Length);
+                return;
             }
+
+            var copy = new float[s.Length];
+            Array.Copy(waveform, copy, s.Length);
+            pending.Enqueue((channel, copy, s));
+        }
+
+        /// <summary>
+        /// Gets the number of samples, summed over the waveforms added, waiting to be drawn.
+        /// </summary>
+        internal int PendingSamples => Volatile.Read(ref pendingSamples);
+
+        bool TryTake(out (int Channel, float[] Waveform, Shape Shape) spike)
+        {
+            if (!pending.TryDequeue(out spike))
+                return false;
+            Interlocked.Add(ref pendingSamples, -spike.Waveform.Length);
+            return true;
         }
 
         /// <summary>
@@ -134,7 +158,7 @@ namespace OpenEphys.EphysVisualization.Design
         public void Clear()
         {
             Interlocked.Exchange(ref clearRequested, 1);
-            while (pending.TryDequeue(out _)) { }
+            while (TryTake(out _)) { }
         }
 
         /// <summary>
@@ -169,14 +193,20 @@ namespace OpenEphys.EphysVisualization.Design
                 Array.Clear(spikeCounts, 0, spikeCounts.Length);
             }
 
+            // NB: uploaded a chunk at a time as the segments are made, so the list never holds more than a chunk.
             vertices.Clear();
-            while (pending.TryDequeue(out var spike))
+            while (TryTake(out var spike))
             {
                 if (spike.Shape != current)
                     continue;
                 var (x, y) = TileOrigin(spike.Channel, gpu.TilesPerRow, current.TileWidth);
                 AppendSegments(spike.Waveform, current.Length, x, y, vertices);
                 spikeCounts[spike.Channel]++;
+                if (vertices.Count >= Gpu.ChunkFloats)
+                {
+                    gpu.Accumulate(vertices);
+                    vertices.Clear();
+                }
             }
 
             if (vertices.Count > 0)
@@ -364,7 +394,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             // NB: a whole number of segments, so a chunk never splits a line. The buffer is made this size once, so
             // however many waveforms pile up between frames, no upload is larger.
-            const int ChunkFloats = 65536 * 3;
+            internal const int ChunkFloats = 65536 * 3;
 
             // NB: the atlas holds half floats, which count whole numbers only up to 2048, where adding one rounds
             // back down, so no pixel holds more.

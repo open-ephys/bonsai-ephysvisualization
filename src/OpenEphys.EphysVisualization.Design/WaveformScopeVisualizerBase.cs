@@ -41,6 +41,7 @@ namespace OpenEphys.EphysVisualization.Design
         StandardColumns? standardColumns;
         ImGuiHoverGLControl? canvas;
         Timer? drainTimer;
+        bool painted;
 
         // NB: shown in the plot's place rather than thrown. The viewer is a view on data it does not change, so a
         // mistake in it must not stop the workflow. Set on whichever thread finds it, and read once a frame.
@@ -274,8 +275,31 @@ namespace OpenEphys.EphysVisualization.Design
             // NB: each frame applies what has arrived, and so does a timer, which runs while the window is
             // minimized and paints nothing, so that what arrives meanwhile is applied rather than held.
             drainTimer = new Timer { Interval = DrainMilliseconds };
-            drainTimer.Tick += (_, _) => Drain();
+            drainTimer.Tick += (_, _) => DrainTick();
             drainTimer.Start();
+        }
+
+        /// <summary>
+        /// Does off screen what a frame would, while the window paints nothing, as while it is minimized. By default
+        /// it does nothing.
+        /// </summary>
+        /// <remarks>
+        /// Called on the window's thread, between frames, with its GL context current, when no frame has been
+        /// painted since the last call, about every 15 ms. For GL work that must keep up with what arrives, such as
+        /// <see cref="ImGuiSpikeView.Flush"/>. Nothing of ImGui's may be called, since no ImGui frame is under way.
+        /// </remarks>
+        protected virtual void DrawOffscreen()
+        {
+        }
+
+        // NB: a frame does its own off screen work, so DrawOffscreen is called only once a tick has passed with none.
+        void DrainTick()
+        {
+            Drain();
+            if (painted)
+                painted = false;
+            else if (canvas?.MakeCurrentOutsideFrame() == true)
+                DrawOffscreen();
         }
 
         /// <inheritdoc/>
@@ -343,6 +367,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (canvas is null || panel is null)
                 return;
 
+            painted = true;
             Drain();
             var io = ImGui.GetIO();
             io.DisplaySize = new Vector2(canvas.Width, canvas.Height);
