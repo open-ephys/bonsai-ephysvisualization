@@ -214,7 +214,9 @@ virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Unit.get
 virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.MaxRange.get -> double
 virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.MinRange.get -> double
 virtual OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawOffscreen() -> void
-OpenEphys.EphysVisualization.Design.ControlStripColumn.ControlStripColumn(string! label, System.Action<float>! draw) -> void
+OpenEphys.EphysVisualization.Design.ControlStripColumn.ControlStripColumn(string! label, System.Action<float>! draw, float width = 150) -> void
+OpenEphys.EphysVisualization.Design.ControlStripColumn.Width.get -> float
+const OpenEphys.EphysVisualization.Design.ControlStripColumn.DefaultWidth = 150 -> float
 OpenEphys.EphysVisualization.Design.StandardColumns
 OpenEphys.EphysVisualization.Design.StandardColumns.All.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.ControlStripColumn>!
 OpenEphys.EphysVisualization.Design.StandardColumns.ChannelHeight.get -> OpenEphys.EphysVisualization.Design.ControlStripColumn

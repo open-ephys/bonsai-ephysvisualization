@@ -10,6 +10,11 @@ namespace OpenEphys.EphysVisualization.Design
     /// </summary>
     public readonly struct ControlStripColumn
     {
+        /// <summary>
+        /// The width, in pixels, a column's controls are given unless it asks for another.
+        /// </summary>
+        public const float DefaultWidth = 150;
+
         readonly string? label;
         readonly Func<string>? labelSource;
 
@@ -23,20 +28,32 @@ namespace OpenEphys.EphysVisualization.Design
         /// <param name="draw">
         /// Draws the column's controls, once per frame, from the cursor, given the width in pixels they have to fill.
         /// </param>
+        /// <param name="width">
+        /// The width, in pixels, the controls need. The column is given at least this, and at least its label's
+        /// width, and more where a wider column shares its place in the strip's grid.
+        /// </param>
         /// <exception cref="ArgumentNullException"><paramref name="label"/> or <paramref name="draw"/> is null.</exception>
-        public ControlStripColumn(string label, Action<float> draw)
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="width"/> is not positive.</exception>
+        public ControlStripColumn(string label, Action<float> draw, float width = DefaultWidth)
         {
             this.label = label ?? throw new ArgumentNullException(nameof(label));
             labelSource = null;
             Draw = draw ?? throw new ArgumentNullException(nameof(draw));
+            Width = width > 0 ? width : throw new ArgumentOutOfRangeException(nameof(width));
         }
 
-        internal ControlStripColumn(Func<string> label, Action<float> draw)
+        internal ControlStripColumn(Func<string> label, Action<float> draw, float width)
         {
             this.label = null;
             labelSource = label;
             Draw = draw;
+            Width = width;
         }
+
+        /// <summary>
+        /// Gets the width, in pixels, the column's controls need.
+        /// </summary>
+        public float Width { get; }
 
         /// <summary>
         /// Gets the label drawn at the head of the column, or an empty string for none.
@@ -64,11 +81,14 @@ namespace OpenEphys.EphysVisualization.Design
         internal StandardColumns(ImGuiWaveformPanel panel)
         {
             this.panel = panel;
-            Timebase = new("Timebase (s)", TimebaseControls);
-            ChannelHeight = new("Chan. Height (px)", ChannelHeightControls);
-            Range = new(RangeLabel, RangeControls);
-            Palette = new("Palette", PaletteControls);
-            Display = new(string.Empty, DisplayControls);
+            // NB: each wide enough for its widest content: a timebase of five characters, a fitted height of three
+            // beside its steps and Fit, the color bar beside WidestRange, the longest palette name, and two
+            // checkboxes side by side.
+            Timebase = new("Timebase (s)", TimebaseControls, 90);
+            ChannelHeight = new("Chan. Height (px)", ChannelHeightControls, 130);
+            Range = new(RangeLabel, RangeControls, 130);
+            Palette = new("Palette", PaletteControls, 130);
+            Display = new(string.Empty, DisplayControls, 150);
             All = new[] { Timebase, ChannelHeight, Range, Palette, Display };
         }
 

@@ -17,12 +17,6 @@ namespace OpenEphys.EphysVisualization.Design
     internal sealed class ImGuiWaveformControlStrip
     {
         /// <summary>
-        /// Width every control is given. Wide enough for the longest palette name, which is the widest
-        /// preview text any of these show, and for every label, so one width serves them all.
-        /// </summary>
-        const float ControlWidth = 150;
-
-        /// <summary>
         /// Width the pause button is given where there is room for it, and the least it will be squeezed
         /// to where there is not. It is not a parameter and is sized to say so.
         /// </summary>
@@ -94,10 +88,10 @@ namespace OpenEphys.EphysVisualization.Design
         /// Lays the columns out as a wrapping grid, with pause kept to the right of a rule.
         /// </summary>
         /// <remarks>
-        /// A table cannot wrap, so the controls are positioned outright. Every control takes one width, which
-        /// makes the wrap arithmetic rather than measurement, and the column pitch is worked out once from a
-        /// full row so that a partly filled last row keeps the columns of the rows above it rather than
-        /// spreading its own few items across the whole width.
+        /// A table cannot wrap, so the controls are positioned outright. Each place in the grid is as wide as the
+        /// widest column that lands in it, so the rows line up while a column of checkboxes takes no more room than
+        /// they need, and a row holds as many columns as fit. The rows start at the left, and what is left over
+        /// sits before the rule.
         /// </remarks>
         void DrawControls(ImGuiWaveformPanel panel, IReadOnlyList<ControlStripColumn> columns)
         {
@@ -108,44 +102,51 @@ namespace OpenEphys.EphysVisualization.Design
             var available = ImGui.GetContentRegionAvail().X;
             var usable = available - EdgeMargin * 2;
             var rightZone = RuleGap * 2 + ImGuiWaveformPanel.FrameWeight + PauseWidth;
-            var flowWidth = Math.Max(ControlWidth, usable - rightZone);
 
-            // NB: one control column is the floor for the flow, so a window narrow enough to reach it
-            // leaves pause less than it asked for. It gives width up rather than being clipped.
+            var labels = new string[columns.Count];
+            var widths = new float[columns.Count];
+            var widest = 0f;
+            for (int i = 0; i < columns.Count; i++)
+            {
+                labels[i] = columns[i].Label;
+                widths[i] = Math.Max(columns[i].Width, ImGui.CalcTextSize(labels[i]).X);
+                widest = Math.Max(widest, widths[i]);
+            }
+
+            // NB: the widest column is the floor for the flow, so a window narrow enough to reach it leaves pause
+            // less than it asked for. It gives width up rather than being clipped.
+            var flowWidth = Math.Max(widest, usable - rightZone);
             var pauseWidth = Math.Max(MinPauseWidth, Math.Min(
                 PauseWidth,
                 usable - flowWidth - RuleGap * 2 - ImGuiWaveformPanel.FrameWeight));
 
-            var count = Math.Max(1, columns.Count);
-            var columnsPerRow = Math.Max(1, (int)((flowWidth + ColumnGap) / (ControlWidth + ColumnGap)));
-            columnsPerRow = Math.Min(columnsPerRow, count);
-            var columnPitch = columnsPerRow > 1
-                ? (flowWidth - columnsPerRow * ControlWidth) / (columnsPerRow - 1) + ControlWidth
-                : ControlWidth;
+            var grid = GridColumns(widths, flowWidth, ColumnGap);
+            var columnsPerRow = grid.Length;
+            var gridX = new float[columnsPerRow];
+            for (int j = 1; j < columnsPerRow; j++)
+                gridX[j] = gridX[j - 1] + grid[j - 1] + ColumnGap;
 
             var style = ImGui.GetStyle();
             var rowPitch = ImGui.GetTextLineHeight() + style.ItemSpacing.Y + ImGui.GetFrameHeight() + RowGap;
-            var rows = (count + columnsPerRow - 1) / columnsPerRow;
+            var rows = (Math.Max(1, columns.Count) + columnsPerRow - 1) / columnsPerRow;
             var flowOrigin = new Vector2(origin.X + EdgeMargin, origin.Y);
 
             for (int i = 0; i < columns.Count; i++)
             {
-                var column = columns[i];
                 var slot = new Vector2(
-                    flowOrigin.X + i % columnsPerRow * columnPitch,
+                    flowOrigin.X + gridX[i % columnsPerRow],
                     flowOrigin.Y + i / columnsPerRow * rowPitch);
                 ImGui.SetCursorScreenPos(slot);
 
                 // NB: under the column's position, so that two columns can use the same IDs for their own controls.
                 ImGui.PushID(i);
-                var label = column.Label;
-                if (label.Length > 0)
+                if (labels[i].Length > 0)
                 {
-                    ImGui.Text(label);
+                    ImGui.Text(labels[i]);
                     ImGui.SetCursorScreenPos(new Vector2(
                         slot.X, slot.Y + ImGui.GetTextLineHeight() + style.ItemSpacing.Y));
                 }
-                column.Draw(ControlWidth);
+                columns[i].Draw(grid[i % columnsPerRow]);
                 ImGui.PopID();
             }
 
@@ -190,6 +191,27 @@ namespace OpenEphys.EphysVisualization.Design
             // every row rather than below whichever item happened to be drawn last.
             ImGui.SetCursorScreenPos(origin);
             ImGui.Dummy(new Vector2(available, flowHeight));
+        }
+
+        /// <summary>
+        /// The widths of the grid's places, as many to a row as fit in <paramref name="flowWidth"/> with
+        /// <paramref name="gap"/> between them, each the widest of <paramref name="widths"/> that lands in it, or one
+        /// place where even two do not fit.
+        /// </summary>
+        internal static float[] GridColumns(IReadOnlyList<float> widths, float flowWidth, float gap)
+        {
+            for (int perRow = Math.Max(1, widths.Count); ; perRow--)
+            {
+                var grid = new float[perRow];
+                for (int i = 0; i < widths.Count; i++)
+                    grid[i % perRow] = Math.Max(grid[i % perRow], widths[i]);
+
+                var total = (perRow - 1) * gap;
+                foreach (var width in grid)
+                    total += width;
+                if (perRow == 1 || total <= flowWidth)
+                    return grid;
+            }
         }
 
         static void PauseButton(ImGuiWaveformPanel panel, Vector2 buttonSize)
