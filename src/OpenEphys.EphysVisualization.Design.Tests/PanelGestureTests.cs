@@ -269,6 +269,66 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Assert.Equal(100, panel.ColorThreshold);
         }
 
+        [Fact]
+        public void TheRange_IsHeldToTheLargest_HoweverItIsSet()
+        {
+            panel.MaxRange = 5000;
+            settings.RangeAmplitude = 5e27;
+            Assert.Equal(5000, panel.Range);
+
+            panel.Range = 1e6;
+            Assert.Equal(5000, settings.RangeAmplitude);
+
+            imgui.Key(ImGuiKey.ModAlt, ImGuiKey.S, draw);
+            Assert.Equal(5000, settings.RangeAmplitude);
+        }
+
+        [Fact]
+        public void TheRangesOffered_StopAtTheLargest()
+        {
+            settings.RangeAmplitude = 2500;
+            panel.MaxRange = 5000;
+
+            Assert.Equal(5000, panel.StandardRanges.Last());
+        }
+
+        [Fact]
+        public void TheRange_IsHeldToTheSmallest_HoweverItIsSet()
+        {
+            panel.MinRange = 10;
+            settings.RangeAmplitude = 1e-3;
+            Assert.Equal(10, panel.Range);
+
+            panel.Range = 1;
+            Assert.Equal(10, settings.RangeAmplitude);
+
+            imgui.Key(ImGuiKey.ModAlt, ImGuiKey.W, draw);
+            Assert.Equal(10, settings.RangeAmplitude);
+        }
+
+        [Fact]
+        public void TheRangesOffered_StartAtTheSmallest()
+        {
+            settings.RangeAmplitude = 25;
+            panel.MinRange = 10;
+
+            Assert.Equal(10, panel.StandardRanges.First());
+        }
+
+        [Fact]
+        public void TheRangesOffered_BetweenTheSmallestAndTheLargest_AreAllOfThem_WhereverTheRangeIs()
+        {
+            panel.MinRange = 10;
+            panel.MaxRange = 5000;
+            var all = new double[] { 10, 25, 50, 100, 250, 500, 1000, 2500, 5000 };
+
+            foreach (var range in new double[] { 10, 250, 5000 })
+            {
+                settings.RangeAmplitude = range;
+                Assert.Equal(all, panel.StandardRanges);
+            }
+        }
+
         void Scroll(int channels)
         {
             for (int i = 0; i < channels; i++)

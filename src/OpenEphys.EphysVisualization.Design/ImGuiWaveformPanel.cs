@@ -152,7 +152,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public double ColorThreshold
         {
-            get => Math.Max(0, Math.Min(settings.ColorThreshold, Math.Max(MinRange, settings.RangeHeatmap)));
+            get => Math.Max(0, Math.Min(settings.ColorThreshold, Bounded(settings.RangeHeatmap)));
             set => settings.ColorThreshold = value;
         }
 
@@ -578,15 +578,59 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public double Range
         {
-            get => Math.Max(MinRange, HeatmapDrawn ? settings.RangeHeatmap : settings.RangeAmplitude);
+            get => Bounded(HeatmapDrawn ? settings.RangeHeatmap : settings.RangeAmplitude);
             set
             {
+                value = Bounded(value);
                 if (HeatmapDrawn)
                     settings.RangeHeatmap = value;
                 else
                     settings.RangeAmplitude = value;
             }
         }
+
+        // NB: on reading as well as setting, since a range saved before the bounds, or beyond them, is read back as
+        // is.
+        double Bounded(double range) => Math.Max(MinRange, Math.Min(MaxRange, range));
+
+        /// <summary>
+        /// Smallest amplitude a channel's row may span, in the units of the incoming data, such as the smallest
+        /// signal worth a row on the device recorded from. No range set or offered is smaller.
+        /// <see cref="DefaultMinRange"/> by default.
+        /// </summary>
+        public double MinRange
+        {
+            get => minRange;
+            set
+            {
+                if (!(value > 0 && value <= MaxRange))
+                    throw new ArgumentOutOfRangeException(nameof(value), value,
+                        $"The smallest range must be above zero and at most the largest, {MaxRange}.");
+                minRange = value;
+                standardRangesIndex = int.MinValue;
+            }
+        }
+
+        double minRange = DefaultMinRange;
+
+        /// <summary>
+        /// Largest amplitude a channel's row may span, in the units of the incoming data, such as the input range
+        /// of the device recorded from. No range set or offered is larger. Unbounded by default.
+        /// </summary>
+        public double MaxRange
+        {
+            get => maxRange;
+            set
+            {
+                if (!(value >= MinRange))
+                    throw new ArgumentOutOfRangeException(nameof(value), value,
+                        $"The largest range must be at least the smallest, {MinRange}.");
+                maxRange = value;
+                standardRangesIndex = int.MinValue;
+            }
+        }
+
+        double maxRange = double.PositiveInfinity;
 
         /// <summary>
         /// Refresh rate, in Hz, of the display the panel is drawn on, which decides how fast a sweep can be shown

@@ -234,6 +234,20 @@ namespace OpenEphys.EphysVisualization.Design
         protected virtual string Unit => string.Empty;
 
         /// <summary>
+        /// Gets the largest amplitude a channel's row may span, in <see cref="Unit"/>, such as the input range of the
+        /// device recorded from, or positive infinity where there is no such limit. Read once, when the visualizer
+        /// loads.
+        /// </summary>
+        protected virtual double MaxRange => double.PositiveInfinity;
+
+        /// <summary>
+        /// Gets the smallest amplitude a channel's row may span, in <see cref="Unit"/>, such as the smallest signal
+        /// worth a row on the device recorded from, or by default a millionth of a unit, far below any range in use.
+        /// Read once, when the visualizer loads.
+        /// </summary>
+        protected virtual double MinRange => ImGuiWaveformPanel.DefaultMinRange;
+
+        /// <summary>
         /// Gets the keys, besides the plot's own, that whatever a derived class draws answers while the pointer is
         /// over the window. Read once, when the visualizer loads.
         /// </summary>
@@ -257,7 +271,12 @@ namespace OpenEphys.EphysVisualization.Design
 
             // NB: no plot can be wider than the widest monitor unless its window spans two, so that is as much
             // horizontal detail as is ever worth holding.
-            panel = new(scope, HistoryBytes, Screen.AllScreens.Max(screen => screen.Bounds.Width)) { Unit = Unit };
+            panel = new(scope, HistoryBytes, Screen.AllScreens.Max(screen => screen.Bounds.Width))
+            {
+                Unit = Unit,
+                MinRange = MinRange,
+                MaxRange = MaxRange,
+            };
             strip = new();
             standardColumns = new(panel);
 

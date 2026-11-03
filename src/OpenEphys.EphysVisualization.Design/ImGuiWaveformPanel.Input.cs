@@ -574,7 +574,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (exact || direction > 0)
                 i += direction;
 
-            Range = RangeAt(Math.Max(RangeIndex(MinRange).Index, i));
+            Range = RangeAt(i);
         }
 
         // NB: counted in slots, not rows (the same when evenly spaced), since counting rows that share a slot

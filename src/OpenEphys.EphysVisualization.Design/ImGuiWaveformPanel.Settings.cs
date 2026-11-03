@@ -8,18 +8,18 @@ namespace OpenEphys.EphysVisualization.Design
     partial class ImGuiWaveformPanel
     {
         /// <summary>
-        /// Smallest amplitude a channel's row may span.
+        /// Smallest amplitude a channel's row may span unless its owner sets <see cref="MinRange"/>.
         /// </summary>
         /// <remarks>
         /// Ranges are in whatever unit the data arrives in, so this is far below any range in use, only keeping the
         /// amplitude zoom and the labels away from zero.
         /// </remarks>
-        public const double MinRange = 1e-6;
+        public const double DefaultMinRange = 1e-6;
 
         static readonly double[] RangeSteps = { 1.0, 2.5, 5.0 };
 
         /// <summary>
-        /// Presets offered below and above the range nearest the current one.
+        /// Presets offered below and above the range nearest the current one, while there is no largest.
         /// </summary>
         const int RangesBelow = 3;
         const int RangesAbove = 4;
@@ -62,8 +62,13 @@ namespace OpenEphys.EphysVisualization.Design
         public const int ChannelHeightStep = 5;
 
         /// <summary>
-        /// Amplitude ranges offered as presets, those of the sequence around the current range.
+        /// Amplitude ranges offered as presets: every range of the sequence from the smallest to the largest, or,
+        /// while there is no largest, those around the current range above the smallest.
         /// </summary>
+        /// <remarks>
+        /// Every one where there is a largest, for the list to scroll through, rather than a window around the
+        /// current range, which at either end would offer only the ranges on one side of it.
+        /// </remarks>
         public IReadOnlyList<double> StandardRanges
         {
             get
@@ -71,8 +76,13 @@ namespace OpenEphys.EphysVisualization.Design
                 var (index, _) = RangeIndex(Range);
                 if (index != standardRangesIndex)
                 {
-                    var first = Math.Max(RangeIndex(MinRange).Index, index - RangesBelow);
-                    standardRanges = new double[index + RangesAbove - first + 1];
+                    var (least, exact) = RangeIndex(MinRange);
+                    if (!exact)
+                        least++;
+                    var bounded = !double.IsPositiveInfinity(MaxRange);
+                    var first = bounded ? least : Math.Max(least, index - RangesBelow);
+                    var last = bounded ? RangeIndex(MaxRange).Index : index + RangesAbove;
+                    standardRanges = new double[last - first + 1];
                     for (int i = 0; i < standardRanges.Length; i++)
                         standardRanges[i] = RangeAt(first + i);
 
