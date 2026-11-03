@@ -20,7 +20,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// The cursor table is a bordered child window, so the box takes its rounding and border color from the
-        /// style, and the overlays on the plot read as one set.
+        /// style.
         /// </remarks>
         public static void Framed(ImDrawListPtr draw, Vector2 corner, string text, bool outline = true)
         {
@@ -37,12 +37,11 @@ namespace OpenEphys.EphysVisualization.Design
         /// Rounds <paramref name="value"/> to <paramref name="figures"/> significant figures, three unless given.
         /// </summary>
         /// <remarks>
-        /// Three significant figures are used because it covers full dynamic range of visual inspection of a
-        /// screen. Math.Round with a number of decimal places returns the double closest to the rounded
-        /// decimal, so it prints cleanly. Scaling by a power of ten below one and back doesn't, because those
-        /// powers aren't exact in binary and leave a tail of digits like 0.30000000000000004. Math.Round
-        /// can't take negative decimal places, though, so values too large for any are scaled by a power of
-        /// ten above one instead, which is exact.
+        /// Math.Round with a number of decimal places returns the double closest to the rounded decimal, so it
+        /// prints cleanly. Scaling by a power of ten below one and back doesn't, because those powers aren't exact
+        /// in binary and leave a tail of digits like 0.30000000000000004. Math.Round can't take negative decimal
+        /// places, though, so values too large for any are scaled by a power of ten above one instead, which is
+        /// exact.
         /// </remarks>
         public static double Significant(double value, int figures = 3)
         {

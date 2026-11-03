@@ -338,10 +338,8 @@ namespace OpenEphys.EphysVisualization.Design
 
             var read = window;
 
-            // NB: a backstop. Whatever the read reached before it gave up stands, so the plot draws a
-            // gap or part of a frame, and the window goes back to the frozen frame to be tried again next
-            // frame. Returning the live buffers here would show the trace running while the cursor and the
-            // pause button both say it is frozen.
+            // NB: a failed read still returns the panned buffers, partly filled, since the live ones would show
+            // the trace running while paused.
             if (windowDirty && !TryReadWindow())
             {
                 SetWindow(new DisplayWindow(0, window.Step, window.Columns));

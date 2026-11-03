@@ -18,8 +18,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
     /// </summary>
     /// <remarks>
     /// Each <see cref="ImGuiGLControl"/> owns its ImGui context and makes it current around its own frames
-    /// and messages, so several can live in one process. The control repaints once per display refresh while
-    /// <see cref="Paced"/> is set.
+    /// and messages, so several can live in one process.
     /// </remarks>
     public class ImGuiGLControl : GLControl, IGLContext
     {

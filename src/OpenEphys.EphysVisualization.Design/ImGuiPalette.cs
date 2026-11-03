@@ -83,8 +83,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// Glasbey's category10 palette from colorcet (https://colorcet.holoviz.org, CC BY 4.0): Tableau 10 without its
-        /// grey, then the further Glasbey colors with a CIELAB lightness of at least 55 and chroma of at least 35, so
-        /// that none is too dark for the plot or too grey to tell from a channel in no group.
+        /// grey, then the further Glasbey colors with a CIELAB lightness of at least 55 and chroma of at least 35.
         /// </remarks>
         internal static IReadOnlyList<uint> Categorical { get; } = new[]
         {

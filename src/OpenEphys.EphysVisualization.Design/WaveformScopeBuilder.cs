@@ -15,15 +15,8 @@ namespace OpenEphys.EphysVisualization.Design
     /// viewer shares, which are saved with the workflow.
     /// </summary>
     /// <remarks>
-    /// <para>
     /// The viewer reads and writes these properties directly, as the property grid does, so the node holds the only
     /// copy of them.
-    /// </para>
-    /// <para>
-    /// Only settings every viewer has belong here. One that a viewer would replace with its own, as a probe viewer
-    /// might group channels by shank rather than by index, belongs to that viewer's node, so nothing here is ever
-    /// hidden or overridden.
-    /// </para>
     /// </remarks>
     [WorkflowElementCategory(ElementCategory.Sink)]
     public abstract class WaveformScopeBuilder : SingleArgumentExpressionBuilder

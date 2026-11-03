@@ -28,7 +28,6 @@ namespace OpenEphys.EphysVisualization.Design
             this.minorTicksPerMajor = minorTicksPerMajor;
         }
 
-        // visual constants
         static readonly uint ColorLine = ImGuiPalette.AzureBlue;
         static readonly uint ColorSelected = ImGuiPalette.Yellow;
         static readonly uint ColorLabel = ImGuiPalette.White;
@@ -110,8 +109,6 @@ namespace OpenEphys.EphysVisualization.Design
                         placement = PlacementState.ClickMode;
                     return false;
 
-                // NB: a click outside the view belongs to whatever it lands on, such as the button that arms
-                // rulers, so it leaves the ruler waiting rather than cancelling it.
                 case PlacementState.ClickMode:
                     if (!clicked || !inCanvas) return false;
                     LockDraft();
@@ -146,7 +143,6 @@ namespace OpenEphys.EphysVisualization.Design
                     viewLeft, viewBot, xLow, yLow, scaleXY, false);
         }
 
-        // NB: the ruler just placed is selected, so Delete takes back one placed by mistake.
         void LockDraft()
         {
             placement = PlacementState.None;
@@ -172,9 +168,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (lenPx >= 0.5f)
             {
                 var dirUnit = dir / lenPx;
-                // perp points 90° CCW from ruler direction in screen space.
                 // For an upward ruler (screen dir (0,-1)): perp = (1,0) = screen right.
-                // The "left" side of the ruler = -perp.
                 var perp = new Vector2(-dirUnit.Y, dirUnit.X);
 
                 float tickSpacingPx = majorTickSpacingUm * scaleXY;
@@ -184,7 +178,6 @@ namespace OpenEphys.EphysVisualization.Design
                     ? tickSpacingPx / minorN
                     : lenPx * 2f;
 
-                // Draw ticks from start up to but not including the endpoint
                 int totalMinors = (int)(lenPx / minorSpacingPx);
                 for (int k = 0; k <= totalMinors; k++)
                 {
@@ -200,11 +193,9 @@ namespace OpenEphys.EphysVisualization.Design
                         DrawTickLabel(dl, center, $"{pos / scaleXY:0}", perp, halfLen);
                 }
 
-                // Always end with a major tick at the exact endpoint (no label — redundant with summary)
                 dl.AddLine(e - perp * MajorTickHalfLen, e + perp * MajorTickHalfLen, lineCol, LineWidth);
             }
 
-            // Floating summary label at end
             float dX  = endUm.X - startUm.X;
             float dY  = endUm.Y - startUm.Y;
             float r   = (float)Math.Sqrt(dX * dX + dY * dY);
@@ -235,7 +226,6 @@ namespace OpenEphys.EphysVisualization.Design
             dl.AddText(new Vector2(lx, ly + lineH * 3f), ColorLabel, line4);
         }
 
-        // Label is placed on the -perp (left) side of the ruler, horizontal.
         // Offset is computed so the text clears the tick end by 2 px regardless of ruler angle.
         static void DrawTickLabel(ImDrawListPtr dl, Vector2 tickCenter, string text,
             Vector2 perp, float halfLen)

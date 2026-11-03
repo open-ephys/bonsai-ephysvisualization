@@ -52,9 +52,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// column boundary the reduction has got.
         /// </summary>
         /// <remarks>
-        /// Columns are counted from wherever the reduction began, and a caller that has to line its own
-        /// binning up with this one cannot work that out from the blocks it has handed over: they need not
-        /// divide into columns, so the boundaries fall wherever they fall.
+        /// A caller lining its own binning up with this one cannot work this out from the blocks it has handed
+        /// over, since they need not divide into columns.
         /// </remarks>
         public int Filled => DownsampleFactor - carry;
 

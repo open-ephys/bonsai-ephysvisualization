@@ -11,7 +11,6 @@ namespace OpenEphys.EphysVisualization.Design
     {
         const int TimeDivisions = 10;
 
-        // visual constants
         static readonly uint ColSweepCursor = ImGuiPalette.Yellow;
         const float SweepCursorWeight = 1;
         internal static readonly uint ColGraticule = ImGuiPalette.Grey0x88;
@@ -35,7 +34,7 @@ namespace OpenEphys.EphysVisualization.Design
         public const float FrameWeight = GraticuleWeight;
         const float HoverFillAlpha = 0.65f;
 
-        // NB: the plot of the lane the pointer works in, which every lane's matches in width.
+        // The plot of the lane the pointer works in, which every lane's matches in width.
         float plotLeft;
         float plotSpan;
         float visibleHeight;
@@ -63,8 +62,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// The graticules go in this window's draw list rather than the table's, so they stay put while the
-        /// channels scroll, and lie under the traces. Lanes after the first have their labels in the plot column,
-        /// beside their plots.
+        /// channels scroll, and lie under the traces.
         /// </remarks>
         /// <param name="envelope">Per-column minima and maxima, one row per channel.</param>
         /// <param name="shown">The window <paramref name="envelope"/> holds, which the frame is drawn in.</param>
@@ -76,7 +74,6 @@ namespace OpenEphys.EphysVisualization.Design
                 amplitudeView.Row = -1;
 
 
-            // NB: the axis labels get a button-height row, so the plot's frame starts one button-height down.
             var headerHeight = ImGui.GetFrameHeight();
             var labelY = ImGui.GetCursorScreenPos().Y + ImGui.GetStyle().FramePadding.Y;
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + headerHeight);
@@ -91,11 +88,9 @@ namespace OpenEphys.EphysVisualization.Design
             var frames = Array.Empty<PlotFrame>();
             var frame = default(PlotFrame);
 
-            // NB: ImGui scrolls one pixel at a time, but the panel often scrolls in increments of full rows, for the
-            // zoom box, for collapsing a channel, and for W and S. Padding above the first row would offset those
-            // scrolls and leave a sliver of the row above in view, so the ##rows window has no padding. ImGui's mouse
-            // wheel scrolling is also turned off here, because it would scroll on Shift+wheel and Ctrl+wheel too.
-            // HandleWheel handles every wheel gesture instead.
+            // NB: the panel scrolls by whole rows, which padding above the first row would offset, leaving a sliver
+            // of the row above in view. ImGui's wheel scrolling is off because it would also scroll on Shift+wheel
+            // and Ctrl+wheel; HandleWheel answers every wheel gesture.
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
             var rowsOpen = ImGui.BeginChild("##rows", new Vector2(-1, tableHeight), ImGuiChildFlags.None,
                 ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);
@@ -204,8 +199,6 @@ namespace OpenEphys.EphysVisualization.Design
 
                 foreach (var f in frames)
                 {
-                    // NB: a trace that runs off its row may run into its neighbors but not past the rows, which can
-                    // end above the plot's bottom when there are few channels, or past its lane.
                     var hoveredHere = hoveredRow >= f.Layout.FirstRow && hoveredRow < f.Layout.LastRow;
                     draw.PushClipRect(new Vector2(f.Left, f.Layout.Origin),
                         new Vector2(f.Left + f.Width, f.Layout.Origin + f.Layout.Height), true);
@@ -218,8 +211,6 @@ namespace OpenEphys.EphysVisualization.Design
 
                     ShadeFrozenTail(draw, f.Axis, f.Left, f.Width, plotTop, plotBottom);
 
-                    // NB: a heatmap row has no line to thicken and covers the band, so the hovered and selected rows
-                    // are marked from outside, which also ties a label to its row when rows are far shorter than it.
                     var selectedHere = selectedRow >= f.Layout.FirstRow && selectedRow < f.Layout.LastRow;
                     if (ShowHeatmap && expandedRow < 0 && hoveredHere && !RowHidden[hoveredRow])
                         BracketRow(draw, f, hoveredRow, ColHoveredRow);
@@ -227,7 +218,7 @@ namespace OpenEphys.EphysVisualization.Design
                         BracketRow(draw, f, selectedRow, WaveformCursors.Color);
                 }
 
-                // NB: ahead of the cursors so the don't compete for a click on [CLIPPING] in the plot area.
+                // NB: ahead of the cursors so they don't compete for a click on [CLIPPING] in the plot area.
                 var corner = frames[frames.Length - 1];
                 var cornerTaken = DrawMaximize(draw, corner);
                 for (int j = 0; j < lanes.Length && lanes.Length > 1; j++)
@@ -295,9 +286,6 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: the first lane's labels, or its strip, take the label column, and the rest go in the plot column, each
-        // lane's plot as wide as every other's. Every lane's labels are as far from its plot as the label column is
-        // from the plot column, and that much less from the plot before.
         Lane[] PlaceLanes(RowLayout[] laneRows, float labelsLeft, float labelWidth, float columnLeft, float columnWidth)
         {
             var count = laneRows.Length;
@@ -352,7 +340,6 @@ namespace OpenEphys.EphysVisualization.Design
             return 0;
         }
 
-        // NB: the lane under the pointer, kept while a button is held so a drag stays in the lane it began in.
         int InputLane(Lane[] lanes)
         {
             if (!ImGui.IsAnyMouseDown())
@@ -377,9 +364,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// Draws the button that widens lane <paramref name="lane"/>, shrinking the others to strips, or that gives
         /// the lanes equal widths again while it is the one widened.
         /// </summary>
-        /// <remarks>
-        /// Faint until hovered, as the maximize button is.
-        /// </remarks>
         void DrawLaneButton(ImDrawListPtr draw, int lane, Vector2 corner, float width)
         {
             var side = Math.Min(width, ImGui.GetFrameHeight());
@@ -397,7 +381,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (hovered)
                 draw.AddRectFilled(min, max, ImGui.GetColorU32(ImGuiCol.ButtonHovered), ImGui.GetStyle().ChildRounding);
 
-            // NB: arrows out from the middle to widen, and in toward it to give the width back.
             var color = ImGui.GetColorU32(ImGuiCol.Text, hovered ? 1f : 0.25f);
             var middle = (min + max) / 2;
             var reach = MathF.Floor(side * 0.3f);
@@ -414,8 +397,6 @@ namespace OpenEphys.EphysVisualization.Design
 
         void ToggleLane(int lane) => expandedLane = expandedLane == lane ? -1 : lane;
 
-        // NB: what the button of the lane under the pointer does, or else the selected channel's lane's, as when the
-        // pointer is over the control strip. A gap between lanes belongs to the lane on its left.
         void LaneKey(RowLayout layout)
         {
             var lanes = placedLanes;
@@ -442,10 +423,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Veils the part of a paused plot that is still showing the tail of the previous sweep.
         /// </summary>
-        /// <remarks>
-        /// Everything right of the cursor is older than everything left of it, and appears again elsewhere in
-        /// the history. The shading marks it as stale.
-        /// </remarks>
         void ShadeFrozenTail(ImDrawListPtr draw, in PixelAxis axis, float left, float width, float top, float bottom)
         {
             if (!Paused)
@@ -477,9 +454,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Shows the channel, time and amplitude under the pointer in the plot's lower right corner.
         /// </summary>
-        /// <remarks>
-        /// The time reads as the time axis labels do, and the amplitude from the center of the channel's row.
-        /// </remarks>
         void DrawReadout(ImDrawListPtr draw, in PlotFrame frame, int hoveredRow)
         {
             var mouse = ImGui.GetMousePos();
@@ -489,7 +463,6 @@ namespace OpenEphys.EphysVisualization.Design
             var seconds = SecondsAt(frame, frame.Axis.PositionAt(mouse.X));
             var amplitude = frame.ValueAt(hoveredRow, mouse.Y);
 
-            // NB: an expanded channel is named in the plot's top left already.
             var position = $"{seconds:0.0000} s   {amplitude:0.0} {frame.Unit}";
             var text = frame.Expanded >= 0 ? position : $"Ch {ChannelOf(hoveredRow)}   {position}";
             var corner = new Vector2(frame.Left + frame.Width, frame.Bottom) - ImGui.CalcTextSize(text) -
@@ -503,8 +476,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// Drawn rather than taken from ImGui, which scrolls its own containers and has no notion of this
-        /// axis. It is styled from the scrollbar colors so that it reads as one alongside the channel
-        /// scrollbar it sits under.
+        /// axis.
         /// </remarks>
         void TimeScrollBar(float left, float width, float top, float height)
         {
@@ -512,14 +484,11 @@ namespace OpenEphys.EphysVisualization.Design
             var axisLast = Paused && history is not null ? AxisLast : window.End;
             var travel = Math.Max(0, axisLast - axisFirst - window.Span);
 
-            // NB: the thumb sits inside the track by the same margin ImGui gives its own grabs, which is
-            // most of what makes a scrollbar read as one rather than as a filled bar.
+            // NB: the inset ImGui gives its own scrollbar grabs.
             var inset = Math.Max(0f, Math.Min(3f, MathF.Floor((height - 2f) / 2f)));
             var trackLeft = left + inset;
             var trackWidth = width - 2 * inset;
 
-            // NB: the thumb keeps a minimum width so that a window which is a thousandth of the axis is
-            // still something to aim at, which costs a little of the travel it stands for.
             var reach = (double)(travel + window.Span);
             var thumbWidth = Math.Max(ImGui.GetStyle().GrabMinSize, (float)(trackWidth * window.Span / reach));
             var slack = trackWidth - thumbWidth;
@@ -579,8 +548,6 @@ namespace OpenEphys.EphysVisualization.Design
                 Slots = slots;
             }
 
-            // NB: rows past either end continue one row height apart, so the top of the row after the last is the
-            // rows' bottom edge.
             public static float SlotOf(float[]? slots, int row) =>
                 slots is { Length: > 0 }
                     ? row < 0 ? slots[0] + row
@@ -590,7 +557,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             public float Slot(int row) => SlotOf(Slots, row);
 
-            // NB: the slot at the origin: the first row's when evenly spaced, or else the top of every lane.
+            // The slot at the origin.
             public float Base => Slots is null ? FirstRow : 0;
 
             /// <summary>
@@ -631,8 +598,7 @@ namespace OpenEphys.EphysVisualization.Design
                     : -1;
             }
 
-            // NB: the first row whose slot is after the given one (or at it, if inclusive), else LastRow. A binary
-            // search, since slots never decrease.
+            // The first row whose slot is after the given one, or at it if inclusive, else LastRow.
             int FirstRowFrom(float slot, bool inclusive)
             {
                 int lo = FirstRow, hi = LastRow;
@@ -649,7 +615,6 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: an expanded channel fills the plot alone, so its layout is one row, wherever its slot or lane.
         RowLayout[] LayoutRows(int rows, float top, float bottom, float origin, float available)
         {
             if (expandedRow >= rows)
@@ -694,16 +659,13 @@ namespace OpenEphys.EphysVisualization.Design
             var textOffset = (layout.RowHeight - ImGui.GetTextLineHeight()) / 2;
             var draw = ImGui.GetWindowDrawList();
 
-            // NB: rows shorter than the text are labeled on a grid of 1, 2, 5, 10, 20, ... slots, the finest whose
-            // cells are a line tall, each cell labeling its first row. The grid is fixed to the slots, so labels
-            // keep their places as the rows scroll, and fall at even depths where rows lie unevenly. The hovered
-            // channel and the one the cursors read are always labeled, and hide only the grid labels they overlap.
+            // Rows shorter than the text are labeled on a grid of 1, 2, 5, 10, 20, ... slots, the finest whose
+            // cells are a line tall, each cell labeling its first row.
             var lineHeight = ImGui.GetTextLineHeight();
             var step = GridStep(layout.RowHeight, lineHeight);
 
             var selected = selectedRow;
             var rows = layout;
-            // NB: only by rows of this lane, since another lane's labels are beside these rather than over them.
             bool Crowds(int row, int priority) =>
                 priority >= rows.FirstRow && priority < rows.LastRow && priority != row &&
                 Math.Abs(rows.RowTop(row) - rows.RowTop(priority)) < lineHeight;
@@ -714,13 +676,10 @@ namespace OpenEphys.EphysVisualization.Design
             // NB: a cell's first row can lie near its end, and the next cell's near its start; the second is skipped.
             var nextFree = float.NegativeInfinity;
 
-            // NB: from the first row whose label reaches into view, so that the grid labels in view are spaced as
-            // they would be scrolled further down.
             var first = layout.FirstVisible;
             while (first > layout.FirstRow && layout.RowTop(first - 1) + lineHeight > layout.Top)
                 first--;
 
-            // NB: an expanded channel is named inside the plot instead, by AmplitudeLabels.
             for (int i = first; i < layout.LastVisible && expandedRow < 0; i++)
             {
                 var gridded = (i == layout.FirstRow || Cell(i) != Cell(i - 1)) && layout.RowTop(i) >= nextFree;
@@ -734,17 +693,13 @@ namespace OpenEphys.EphysVisualization.Design
                 label.Append(name);
                 label.End();
 
-                // NB: at least as tall as the label, centered on the row as the label is, so that on a row shorter
-                // than the text the highlight frames it rather than striking it through.
                 var markHeight = Math.Max(layout.RowHeight, lineHeight);
                 var markTop = layout.RowTop(i) + (layout.RowHeight - markHeight) / 2;
 
-                // NB: a clipping channel's label flashes, in step with the plot's CLIPPING, and is always written.
                 var clipping = Clipping(i);
                 if (clipping && ClipFlashOn)
                     draw.AddRectFilled(new Vector2(left, markTop), new Vector2(right, markTop + markHeight), ColClipping);
 
-                // Highlight hovered channel and the selected one
                 if ((i == hoveredRow || i == selected) && expandedRow < 0)
                 {
                     var fill = Colors.Of(i, name);
@@ -791,8 +746,6 @@ namespace OpenEphys.EphysVisualization.Design
             var columns = shape.Width;
             var axis = frame.Axis;
 
-            // NB: a point per pixel where pixels combine columns, read as the texture beneath reads them, or else
-            // one per column, at its left edge.
             var points = axis.Combines ? axis.Width : columns;
             var low = stackalloc Vector2[points];
             var high = stackalloc Vector2[points];
@@ -810,9 +763,8 @@ namespace OpenEphys.EphysVisualization.Design
                 Segments(draw, high, points, color, weight);
         }
 
-        // NB: one segment at a time rather than a polyline, whose mitred joins overshoot a sharp turn by many
-        // pixels on a noisy trace. A segment touching a column that holds nothing is left out, so empty columns
-        // are a gap. AddLine moves its ends half a pixel, which is taken back.
+        // NB: segments rather than a polyline, whose mitred joins overshoot a sharp turn by many pixels on a noisy
+        // trace. NaN marks a column that holds nothing. AddLine moves its ends half a pixel, which is taken back.
         static unsafe void Segments(ImDrawListPtr draw, Vector2* points, int count, uint color, float weight)
         {
             var half = new Vector2(0.5f);
@@ -831,7 +783,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (FastSweep || decimator is null)
                 return;
 
-            // NB: paused, the pause instant, which can fall partway through a column.
             var shown = frame.Window;
             var position = Paused ? CursorPosition : shown.PositionOf(decimator.Cursor);
             if (position < shown.Start || position >= shown.End)
@@ -847,10 +798,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Shades the row of the selected channel.
         /// </summary>
-        /// <remarks>
-        /// Drawn ahead of the traces, so the selection is marked without anything drawn over the trace. Not in the
-        /// heatmap, which covers it, and where lines above and below the row mark it instead.
-        /// </remarks>
         static void DrawRowBand(ImDrawListPtr draw, in PlotFrame frame)
         {
             var layout = frame.Layout;
@@ -867,10 +814,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Draws the box a right-drag is zooming to, while it is held.
         /// </summary>
-        /// <remarks>
-        /// An axis the box is too short along to zoom, or time while live, is drawn across the whole plot, since the
-        /// zoom leaves it as it is, so the box shows what letting go will do.
-        /// </remarks>
         void DrawZoomBox(ImDrawListPtr draw, in PlotFrame frame)
         {
             var plotMin = PlotMin(frame.Top);
@@ -905,9 +848,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// Draws the button in the plot's top right corner that gives the plot the whole window or gives the rest
         /// back, and returns the width it takes from the corner.
         /// </summary>
-        /// <remarks>
-        /// Faint until hovered, since it sits over the traces.
-        /// </remarks>
         float DrawMaximize(ImDrawListPtr draw, in PlotFrame frame)
         {
             var pad = ImGui.GetStyle().FramePadding;
@@ -924,8 +864,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (hovered)
                 draw.AddRectFilled(min, max, ImGui.GetColorU32(ImGuiCol.ButtonHovered), ImGui.GetStyle().ChildRounding);
 
-            // NB: a window's glyph, one square to maximize, and to restore one square in front of another, of which
-            // only the top and right edges show.
             var color = ImGui.GetColorU32(ImGuiCol.Text, hovered ? 1f : 0.25f);
             var inset = MathF.Floor(side * 0.28f);
             var a = min + new Vector2(inset);
@@ -968,7 +906,6 @@ namespace OpenEphys.EphysVisualization.Design
             var size = ImGui.CalcTextSize(Text);
             var corner = new Vector2(frame.Left + frame.Width - right - size.X - 2 * pad.X, frame.Top + 2 * pad.Y);
 
-            // NB: only the text flashes, so that a click is never lost to the dark half of a flash.
             ImGui.SetCursorScreenPos(corner - pad);
             if (ImGui.InvisibleButton("##clipping", size + 2 * pad))
                 ShowChannel(first, frame.Layout);
@@ -983,7 +920,6 @@ namespace OpenEphys.EphysVisualization.Design
                 draw.AddText(corner, ColClipping, Text);
         }
 
-        // NB: If not expanded, center the channel. If expanded, show that channel in expanded view.
         void ShowChannel(int row, in RowLayout layout)
         {
             if (expandedRow >= 0)
@@ -1012,7 +948,6 @@ namespace OpenEphys.EphysVisualization.Design
             draw.AddRectFilled(new Vector2(frame.Left, bottom), new Vector2(right, bottom + 1), color);
         }
 
-        // NB: filled rects on whole pixels, as PixelRect draws, here and in DrawGraticules and BracketRow.
         static void DrawFrame(ImDrawListPtr draw, float left, float width, float top, float bottom) =>
             PixelRect.Outline(draw, new Vector2(left, top), new Vector2(left + width, bottom), ColGraticule,
                 GraticuleWeight);
@@ -1020,11 +955,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Draws the time divisions and their labels.
         /// </summary>
-        /// <remarks>
-        /// Live, zero is the start of the sweep. Paused, zero is the cursor and every label is how long before
-        /// the pause that sample was taken, so the frozen tail right of the cursor reads oldest. Divisions are
-        /// fixed to positions on the axis rather than to the plot, so they pan with the data.
-        /// </remarks>
         void DrawGraticules(
             ImDrawListPtr draw, in PixelAxis axis, float left, float width, float top, float bottom, float labelY)
         {
@@ -1046,19 +976,14 @@ namespace OpenEphys.EphysVisualization.Design
                 var position = origin + d * interval;
                 var x = axis.X(position);
 
-                // NB: skip divisions on the edges, where the frame already draws a line.
                 var l = MathF.Floor(x);
                 if (l > left + 1 && l < left + width - 1)
                     DivisionDots(draw, new Vector2(l, t), b - t, vertical: true);
 
-                // NB: one spacing across the whole plot, so labels on either side of the cursor never
-                // overlap. Right of the cursor is the frozen tail, a whole frozen window older.
                 var seconds = d * Timebase / TimeDivisions;
                 if (Paused && position > CursorPosition)
                     seconds -= pausedTimebase;
 
-                // NB: kept within the plot, since one at an edge would be clipped by the window or run into the
-                // next lane's.
                 var label = $"{seconds:g}";
                 var labelWidth = ImGui.CalcTextSize(label).X;
                 var labelX = Math.Max(left, Math.Min(left + width - labelWidth, x - labelWidth / 2));
@@ -1068,8 +993,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (expandedRow < 0)
                 return;
 
-            // NB: an expanded channel fills the plot, so its row is the plot, and a tenth of the range is a
-            // tenth of the height. The outermost divisions lie on the frame.
             var l0 = MathF.Floor(left) + GraticuleWeight;
             for (int k = 1; k < AmplitudeDivisions; k++)
                 DivisionDots(draw, new Vector2(l0, MathF.Floor(AmplitudeDivisionY(k, top, bottom))),
@@ -1087,9 +1010,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// Labels an expanded channel's amplitude divisions down the left of the plot, and names the channel
         /// and both scales in its top left corner.
         /// </summary>
-        /// <remarks>
-        /// Drawn over the traces, where the divisions themselves are drawn under them.
-        /// </remarks>
         void AmplitudeLabels(ImDrawListPtr draw, in PlotFrame frame, float left, float top, float bottom)
         {
             if (expandedRow < 0)

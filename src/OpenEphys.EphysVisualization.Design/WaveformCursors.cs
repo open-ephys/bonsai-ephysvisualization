@@ -9,12 +9,6 @@ namespace OpenEphys.EphysVisualization.Design
     /// <summary>
     /// Cursors on a stack of traces: lines across the plot that read the selected channel where they cross it.
     /// </summary>
-    /// <remarks>
-    /// A cursor is an axis position only, so it stays on the samples it marks through panning, zooming and
-    /// pausing. One cursor is the reference the others are measured from, C0 to begin with; clicking a cursor's
-    /// time label makes it the reference, and the reference cannot be removed. The cursors keep only their own state; everything about the
-    /// plot comes in with each frame.
-    /// </remarks>
     internal sealed class WaveformCursors
     {
         /// <summary>
@@ -148,7 +142,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (cursor < reference)
                 reference--;
 
-            // NB: removing the active cursor hands the arrows to the reference, which cannot be removed.
             if (cursor == active)
                 active = reference;
             else if (cursor < active)
@@ -180,7 +173,6 @@ namespace OpenEphys.EphysVisualization.Design
                     grabbed = -1;
                 else
                 {
-                    // NB: clamped to the plot, so a cursor dragged past an edge stops at it.
                     positions[grabbed] = axis.PositionAt(pointer.X);
                     ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEw);
                 }
@@ -213,8 +205,6 @@ namespace OpenEphys.EphysVisualization.Design
                 if (x < left || x > left + width)
                     continue;
 
-                // NB: the reference solid and the rest dotted, as on a scope, and the active cursor heavier where there
-                // is more than one to tell it from.
                 var weight = i == active && positions.Count > 1 ? 2 * LineWeight : LineWeight;
                 if (i == reference)
                     draw.AddRectFilled(new Vector2(MathF.Floor(x), top), new Vector2(MathF.Floor(x) + weight, bottom), Color);
@@ -227,8 +217,7 @@ namespace OpenEphys.EphysVisualization.Design
                     Values(draw, frame, min, max, x);
             }
 
-            // NB: one row per cursor rather than packed, so the dimensions can never overlap however the
-            // cursors are arranged. An expanded channel's name takes the first row.
+            // NB: an expanded channel's name takes the first row.
             var row = ImGui.GetTextLineHeight() + 2 * ImGui.GetStyle().FramePadding.Y + LabelGap;
             var y = top + LabelGap + (frame.Expanded >= 0 ? row : 0);
             for (int i = 0; i < positions.Count; i++)
@@ -264,8 +253,6 @@ namespace OpenEphys.EphysVisualization.Design
             var start = Math.Max(left, a);
             var end = Math.Min(right, b);
 
-            // NB: the line breaks around the text, as a drawing's dimension does, and the text sits on a dark fill so
-            // that it reads over the cursor lines and graticules it crosses. No outline, which the break makes busy.
             var text = $"{PlotText.Significant(samples * 1000.0 / frame.SampleRate)} ms " +
                 $"({PlotText.Significant(frame.SampleRate / (double)samples)} Hz)";
             var textSize = ImGui.CalcTextSize(text);
@@ -277,8 +264,6 @@ namespace OpenEphys.EphysVisualization.Design
                 draw.AddRectFilled(new Vector2(textLeft + textSize.X + pad.X, line), new Vector2(end, line + LineWeight), Color);
             PlotText.Framed(draw, new Vector2(textLeft, center - textSize.Y / 2), text, outline: false);
 
-            // NB: one arrowhead, at the measured cursor rather than the reference, so the dimension reads from the
-            // reference out to it. None where the plot edge cuts the dimension short of that cursor.
             if (to < from && a >= left)
                 draw.AddTriangleFilled(new Vector2(a, center),
                     new Vector2(a + Arrow, center - Arrow / 2), new Vector2(a + Arrow, center + Arrow / 2), Color);
@@ -291,9 +276,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// The min and max drawn at <paramref name="position"/> on the channel the cursors read.
         /// </summary>
         /// <remarks>
-        /// Read from the cell the screen shows there, every column a pixel combines or the one column a pixel
-        /// shows, as the traces are drawn, so the values are those on screen. In the heatmap both are the one value
-        /// its color shows, whichever of them lies further from zero.
+        /// In the heatmap both are the one value its color shows, whichever of them lies further from zero.
         /// </remarks>
         /// <returns>False if no channel can be read, or the cell is off the window or holds no data.</returns>
         bool TryRead(in PlotFrame frame, long position, out double min, out double max)
@@ -372,10 +355,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// Labels each cursor with its time in the row of time axis labels, and makes a cursor whose label is
         /// clicked the reference.
         /// </summary>
-        /// <remarks>
-        /// Boxed, the reference filled, and drawn over the axis labels on the window's own background with a margin
-        /// either side, so that it takes the place of any axis label close enough to collide with it.
-        /// </remarks>
         public void DrawTimeLabels(ImDrawListPtr draw, in PlotFrame frame, float labelY)
         {
             if (!Show)
@@ -409,7 +388,6 @@ namespace OpenEphys.EphysVisualization.Design
                 if (!TryPlaceLabel(frame, i, labelY, out var text, out var corner, out var size))
                     continue;
 
-                // NB: lit while hovered, as a button is, so that it shows it can be clicked.
                 draw.AddRectFilled(corner - margin, corner + size + margin, background);
                 if (i == hovered)
                     draw.AddRectFilled(corner - pad, corner + size + pad, ImGui.GetColorU32(ImGuiCol.ButtonHovered));
@@ -420,7 +398,6 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: centered on the cursor's line, kept within the plot, or false where the cursor is off it.
         bool TryPlaceLabel(in PlotFrame frame, int i, float labelY, out string text, out Vector2 corner, out Vector2 size)
         {
             text = string.Empty;
@@ -437,7 +414,7 @@ namespace OpenEphys.EphysVisualization.Design
             return true;
         }
 
-        // NB: to the width of a cell, which is as fine as a cursor can be placed.
+        // To the width of a cell, which is as fine as a cursor can be placed.
         static string FormatSeconds(in PlotFrame frame, double seconds) =>
             seconds.ToString("F" + Math.Max(0, (int)Math.Ceiling(-Math.Log10(frame.Axis.CellSpan / (double)frame.SampleRate))));
 
@@ -447,8 +424,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// the plot, and buttons to add and remove cursors.
         /// </summary>
         /// <remarks>
-        /// Times are read only. Right of the sweep cursor on a paused view, two places on the axis carry the
-        /// same time, so a typed time would not name one place. A cursor is moved by dragging its line.
+        /// Times are read only, since right of the sweep cursor on a paused view, two places on the axis carry the
+        /// same time, so a typed time would not name one place.
         /// </remarks>
         /// <returns>The position of a cursor whose button was pressed, to center the view on, or null.</returns>
         public long? DrawTable(in PlotFrame frame)
@@ -475,8 +452,7 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.TextUnformatted(row >= 0 ? $"Ch {frame.ChannelOf(row)}" : "No channel");
 
                 var remove = -1;
-                // NB: a cell of one sample has min and max equal, so it has one value and one difference from C0, as
-                // does the heatmap, which reduces a cell to one value.
+                // NB: the heatmap reduces a cell to one value too.
                 var oneSample = window.Step == 1 && frame.Axis.SingleColumnCells || Heatmap(frame);
                 var headers = oneSample
                     ? new[] { "", "t (s)", "dt (ms)", "1/dt (Hz)", WithUnit("y"), WithUnit("dy"), "" }
@@ -496,8 +472,7 @@ namespace OpenEphys.EphysVisualization.Design
 
                         ImGui.TableNextRow();
 
-                        // NB: under the row's buttons, so that a click anywhere else on the row picks its cursor as the
-                        // active one, which the row's highlight then shows.
+                        // NB: under the row's buttons, so that a click anywhere else on the row picks its cursor.
                         ImGui.TableNextColumn();
                         var rowStart = ImGui.GetCursorScreenPos();
                         if (ImGui.Selectable($"##active{i}", i == active,
@@ -506,8 +481,6 @@ namespace OpenEphys.EphysVisualization.Design
                         ImGuiWidgets.Tooltip("Click to make this the active cursor, which the Left and Right keys move.");
                         ImGui.SetCursorScreenPos(rowStart);
 
-                        // NB: only paused, since live the window does not move. The reference's button filled, as
-                        // its time label is, so that both mark it alike.
                         ImGui.BeginDisabled(!frame.Paused);
                         if (!measured)
                         {

@@ -162,8 +162,8 @@ namespace OpenEphys.EphysVisualization.Design
 
         long CellStart(long cell) => Combines ? FloorDiv(cell * Window.Columns, Width) : cell;
 
-        // NB: a pixel's run of columns is drawn as one, so its middle stands for it. A lone column is drawn at its
-        // first sample, so that does, and a cursor's line and time then sit where the sample is drawn.
+        // NB: a pixel's run of columns is drawn as one, so its middle stands for it, but a lone column is drawn at
+        // its first sample, so that does.
         long PositionOf(long cell)
         {
             var start = CellStart(cell);

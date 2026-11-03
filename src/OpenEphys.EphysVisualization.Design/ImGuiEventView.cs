@@ -18,10 +18,8 @@ namespace OpenEphys.EphysVisualization.Design
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The densities are kept on the GPU, one tile per channel, in the signal's own coordinates: time across, and
-    /// amplitude in bins spaced evenly in its inverse hyperbolic sine, fine near zero and coarser at large amplitudes.
-    /// So the amplitudes drawn can change at any time without losing what has accumulated, and no waveform is kept
-    /// once it has been drawn.
+    /// The densities are kept on the GPU, one tile per channel, in the signal's own coordinates, so the amplitudes
+    /// drawn can change at any time without losing what has accumulated.
     /// </para>
     /// <para>
     /// The view detects nothing itself. Its owner adds waveforms with <see cref="Add"/>, from any thread, and draws a
@@ -32,17 +30,17 @@ namespace OpenEphys.EphysVisualization.Design
     /// </remarks>
     public sealed class ImGuiEventView
     {
-        // NB: columns per sample, so the line between two samples has room to be drawn as a line.
+        // Columns per sample, so the line between two samples has room to be drawn as a line.
         const int Oversample = 4;
         const int Bins = 1024;
 
-        // NB: how far from the threshold's line, in pixels, the pointer still takes hold of it.
+        // How far from the threshold's line, in pixels, the pointer still takes hold of it.
         const float ThresholdGrab = 4;
 
         readonly int channels;
         readonly float span;
         readonly float knee;
-        // NB: the most samples, summed over the waveforms waiting to be drawn, that are held, 16 MB of them.
+        // The most samples, summed over the waveforms waiting to be drawn, that are held, 16 MB of them.
         internal const int MostPendingSamples = 1 << 22;
 
         readonly ConcurrentQueue<(int Channel, float[] Waveform, Shape Shape)> pending = new();
@@ -248,7 +246,6 @@ namespace OpenEphys.EphysVisualization.Design
                 Array.Clear(flushedEvents, 0, flushedEvents.Length);
             }
 
-            // NB: uploaded a chunk at a time as the segments are made, so the list never holds more than a chunk.
             vertices.Clear();
             while (TryTake(out var item))
             {
@@ -282,7 +279,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// is while a frame is drawn.
         /// </summary>
         /// <remarks>
-        /// The amplitudes drawn are given each time, so a view beside a plot can take the plot's and change with it.
         /// The threshold's line can be dragged, and the value it is dropped at is returned for the owner to detect
         /// at.
         /// </remarks>
@@ -382,8 +378,6 @@ namespace OpenEphys.EphysVisualization.Design
             var pad = new Vector2(4, 2);
             var count = $"{EventCount(channel)} events";
             draw.AddText(min + pad, text, count);
-            // NB: to two significant figures, since a rate decays every frame between events, and a finer one would
-            // flicker in its last digit.
             var rate = $"{PlotText.Significant(EventRate(channel), 2)} Hz";
             var rateWidth = ImGui.CalcTextSize(rate).X;
             if (ImGui.CalcTextSize(count).X + rateWidth + 4 * pad.X <= w)
@@ -409,7 +403,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         string WithUnit(string value) => string.IsNullOrEmpty(Unit) ? value : $"{value} {Unit}";
 
-        // NB: the amplitude below which the bins are spaced near evenly in the amplitude itself.
+        // The amplitude below which the bins are spaced near evenly in the amplitude itself.
         internal static float Knee(float span) => span / 256;
 
         internal static int TileWidth(int length) => (length - 1) * Oversample + 1;
@@ -462,8 +456,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         sealed class Gpu
         {
-            // NB: a whole number of segments, so a chunk never splits a line. The buffer is made this size once, so
-            // however many waveforms pile up between frames, no upload is larger.
+            // NB: a whole number of segments, so a chunk never splits a line.
             internal const int ChunkFloats = 65536 * 3;
 
             // NB: the atlas holds half floats, which count whole numbers only up to 2048, where adding one rounds
@@ -559,7 +552,6 @@ namespace OpenEphys.EphysVisualization.Design
                 if (atlasHeight > largest)
                     throw new InvalidOperationException($"{view.channels} channels need more texture than the GPU allows.");
 
-                // NB: linear, so the view reads between bins smoothly when zoomed in past them.
                 atlas = GL.GenTexture();
                 GL.BindTexture(TextureTarget.Texture2D, atlas);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
@@ -593,7 +585,6 @@ namespace OpenEphys.EphysVisualization.Design
                 Restore(viewport);
             }
 
-            // NB: added to what is there, one for each line passing through a pixel.
             public void Accumulate(List<float> points)
             {
                 var viewport = Viewport();

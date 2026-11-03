@@ -7,11 +7,6 @@ namespace OpenEphys.EphysVisualization.Design
     /// and how many there are. Nothing about the signal, and nothing about pixels beyond the fraction of
     /// the width a position falls at.
     /// </summary>
-    /// <remarks>
-    /// Panning and zooming are the whole of what this type does, and they are the whole of what they are
-    /// allowed to do: what a column then draws, and what a division is labeled, are read back out of the
-    /// same window, so the two cannot disagree.
-    /// </remarks>
     readonly struct DisplayWindow
     {
         /// <param name="start">Axis position of the left edge.</param>
@@ -92,7 +87,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// A window wider than that stretch is put at <paramref name="first"/> and left hanging over the
-        /// end, since there is nowhere it would fit.
+        /// end.
         /// </remarks>
         public DisplayWindow Clamp(long first, long last) =>
             new(Math.Max(first, Math.Min(Start, last - Span)), Step, Columns);

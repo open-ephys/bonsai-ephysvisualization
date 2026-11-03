@@ -39,12 +39,8 @@ namespace OpenEphys.EphysVisualization.Design
         Func<int, int>? grouping;
 
         /// <inheritdoc/>
-        /// <remarks>
-        /// The standard columns, with the grouping of channel colors after the palette.
-        /// </remarks>
         protected override void DrawFrame()
         {
-            // NB: none while grouping is off, so the rows take the palette's colors rather than the groups'.
             ChannelGroup = Viewer.ColorGroupingEnabled ? grouping : null;
             var plotHeight = ImGui.GetContentRegionAvail().Y - (Maximized ? 0 : ControlStripHeight);
             DrawPlot(new System.Numerics.Vector2(0, plotHeight));
@@ -108,9 +104,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// The rows of <paramref name="raw"/> holding a sample at or beyond either limit, or null where none does.
         /// </summary>
-        /// <remarks>
-        /// Null when nothing clipped, so a clean recording sends the display nothing.
-        /// </remarks>
         static bool[]? ClippedRows(Mat raw, double? low, double? high)
         {
             if (low is null && high is null)

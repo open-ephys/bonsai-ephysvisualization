@@ -10,11 +10,6 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
     /// <summary>
     /// An <see cref="ImGuiGLControl"/> that answers the pointer whichever window is active.
     /// </summary>
-    /// <remarks>
-    /// A plot of live data has to answer the user the moment they act on it, whichever window was
-    /// active, so the plot under the pointer answers a click, a wheel, or one of its hover keys,
-    /// taking focus as it does.
-    /// </remarks>
     internal class ImGuiHoverGLControl : ImGuiGLControl
     {
         const int WM_KEYDOWN = 0x0100;

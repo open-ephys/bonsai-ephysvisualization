@@ -43,9 +43,6 @@ namespace OpenEphys.EphysVisualization.Design
             var labelY = bottom + LabelGapPx;
             var total = height + LabelGapPx + ImGui.GetTextLineHeight();
 
-            // NB: the whole control takes the drag, value included, since with one handle a click anywhere means
-            // only one thing and the bar alone is a thin target. It reaches out to the handle's overhang too, so
-            // that everywhere the handle is drawn lights it.
             ImGui.SetCursorScreenPos(new Vector2(corner.X - HandleVisualWidth / 2, corner.Y - HandleOverbitePx));
             ImGui.InvisibleButton(id, new Vector2(width + HandleVisualWidth, total + HandleOverbitePx));
             var active = ImGui.IsItemActive();
@@ -55,7 +52,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (tooltip != null && hovered && !active)
                 ImGui.SetTooltip(tooltip);
 
-            // NB: the positive half goes on top, as positive is up in the traces.
             var middle = colormap.Length / 2;
             var split = corner.Y + height / 2;
             for (int s = 0; s < GradientSegments; s++)

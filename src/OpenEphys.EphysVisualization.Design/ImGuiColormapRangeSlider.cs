@@ -13,10 +13,9 @@ namespace OpenEphys.EphysVisualization.Design
     /// </summary>
     public static class ImGuiColormapRangeSlider
     {
-        // visual constants
         const int   GradientSegments  = 32;
         const float HandleVisualWidth = 3f;
-        const float HandleHitWidth    = 14f; // wider than the visual handle, for easier grabbing
+        const float HandleHitWidth    = 14f;
         const float HandleOverbitePx  = 3f;  // handle extends this far above/below the bar
         static readonly uint  ColorHandle       = ImGuiPalette.White;
         static readonly uint  ColorHandleActive = ImGuiPalette.BrightFern;
@@ -75,7 +74,6 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (domainSpan <= 0f)
             {
-                // Degenerate domain (e.g. all data identical): nothing meaningful to drag.
                 dl.AddRectFilled(cp, new Vector2(cp.X + avail, cp.Y + barH), colormap[colormap.Count / 2]);
                 float w = ImGui.CalcTextSize(domainMinStr).X;
                 dl.AddText(new Vector2(cp.X + avail / 2f - w / 2f, labelY), ColorText, domainMinStr);
@@ -110,7 +108,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (xMax < cp.X + avail)
                 dl.AddRectFilled(new Vector2(xMax, cp.Y), new Vector2(cp.X + avail, cp.Y + barH), colormap[colormap.Count - 1]);
 
-            // Min handle (submitted first so an overlapping max handle wins the grab).
+            // Submitted first so an overlapping max handle wins the grab.
             ImGui.SetCursorScreenPos(new Vector2(xMin - HandleHitWidth / 2f, cp.Y - HandleOverbitePx));
             ImGui.InvisibleButton(id + "_minHandle", new Vector2(HandleHitWidth, barH + 2f * HandleOverbitePx));
             bool minActive = ImGui.IsItemActive();
@@ -120,7 +118,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (minHandleTooltip != null && minHovered && !minActive)
                 ImGui.SetTooltip(minHandleTooltip);
 
-            // Max handle.
             ImGui.SetCursorScreenPos(new Vector2(xMax - HandleHitWidth / 2f, cp.Y - HandleOverbitePx));
             ImGui.InvisibleButton(id + "_maxHandle", new Vector2(HandleHitWidth, barH + 2f * HandleOverbitePx));
             bool maxActive = ImGui.IsItemActive();
@@ -130,7 +127,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (maxHandleTooltip != null && maxHovered && !maxActive)
                 ImGui.SetTooltip(maxHandleTooltip);
 
-            // Recompute handle X positions in case dragging just moved them, then draw the handle bars on top.
             xMin = ValueToX(rangeMin);
             xMax = ValueToX(rangeMax);
             dl.AddRectFilled(
@@ -142,9 +138,6 @@ namespace OpenEphys.EphysVisualization.Design
                 new Vector2(xMax + HandleVisualWidth / 2f, cp.Y + barH + HandleOverbitePx),
                 maxActive || maxHovered ? ColorHandleActive : ColorHandle);
 
-            // Labels: the two domain extremes are always shown; each handle's own value is shown beneath it
-            // unless that would overlap a domain label or the other handle's label (common at rest, when
-            // both handles sit exactly at the domain extremes and would otherwise duplicate those labels).
             string minStr = rangeMin.ToString(valueFormat);
             string maxStr = rangeMax.ToString(valueFormat);
 

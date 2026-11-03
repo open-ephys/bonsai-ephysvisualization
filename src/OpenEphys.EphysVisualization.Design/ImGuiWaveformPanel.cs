@@ -14,9 +14,8 @@ namespace OpenEphys.EphysVisualization.Design
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The owner calls <see cref="Update"/> with each block and <see cref="Draw"/> once a frame. Everything
-    /// the display can be told is a property, so a control strip is one way to drive it, not part of it. The
-    /// settings a node saves are read from and written to that node, which holds the only copy of them.
+    /// The owner calls <see cref="Update"/> with each block and <see cref="Draw"/> once a frame. The settings a
+    /// node saves are read from and written to that node, which holds the only copy of them.
     /// </para>
     /// <para>
     /// While <see cref="Paused"/>, the display is frozen and can be panned back through a history of recent
@@ -71,9 +70,6 @@ namespace OpenEphys.EphysVisualization.Design
             get => cursors.Show;
             set
             {
-                // NB: only the cursors the view can no longer reach, as after the record they were placed in has
-                // been dropped or cleared, which could not otherwise be shown or centered on. Any other cursor keeps
-                // its place however often the cursors are hidden and shown.
                 if (value && !cursors.Show)
                 {
                     var (first, last) = ReachablePositions;
@@ -91,8 +87,6 @@ namespace OpenEphys.EphysVisualization.Design
         (long First, long Last) ReachablePositions =>
             CanPan && history is not null ? (AxisFirst(history), AxisLast) : (window.Start, window.End);
 
-        // NB: once, as the cursors are shown, rather than whenever there is no selection, so that clearing the
-        // selection with the cursors shown leaves it clear.
         bool selectOnShow;
 
         /// <summary>
@@ -239,8 +233,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (rows.Length == 0 || SingleChannel || visibleHeight <= 0)
                 return;
 
-            // NB: counted in whole slots from the top of the lanes, as the zoom box counts them, so a row placed
-            // between two is shown whole. Evenly spaced lanes each count from their own first row.
             var starts = LanesFor(rowCount);
             float Slot(int row) =>
                 SlotsFor(rowCount) is null && starts is not null ? row - starts[LaneOf(row)] : SlotOf(row);
@@ -267,22 +259,21 @@ namespace OpenEphys.EphysVisualization.Design
 
         WaveformHistory? history;
 
-        // NB: how many rows the data has, which the hidden mask's length used to stand in for.
         int rowCount;
 
-        // NB: the data's rows, and with them whatever is drawn, selected or expanded, are counted in rows. What a
-        // user reads and what the settings name are channels, which an owner that reorders its rows maps here.
+        // Whatever is drawn, selected or expanded is counted in rows of the data. What a user reads and what the
+        // settings name are channels, which an owner that reorders its rows maps here.
         RowOrder? order;
         int[]? rowChannels;
 
-        // NB: each row's offset from the top of the lanes, in row heights, or null for row k at k.
+        // Each row's offset from the top of the lanes, in row heights, or null for row k at k.
         float[]? rowSlots;
         float slotExtent;
 
-        // NB: the row each lane starts at, and the row count last, or null for one lane.
+        // The row each lane starts at, and the row count last, or null for one lane.
         int[]? laneStarts;
 
-        // NB: the lane given most of the plot's width, the others shrunk to strips, or -1 for equal widths.
+        // The lane widened over the others, or -1 for equal widths.
         int expandedLane = -1;
 
         /// <summary>
@@ -413,7 +404,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         float SlotOf(int row) => RowLayout.SlotOf(SlotsFor(rowCount), row);
 
-        // NB: the tallest lane's span in row heights, the row count when evenly spaced in one lane.
+        // The tallest lane's span, in row heights.
         float SlotCount => SlotsFor(rowCount) is not null ? slotExtent : rowCount;
 
         internal int ChannelOf(int row) => ChannelOf(rowChannels, row);
@@ -423,9 +414,8 @@ namespace OpenEphys.EphysVisualization.Design
 
         int RowOf(int channel) => rowChannels is { } map ? Array.IndexOf(map, channel) : channel;
 
-        // NB: the node's hidden channels as a mask by row, for looking a row up, worked out again whenever the node's
-        // channel settings or the row order is replaced or the channel count changes. Never written to: hiding and
-        // showing replace the settings.
+        // NB: hiding and showing replace the node's channel settings rather than edit them, so a reference check
+        // catches every change.
         bool[] hiddenMask = Array.Empty<bool>();
         ChannelSettings[]? maskedFrom;
         int[]? maskedRows;
@@ -449,7 +439,7 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: the hidden channels when a drag on the labels began, which the drag sets its range against.
+        // The hidden channels as a drag on the labels began.
         int[] dragOriginal = Array.Empty<int>();
 
         /// <summary>
@@ -462,7 +452,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         const double ClipFlashHz = 4;
 
-        // NB: seconds of data shown, which stand still while paused or while no data arrives, and so hold the marks.
         double dataSeconds;
         double[] lastClip = Array.Empty<double>();
 
@@ -494,8 +483,6 @@ namespace OpenEphys.EphysVisualization.Design
         bool Clipping(int row) =>
             ShowClipping && !RowHidden[row] && dataSeconds - lastClip[row] < ClipHoldSeconds;
 
-        // NB: steady while paused, when the marks only say which channels were clipping and flashing would only
-        // distract from studying the view.
         bool ClipFlashOn => Paused || (long)(ImGui.GetTime() * 2 * ClipFlashHz) % 2 == 0;
 
         int expandedRow = -1;
@@ -505,7 +492,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         const double MaxAmplitudeZoom = 1000;
 
-        // NB: for one channel at one range, so that expanding another, collapsing or changing the range starts it over.
         (int Row, double Range, double Center, double Span) amplitudeView = (-1, 0, 0, 0);
 
         /// <summary>
@@ -569,10 +555,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// The next multiple of the channel height step above <paramref name="height"/>, or below it when
         /// <paramref name="direction"/> is negative.
         /// </summary>
-        /// <remarks>
-        /// To a multiple rather than by a step, so that a height off the multiples, as a fitted one is, comes back
-        /// onto them.
-        /// </remarks>
         public static float StepChannelHeight(float height, int direction) => direction > 0
             ? (MathF.Floor(height / ChannelHeightStep) + 1) * ChannelHeightStep
             : (MathF.Ceiling(height / ChannelHeightStep) - 1) * ChannelHeightStep;
@@ -683,12 +665,10 @@ namespace OpenEphys.EphysVisualization.Design
             var historyReplaced = history is null || history.Rows != data.Rows || history.Capacity != capacity;
 
             // NB: the history converts sample offsets to time with a single factor, so it cannot hold two
-            // rates. A change of band that keeps the rate is left alone: what the history holds is what was
-            // displayed, seams between band switches are included.
+            // rates.
             var historyInvalid = historyReplaced || dataSampleRate != sampleRate;
 
-            // NB: a paused view is read from the history, so a block that would clear it is dropped. Once
-            // the view resumes, the next block still differs and is applied as usual.
+            // NB: nothing is lost by dropping: once the view resumes, the next block still differs and is applied.
             if (Paused && historyInvalid)
                 return;
 
@@ -728,16 +708,13 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (decimator is null ||
                 pannedDecimator is null ||
-                decimator.Sweep.Rows != rows ||             // # channels
-                decimator.Sweep.Cols != columns ||          // # downsamples
-                decimator.DownsampleFactor != samplesPerBin) // factor to map totalSamples -> # downsamples
+                decimator.Sweep.Rows != rows ||
+                decimator.Sweep.Cols != columns ||
+                decimator.DownsampleFactor != samplesPerBin)
             {
                 decimator?.Dispose();
                 pannedDecimator?.Dispose();
                 decimator = new Decimator(rows, columns, samplesPerBin);
-
-                // NB: the paused view reduces out of the history into its own decimator, at the same width as
-                // the live one, so that changing the timebase while paused rebuilds both together.
                 pannedDecimator = new Decimator(rows, columns, samplesPerBin);
 
                 if (rowCount != rows)
@@ -757,8 +734,7 @@ namespace OpenEphys.EphysVisualization.Design
                 RebuildWindow(samplesPerBin, columns);
             }
 
-            // NB: also when only the anchor is waiting, so that a timebase change which happens to land on
-            // the same column spacing still moves the window to where the gesture asked.
+            // NB: also when only the anchor is waiting, since a timebase change can land on the same column spacing.
             else if (anchorPending)
                 RebuildWindow(samplesPerBin, columns);
         }
@@ -772,15 +748,12 @@ namespace OpenEphys.EphysVisualization.Design
             // gestures would free the matrices the plot is about to read.
             AnswerFrameKeys();
 
-            // NB: also here and not only in Update, so a timebase change takes effect while no data is
-            // arriving, as when paused after acquisition has stopped.
+            // NB: also here and not only in Update, so a timebase change takes effect while no data arrives.
             if (decimator is not null)
                 RebuildBuffers(decimator.Sweep.Rows);
 
             if (decimator is not null)
             {
-                // NB: no vertical padding, so the plot frame lands on the region's own edges and can
-                // be lined up with whatever the owner puts beside it.
                 var padding = ImGui.GetStyle().WindowPadding;
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(padding.X, 0));
                 ImGui.BeginChild("##data", Vector2.Zero, ImGuiChildFlags.None, ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs);

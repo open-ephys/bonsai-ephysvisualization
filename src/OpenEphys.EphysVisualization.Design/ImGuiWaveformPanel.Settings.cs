@@ -65,10 +65,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// Amplitude ranges offered as presets: every range of the sequence from the smallest to the largest, or,
         /// while there is no largest, those around the current range above the smallest.
         /// </summary>
-        /// <remarks>
-        /// Every one where there is a largest, for the list to scroll through, rather than a window around the
-        /// current range, which at either end would offer only the ranges on one side of it.
-        /// </remarks>
         public IReadOnlyList<double> StandardRanges
         {
             get
@@ -134,7 +130,7 @@ namespace OpenEphys.EphysVisualization.Design
                 foreach (var step in TimeBaseSteps)
                 {
                     var span = decade * step;
-                    if (span > historySeconds && ladder.Count > 0) // NB: ladder.Count > 0 -> shortest span is always offered
+                    if (span > historySeconds && ladder.Count > 0)
                     {
                         nextDecade = false;
                         break;

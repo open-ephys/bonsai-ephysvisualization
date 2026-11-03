@@ -27,8 +27,6 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         static readonly long ShortestWait = Stopwatch.Frequency / 1000;
         const int IdleMilliseconds = 5;
 
-        // NB: the monitor's own refresh rate is read again every so often, so that moving the window to another
-        // monitor is picked up.
         const int RefreshesBetweenReads = 100;
         internal const int DefaultRefreshRate = 60;
 

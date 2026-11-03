@@ -10,8 +10,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// <remarks>
     /// Samples are addressed on an absolute timeline that starts at zero and never wraps, so a reader can
     /// hold a position across writes; <see cref="Oldest"/> and <see cref="Count"/> bound what is still
-    /// held. The ring itself is never handled whole: a write that straddles its end is two copies of
-    /// adjoining column ranges, and a read two reductions.
+    /// held.
     /// </remarks>
     internal sealed class WaveformHistory : IDisposable
     {
@@ -90,9 +89,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// The decimator carries its reduction across calls, so a range straddling the ring's end is
-        /// two reductions that come out as one, and a caller whose view is several ranges calls again for
-        /// each. Nothing is copied: at the longest timebase a window is the whole ring, and a contiguous
-        /// copy of it would double what the history costs.
+        /// two reductions that come out as one. Nothing is copied: at the longest timebase a window is the
+        /// whole ring, and a contiguous copy of it would double what the history costs.
         /// </remarks>
         /// <returns>
         /// False, having reduced nothing, if any part of the range is no longer held. What earlier calls

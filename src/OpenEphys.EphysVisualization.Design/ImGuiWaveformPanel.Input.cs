@@ -32,7 +32,7 @@ namespace OpenEphys.EphysVisualization.Design
         bool? dragHidden;
         int dragAnchor;
 
-        // NB: while a drag is held, the value it began from and where the pointer was then.
+        // While a drag is held, the value it began from and where the pointer was then.
         (double Value, float Y)? rangeDrag;
         (float Value, float Y, float Pivot, float Scroll)? heightDrag;
         (double Span, float Y, double Value, double Fraction)? amplitudeDrag;
@@ -47,8 +47,6 @@ namespace OpenEphys.EphysVisualization.Design
         float collapsedScroll;
         float? pendingScroll;
 
-        // NB: the channel under the mouse is found from its y anywhere across the lane's labels and plot, so a
-        // trace can be acted on where it is looked at. The last lane reaches the window's edge.
         static int HoveredRow(Lane[] lanes, int lane)
         {
             var layout = lanes[lane].Rows;
@@ -77,9 +75,8 @@ namespace OpenEphys.EphysVisualization.Design
             return row >= layout.FirstRow && row < layout.LastRow ? row : -1;
         }
 
-        // NB: the scroll clamps to the rows as they were the frame before, which for a collapse is one channel
-        // filling the table and for a box zoom rows of the old height, so a scroll for rows that change is set once
-        // they have.
+        // NB: the scroll clamps to the rows as they were the frame before, so a scroll for rows that change is set
+        // once they have.
         void ScrollIfPending()
         {
             if (pendingScroll is float scroll)
@@ -106,9 +103,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (expandedRow >= 0)
                 return;
 
-            // NB: only from the labels, which leaves a click on a trace to select it and Shift+Drag there to set
-            // the range. Set rather than toggled, so a drag across a mix of shown and hidden channels gives one
-            // result.
             var onLabels = ImGui.GetMousePos().X < plotLeft;
             if (onLabels && ImGui.IsMouseClicked(ImGuiMouseButton.Left) && (Modifiers() || Modifiers(shift: true)))
             {
@@ -137,7 +131,6 @@ namespace OpenEphys.EphysVisualization.Design
                 if (!hidden.SequenceEqual(ChannelSettings.HiddenOf(settings.Channels)))
                     settings.Channels = ChannelSettings.WithHidden(settings.Channels, hidden);
 
-                // NB: a hidden channel shows nothing to select, and the cursors would read nothing from it.
                 if (selectedRow >= 0 && RowHidden[selectedRow])
                     selectedRow = -1;
             }
@@ -197,8 +190,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public bool KeysElsewhere { get; set; }
 
-        // NB: these act on the selected channel, which a pane beside the panel, such as a probe, selects too, so they
-        // are answered wherever the pointer is.
         static readonly ImGuiKey[] SelectionKeys = { ImGuiKey.Q, ImGuiKey.E, ImGuiKey.X };
 
         void AnswerFrameKeys()
@@ -219,17 +210,12 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: not a key typed into a text field.
         bool Pressed(ImGuiKey key, bool repeat, bool anywhere = false) =>
             (anywhere || !KeysElsewhere) && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(key, repeat);
 
         /// <summary>
         /// Whether exactly the named modifiers are down and the rest are up.
         /// </summary>
-        /// <remarks>
-        /// Testing only whether a modifier is down lets gestures overlap: Shift+Alt+click would also fire the
-        /// Shift+click gesture.
-        /// </remarks>
         internal static bool Modifiers(bool ctrl = false, bool shift = false, bool alt = false)
         {
             var io = ImGui.GetIO();
@@ -237,11 +223,7 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         // NB: ImGui doesn't scroll the ##rows window (see WaveformPlot), so every wheel gesture over the rows ends up
-        // here. The modifiers follow conventions every application shares: Shift scrolls sideways, like a touchpad's
-        // sideways swipe, and Ctrl zooms, because a touchpad pinch arrives as Ctrl+wheel. The plain wheel scrolls the
-        // channels, and Shift+wheel moves through time. Ctrl+wheel zooms the channel height, Ctrl+Shift+wheel zooms the
-        // timebase, and Alt+wheel sets the range. The zooms and the range only respond over the plot, and wheeling up
-        // always magnifies.
+        // here. A touchpad pinch arrives as Ctrl+wheel.
         void HandleWheel(in RowLayout layout)
         {
             var io = ImGui.GetIO();
@@ -282,9 +264,6 @@ namespace OpenEphys.EphysVisualization.Design
             wheelSteps -= steps;
             for (var direction = Math.Sign(steps); steps != 0; steps -= direction)
             {
-                // NB: anchored on the pointer rather than the middle of the view, so that whatever is being
-                // looked at stays where it is. The keys and the dropdown have no pointer to speak of and anchor
-                // on the middle instead.
                 if (Modifiers(ctrl: true, shift: true))
                     StepTimebase(-direction, mouse.X);
                 else if (Modifiers(alt: true))
@@ -335,15 +314,12 @@ namespace OpenEphys.EphysVisualization.Design
                 StepTimebase(-direction, plotLeft + plotSpan / 2);
         }
 
-        // NB: a zoom box being dragged is cancelled alone, leaving the selection, so that backing out of one gesture
-        // does not undo another.
         void Escape()
         {
             if (zoomBox.Dragging) zoomBox.Cancel();
             else selectedRow = -1;
         }
 
-        // NB: Shift steps ten cells, as it makes the other moves larger.
         void CursorKey(int direction)
         {
             var cells = Modifiers() ? 1 : Modifiers(shift: true) ? CursorCoarseStep : 0;
@@ -366,16 +342,8 @@ namespace OpenEphys.EphysVisualization.Design
 
         const int CursorCoarseStep = 10;
 
-        // NB: the modifier wheels and drags set the plot's scales, so they start on the plot only. The channel labels
-        // have gestures of their own, and the plain wheel scrolls the channels anywhere, as ImGui does.
         bool OverPlot(float x) => x >= plotLeft && x < plotLeft + plotSpan;
 
-        // NB: the modifier picks what a drag sets and its direction which axis: with Ctrl, up raises the channel
-        // height, or magnifies an expanded channel's amplitude, and right shortens the timebase, so a diagonal zooms
-        // both; with Alt, up narrows the range. Each works from where it began rather than frame to frame, so it
-        // ends where the pointer does, and an axis answers only past the drag threshold, so a drag along one barely
-        // moves the other. A middle drag grabs the plot instead and moves it with the pointer, through the channels
-        // or an expanded channel's amplitudes and, paused, through time.
         void HandleDrags(in RowLayout layout)
         {
             var mouse = ImGui.GetMousePos();
@@ -407,7 +375,6 @@ namespace OpenEphys.EphysVisualization.Design
             if (clicked && Modifiers(alt: true))
                 rangeDrag = (Range, mouse.Y);
 
-            // NB: by a factor rather than an amount, so the drag feels alike at every range.
             if (rangeDrag is { } range)
                 Range = PlotText.Significant(range.Value * Math.Exp(Beyond(mouse.Y - range.Y) * RangeDragRate));
 
@@ -425,9 +392,7 @@ namespace OpenEphys.EphysVisualization.Design
                 }
             }
 
-            // NB: about the press point, which stays where it was pressed, as the wheel zooms about the pointer.
-            // Rounded, which keeps the division labels readable and the decimators from being rebuilt on every
-            // pixel of the drag.
+            // NB: rounded, which also keeps the decimators from being rebuilt on every pixel of the drag.
             if (timebaseDrag is { } zoom)
             {
                 var longest = standardTimeBases[ServableTimeBases - 1];
@@ -453,10 +418,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Right click and drag a zoom box. A double-click zooms all the way out.
         /// </summary>
-        /// <remarks>
-        /// Live, only the box's height counts: its rows hold still, but the sweep moves under its left and right
-        /// edges, so it zooms the rows or the expanded channel's amplitude and leaves the timebase as it is.
-        /// </remarks>
         void HandleZoomBox(in RowLayout layout)
         {
             var mouse = ImGui.GetMousePos();
@@ -487,8 +448,6 @@ namespace OpenEphys.EphysVisualization.Design
             }
             else if (box.Tall)
             {
-                // NB: counted in slots, not rows (the same when evenly spaced), so a box over a gap zooms to the
-                // gap as drawn.
                 var slots = (int)Math.Ceiling(layout.Slot(layout.LastRow - 1) + 1);
                 var first = Math.Max(0, (int)Math.Floor(layout.SlotAt(box.Min.Y)));
                 var last = Math.Min(slots - 1, (int)Math.Floor(layout.SlotAt(box.Max.Y - 1)));
@@ -504,10 +463,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// Shows everything: the longest timebase, every channel fitted to the plot, and an expanded channel's
         /// whole range.
         /// </summary>
-        /// <remarks>
-        /// Fitted once rather than by turning Fit on, so a gesture does not change a setting it does not show. Fit
-        /// left on is left on.
-        /// </remarks>
         void ZoomAll()
         {
             LongestTimebase();
@@ -519,7 +474,6 @@ namespace OpenEphys.EphysVisualization.Design
             amplitudeView.Row = -1;
         }
 
-        // NB: while paused, the longest the record can fill, so the whole record is in view.
         void LongestTimebase() => SetTimebaseAt(standardTimeBases[ServableTimeBases - 1], plotLeft + plotSpan / 2);
 
         /// <summary>
@@ -528,16 +482,13 @@ namespace OpenEphys.EphysVisualization.Design
         float RowFraction(in RowLayout layout, float y) =>
             (layout.RowTop(expandedRow) + layout.RowHeight / 2 - y) / layout.RowHeight;
 
-        // NB: how far a drag has gone along one axis past the drag threshold, so a drag held to one axis does not
-        // move the other by the pointer's wobble.
+        // How far a drag has gone along one axis past the drag threshold.
         static float Beyond(float distance)
         {
             var threshold = ImGui.GetIO().MouseDragThreshold;
             return Math.Sign(distance) * Math.Max(0, Math.Abs(distance) - threshold);
         }
 
-        // NB: the channel that was under the pointer when the gesture began is kept at the same
-        // screen position by moving the scroll with the height change.
         void SetChannelHeight(float height, float baseHeight, float pivot, float baseScroll, in RowLayout layout)
         {
             // NB: a drag that has not moved yet leaves a fitted height fitted.
@@ -567,7 +518,6 @@ namespace OpenEphys.EphysVisualization.Design
             SetTimebaseAt(stepped, x);
         }
 
-        // NB: whatever is drawn at x stays there, so that what is being looked at stays put.
         void SetTimebaseAt(double value, float x)
         {
             var anchor = Axis.PositionAt(x);
@@ -583,8 +533,6 @@ namespace OpenEphys.EphysVisualization.Design
             Range = RangeAt(i);
         }
 
-        // NB: counted in slots, not rows (the same when evenly spaced), since counting rows that share a slot
-        // would page past the view.
         static float ChannelStep(in RowLayout layout)
         {
             var slots = (int)Math.Ceiling(layout.Slot(layout.LastRow - 1) + 1);
@@ -596,7 +544,6 @@ namespace OpenEphys.EphysVisualization.Design
                 : layout.RowHeight;
         }
 
-        // NB: the same relationship to a window as ChannelStep has to the channels in view.
         long PanStep() => Modifiers(shift: true)
             ? (long)(window.Span * CoarsePanFraction)
             : window.Span / TimeDivisions;
@@ -655,8 +602,7 @@ namespace OpenEphys.EphysVisualization.Design
             expandedRow = row;
         }
 
-        // NB: back where the expand began, moved only as far as brings the channel that was expanded into view,
-        // since Q and E may have stepped away from it. Not at all if it is in view there already.
+        // NB: Q and E may have stepped the expanded channel away from the one the expand began on.
         void Collapse()
         {
             if (SingleChannel)

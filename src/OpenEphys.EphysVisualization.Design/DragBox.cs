@@ -15,9 +15,6 @@ namespace OpenEphys.EphysVisualization.Design
     /// <summary>
     /// A box drawn out by dragging with one mouse button, from where the drag began to the pointer.
     /// </summary>
-    /// <remarks>
-    /// Only the box: which press begins one, and what it does while held and when let go, are the caller's.
-    /// </remarks>
     internal sealed class DragBox
     {
         readonly ImGuiMouseButton button;

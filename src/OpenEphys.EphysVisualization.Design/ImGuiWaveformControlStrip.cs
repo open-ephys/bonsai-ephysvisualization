@@ -9,11 +9,6 @@ namespace OpenEphys.EphysVisualization.Design
     /// The row of controls under a waveform viewer's plot: whichever columns its owner gives it, laid out on a
     /// wrapping grid, with pause and the record length beside them.
     /// </summary>
-    /// <remarks>
-    /// One way to reach the panel's settings rather than a part of it: the panel plots and interprets gestures
-    /// whether or not a strip is drawn, and reads nothing back from here. Widgets take the current value from the
-    /// panel every frame, so a setting changed by gesture shows up here without anything being told about it.
-    /// </remarks>
     internal sealed class ImGuiWaveformControlStrip
     {
         /// <summary>
@@ -88,16 +83,10 @@ namespace OpenEphys.EphysVisualization.Design
         /// Lays the columns out as a wrapping grid, with pause kept to the right of a rule.
         /// </summary>
         /// <remarks>
-        /// A table cannot wrap, so the controls are positioned outright. Each place in the grid is as wide as the
-        /// widest column that lands in it, so the rows line up while a column of checkboxes takes no more room than
-        /// they need, and a row holds as many columns as fit. The rows start at the left, and what is left over
-        /// sits before the rule.
+        /// A table cannot wrap, so the controls are positioned outright.
         /// </remarks>
         void DrawControls(ImGuiWaveformPanel panel, IReadOnlyList<ControlStripColumn> columns)
         {
-            // NB: the flow is positioned outright rather than indented, so every horizontal distance here is
-            // measured from one origin and the rule and pause go exactly where the layout reserved room for
-            // them.
             var origin = ImGui.GetCursorScreenPos();
             var available = ImGui.GetContentRegionAvail().X;
             var usable = available - EdgeMargin * 2;
@@ -113,8 +102,6 @@ namespace OpenEphys.EphysVisualization.Design
                 widest = Math.Max(widest, widths[i]);
             }
 
-            // NB: the widest column is the floor for the flow, so a window narrow enough to reach it leaves pause
-            // less than it asked for. It gives width up rather than being clipped.
             var flowWidth = Math.Max(widest, usable - rightZone);
             var pauseWidth = Math.Max(MinPauseWidth, Math.Min(
                 PauseWidth,
@@ -155,7 +142,6 @@ namespace OpenEphys.EphysVisualization.Design
             var stackHeight = ImGui.GetTextLineHeight() + style.ItemSpacing.Y
                 + barHeight + style.ItemSpacing.Y + pauseHeight;
 
-            // NB: at one row the pause zone is taller than the controls beside it, so it sets the height.
             var flowHeight = Math.Max(rows * rowPitch - RowGap, stackHeight);
             var ruleX = MathF.Floor(flowOrigin.X + flowWidth + RuleGap);
             ImGui.GetWindowDrawList().AddRectFilled(
@@ -163,8 +149,6 @@ namespace OpenEphys.EphysVisualization.Design
                 new Vector2(ruleX + ImGuiWaveformPanel.FrameWeight, flowOrigin.Y + flowHeight),
                 ImGuiWaveformPanel.FrameColor);
 
-            // NB: the history bar and pause travel together as one stack, centered: a narrow window wraps
-            // the controls into several rows, and a pause button that grew with them would be absurdly tall.
             var stackX = ruleX + ImGuiWaveformPanel.FrameWeight + RuleGap;
             var stackY = flowOrigin.Y + (flowHeight - stackHeight) / 2;
 

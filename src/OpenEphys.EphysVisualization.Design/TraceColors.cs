@@ -43,10 +43,9 @@ namespace OpenEphys.EphysVisualization.Design
         /// to take the next color of the palette.
         /// </summary>
         /// <remarks>
-        /// Groups take their colors from <see cref="ImGuiPalette.Categorical"/> whatever the palette, which is there
-        /// to tell neighboring rows apart rather than groups. Without one, the colors follow the rows rather than the
-        /// channels, whichever channels an owner's order puts side by side. Read for every channel every frame, so an
-        /// assignment that reads its owner's settings live never has to be told they changed.
+        /// Groups take their colors from <see cref="ImGuiPalette.Categorical"/> whatever the palette. Read for every
+        /// channel every frame, so an assignment that reads its owner's settings live never has to be told they
+        /// changed.
         /// </remarks>
         public Func<int, int>? GroupOf { get; set; }
 
@@ -77,12 +76,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// The color row <paramref name="row"/>, which shows channel <paramref name="channel"/>, is drawn in.
         /// </summary>
-        /// <remarks>
-        /// Read by the trace, its outline and its label's highlight alike, so they always agree.
-        /// </remarks>
         public Vector4 Of(int row, int channel) => GroupOf is { } group ? Group(group(channel)) : Row(row);
 
-        // NB: neutral, so that the groups stand out, but light enough to read as a trace on the black plot.
         static readonly uint Ungrouped = ImGuiPalette.Grey0xCC;
 
         /// <summary>

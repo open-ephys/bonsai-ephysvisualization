@@ -7,8 +7,6 @@ namespace OpenEphys.EphysVisualization.Design
     /// </summary>
     /// <remarks>
     /// Icefire runs from light blue through blues to near black at its middle, then through reds to light yellow.
-    /// Diverging about a dark middle, it shows signed values on a dark background with zero as near black and
-    /// the two signs as two hues that brighten with magnitude.
     /// <para>
     /// Colormap data from seaborn (Michael Waskom, BSD 3-Clause license), <c>seaborn/cm.py</c>.
     /// </para>
@@ -153,9 +151,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public static readonly uint[] Map = BuildMap();
 
-        // NB: icefire's middle is a 12% grey, which reads as a haze over the black plot. Each half has its
-        // innermost color subtracted, fully at the middle and fading to nothing at the ends, so the middle is
-        // black and the ends are unchanged.
+        // NB: icefire's own middle is a 12% grey, which reads as a haze over the black plot.
         static uint[] BuildMap()
         {
             var entries = Data.Length / 3;

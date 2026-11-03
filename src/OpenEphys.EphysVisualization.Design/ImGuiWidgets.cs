@@ -58,11 +58,9 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // Item ID + timestamp of the most recent click/drag/edit to finish. ImGui's own hover-delay
-        // timer accumulates for as long as the mouse sits on an item, click or no click, so a
-        // control that was already hovered-with-delay before being clicked stays "primed" through
-        // the click and shows its tooltip instantly on release. Tracking this ourselves lets us
-        // force the normal delay to re-elapse after an interaction, regardless of ImGui's own timer.
+        // ImGui's own hover-delay timer accumulates for as long as the mouse sits on an item, click or no
+        // click, so a control already hovered past the delay before being clicked shows its tooltip instantly
+        // on release.
         static uint lastDeactivatedItemId;
         static double lastDeactivatedTime = -1.0;
 
@@ -87,14 +85,14 @@ namespace OpenEphys.EphysVisualization.Design
             }
 
             if (ImGui.IsItemActive())
-                return; // don't show tooltips while the user is interacting (e.g. dragging a slider)
+                return;
 
             if (ImGui.GetItemID() == lastDeactivatedItemId &&
                 ImGui.GetTime() - lastDeactivatedTime < ImGui.GetStyle().HoverDelayNormal)
-                return; // just interacted with this control; wait out the normal delay again
+                return;
 
             if (!ImGui.IsItemHovered(ImGuiHoveredFlags.DelayNormal | ImGuiHoveredFlags.AllowWhenDisabled))
-                return; // only show when hovering for a delay and allow for disabled components as well
+                return;
             bool disabled = ((ImGuiItemFlagsPrivate)ImGuiP.GetItemFlags() & ImGuiItemFlagsPrivate.Disabled) != 0;
             ImGui.SetTooltip(disabled && disabledHint != null ? $"{text}\n{disabledHint}" : text);
         }

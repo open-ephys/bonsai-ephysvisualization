@@ -17,18 +17,10 @@ namespace OpenEphys.EphysVisualization.Design
     /// live multi-channel waveform viewer.
     /// </summary>
     /// <remarks>
-    /// <para>
     /// The base class owns the window, its pacing to the display, the waveform plot and the control strip. A
     /// derived class turns what the node receives into blocks of samples, in <see cref="Visualize"/>, and hands them
     /// over with <see cref="PostData"/>; anything else it needs done on the window's thread it hands over with
     /// <see cref="Post"/>, in order with the data.
-    /// </para>
-    /// <para>
-    /// Each frame calls <see cref="DrawFrame"/>, which by default draws the plot above a control strip of the
-    /// <see cref="StandardColumns"/>. A derived class that shows more overrides it and arranges
-    /// <see cref="DrawPlot"/> and <see cref="DrawControlStrip"/>, with whichever columns it chooses, around its own
-    /// content.
-    /// </para>
     /// </remarks>
     public abstract class WaveformScopeVisualizerBase : DialogTypeVisualizer
     {
@@ -43,8 +35,8 @@ namespace OpenEphys.EphysVisualization.Design
         Timer? drainTimer;
         bool painted;
 
-        // NB: shown in the plot's place rather than thrown. The viewer is a view on data it does not change, so a
-        // mistake in it must not stop the workflow. Set on whichever thread finds it, and read once a frame.
+        // NB: shown in the plot's place rather than thrown, which would stop the workflow. Set on whichever thread
+        // finds it, and read once a frame.
         volatile string? fault;
         float stripHeight;
 
@@ -84,10 +76,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// negative group, which is none, is drawn in a neutral grey.
         /// </summary>
         /// <remarks>
-        /// Groups take their colors from a categorical palette, chosen to tell groups apart, whatever palette the
-        /// rows are drawn in. Without one, the colors follow the rows, so that neighboring rows differ whichever
-        /// channels <see cref="Order"/> puts side by side. Called for every channel every frame, so a function that
-        /// reads settings as it goes never has to be told they changed.
+        /// Groups take their colors from a categorical palette whatever palette the rows are drawn in. Called for
+        /// every channel every frame, so a function that reads settings as it goes never has to be told they changed.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
         protected Func<int, int>? ChannelGroup
@@ -297,8 +287,8 @@ namespace OpenEphys.EphysVisualization.Design
             var visualizerService = (IDialogTypeVisualizerService)provider.GetService(typeof(IDialogTypeVisualizerService));
             visualizerService?.AddControl(host);
 
-            // NB: each frame applies what has arrived, and so does a timer, which runs while the window is
-            // minimized and paints nothing, so that what arrives meanwhile is applied rather than held.
+            // NB: a timer applies what has arrived too, since a minimized window paints nothing, so what arrives
+            // meanwhile is applied rather than held.
             drainTimer = new Timer { Interval = DrainMilliseconds };
             drainTimer.Tick += (_, _) => DrainTick();
             drainTimer.Start();
@@ -317,7 +307,6 @@ namespace OpenEphys.EphysVisualization.Design
         {
         }
 
-        // NB: a frame does its own off screen work, so DrawOffscreen is called only once a tick has passed with none.
         void DrainTick()
         {
             Drain();
@@ -456,9 +445,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// the record length beside them.
         /// </summary>
         /// <remarks>
-        /// The columns are laid out in order on a grid that wraps to the width. A standard column left out leaves
-        /// the plot's gestures acting on its setting with nothing on screen showing it; see
-        /// <see cref="OpenEphys.EphysVisualization.Design.StandardColumns"/>.
+        /// A standard column left out leaves the plot's gestures acting on its setting with nothing on screen
+        /// showing it; see <see cref="OpenEphys.EphysVisualization.Design.StandardColumns"/>.
         /// </remarks>
         /// <param name="columns">The columns to draw, in order.</param>
         /// <exception cref="ArgumentException">A column has no draw action.</exception>

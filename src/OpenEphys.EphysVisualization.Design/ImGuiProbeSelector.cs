@@ -60,15 +60,9 @@ namespace OpenEphys.EphysVisualization.Design
     /// which contacts can be selected by dragging.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// The owner decides what the contacts mean through <see cref="FillColor"/> and <see cref="Blocked"/>, so the
-    /// view itself is the same for any probe.
-    /// </para>
-    /// <para>
     /// <see cref="DrawMinimap"/> and <see cref="DrawZoomedView"/> each fill the child window they are called in,
     /// and answer the wheel while it is over them: scroll, Shift to pan across, Ctrl to zoom. Size the minimap's
     /// child with <see cref="MinimapWidth"/>.
-    /// </para>
     /// </remarks>
     public class ImGuiProbeSelector
     {
@@ -118,9 +112,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// draws around the contact at an index into the probe's contacts, or zero for none. It is drawn in place of
         /// the selection's outline.
         /// </summary>
-        /// <remarks>
-        /// For marking contacts where a fill color would be read as data, as on a color scale.
-        /// </remarks>
         public Func<int, uint> OutlineColor { get; set; } = _ => 0;
 
         /// <summary>
@@ -201,10 +192,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Gets or sets a value specifying whether the zoomed view draws grid lines and their axis labels.
         /// </summary>
-        /// <remarks>
-        /// The labels take a fixed pixel margin on each side, which in a narrow pane leaves little room for the
-        /// probe itself, so a narrow view does better without them.
-        /// </remarks>
         public bool ShowGrid { get; set; } = true;
 
         /// <summary>
@@ -264,8 +251,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         const float MinimapPaddingPx = 8f;
 
-        // NB: spans enough decades to serve a file written in millimetres as well as one in
-        // micrometres. The pixel thresholds pick the interval; the unit never enters into it.
+        // NB: spans enough decades to serve a file written in millimeters as well as one in micrometers.
         static readonly float[] TickCandidates =
         {
             0.01f, 0.02f, 0.05f, 0.1f, 0.2f, 0.5f, 1f, 2f, 5f, 10f, 20f, 50f,
@@ -280,19 +266,15 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         readonly record struct ProbeContact(int Index, Vector2 Position, Vector2 Size);
 
-        // probe state
         ProbeGroup? probeGroup;
         IReadOnlyList<ProbeContact> contacts = Array.Empty<ProbeContact>();
 
-        // probe bounds in microns
         float probeXMin, probeXMax, probeYMin, probeYMax;
 
-        // scroll / zoom
-        float scrollY, scrollX; // Defaulted to half probe width
+        float scrollY, scrollX;
         float zoomWindow; // defines the major axis length of the zoom window.
         float effectiveXWindow;
 
-        // drag-select state machine
         readonly DragBox selectBox = new(ImGuiMouseButton.Left);
         bool dragHadShift, dragHadCtrl;
         bool[] preDragSelection = Array.Empty<bool>();
@@ -300,14 +282,11 @@ namespace OpenEphys.EphysVisualization.Design
 
         readonly DragBox zoomBox = new(ImGuiMouseButton.Right);
 
-        // middle-mouse pan
         bool isMiddlePanning;
         Vector2 middlePanLastPos;
 
-        // ruler tool
-        // NB: si_units is a label, not a scale. The coordinates in the file are self consistent
-        // and are drawn normalized against the probe bounds, so the unit is only ever used to say
-        // what the tick and readout numbers mean.
+        // NB: si_units is a label, not a scale: the coordinates are drawn normalized against the probe bounds, so
+        // the unit only says what the tick and readout numbers mean.
         string units = "um";
 
         readonly ImGuiProbeRuler ruler = new();
@@ -321,7 +300,6 @@ namespace OpenEphys.EphysVisualization.Design
 
         int lastDrawnFrame = -1;
 
-        // visual constants
         static readonly uint  ColContactDefault   = ImGuiPalette.Grey0x4D;
         static readonly uint  ColContactBlocked   = ImGuiPalette.Black;
         static readonly uint  ColBlockedOutline   = ImGuiPalette.Grey0x77;
@@ -406,7 +384,6 @@ namespace OpenEphys.EphysVisualization.Design
                 if (y < probeYMin) probeYMin = y; if (y > probeYMax) probeYMax = y;
             }
 
-            // Expand by full contact extents so edge contacts are not clipped.
             foreach (var c in contacts)
             {
                 Expand(c.Position.X - c.Size.X / 2f, c.Position.Y - c.Size.Y / 2f);
@@ -573,8 +550,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             Hovered = ImGui.IsWindowHovered();
 
-            // NB: a view that wasn't drawn last frame was hidden, such as behind another tab. A ruler armed or half
-            // placed there is dropped, since the user has moved on from it.
+            // NB: a view that wasn't drawn last frame was hidden, such as behind another tab.
             var frame = ImGui.GetFrameCount();
             if (frame != lastDrawnFrame + 1)
                 ruler.Cancel();
@@ -590,8 +566,6 @@ namespace OpenEphys.EphysVisualization.Design
             var fullRegion = region;
             var fullTop = regionTop;
 
-            // NB: the bars' room is kept whether or not the whole probe is in view, so the room the probe is drawn in
-            // never changes with the zoom.
             float bar = ShowScrollBars ? ImGui.GetStyle().ScrollbarSize : 0f;
             regionTop.X += bar;
             region = new Vector2(Math.Max(0f, region.X - bar), Math.Max(0f, region.Y - bar));
@@ -624,8 +598,6 @@ namespace OpenEphys.EphysVisualization.Design
             float gridTop   = cp.Y + marginV;
             float gridBot   = cp.Y + avail.Y - marginV;
 
-            // NB: lines and labels are drawn in separate passes but are one grid, so the interval is
-            // chosen once here rather than derived twice from scaleXY and relied on to agree.
             var (gridMajor, gridMinor) = TickIntervals(scaleXY, ShowGrid);
 
             if (ShowGrid)
@@ -875,10 +847,9 @@ namespace OpenEphys.EphysVisualization.Design
 
         void HandleKeys(bool selectionEnabled)
         {
-            // NB: Escape backs out of the most recent thing first, so cancelling a ruler doesn't also lose the
-            // selection. A gesture in progress is cancelled wherever the pointer is, since a drag can carry it out of
-            // the view and a ruler is armed from outside it, but what is selected is cleared only over the view, so
-            // Escape over a pane beside it clears that pane's selection and not this one.
+            // NB: a gesture in progress is cancelled wherever the pointer is, since a drag can carry it out of the
+            // view, but the selection is cleared only over the view, so Escape over a pane beside it clears that
+            // pane's selection and not this one.
             if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
             {
                 if (zoomBox.Dragging)
@@ -955,7 +926,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (!zoomBox.Released(canvasMin, canvasMax, out var end) || !end.Wide && !end.Tall)
                 return;
 
-            // NB: one scale serves both axes, so the zoom is set by whichever side of the box needs more room at the
+            // One scale serves both axes, so the zoom is set by whichever side of the box needs more room at the
             // view's shape.
             var (_, _, mmYMin, mmYMax) = GetMmBounds();
             var widthUm = (end.Max.X - end.Min.X) / scaleXY;
@@ -968,7 +939,7 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         // NB: the view's width follows from the zoom, so the layout is redone before the view is clamped across,
-        // which would otherwise use the width from before. HandleZoomBox does the same.
+        // which would otherwise use the width from before.
         void ZoomAll(Vector2 region)
         {
             var (_, _, mmYMin, mmYMax) = GetMmBounds();
@@ -1206,7 +1177,6 @@ namespace OpenEphys.EphysVisualization.Design
         {
             if (scaleXY <= 0) return;
 
-            // Y (horizontal) grid lines
             float yMinV = yLow + (viewBot - lineBot) / scaleXY;
             float yMaxV = yLow + (viewBot - lineTop) / scaleXY;
 
@@ -1230,7 +1200,6 @@ namespace OpenEphys.EphysVisualization.Design
                 }
             }
 
-            // X (vertical) grid lines
             float xMinV = xLow + (lineLeft  - viewLeft) / scaleXY;
             float xMaxV = xLow + (lineRight - viewLeft) / scaleXY;
 
@@ -1263,7 +1232,6 @@ namespace OpenEphys.EphysVisualization.Design
         {
             if (scaleXY <= 0) return;
 
-            // Y (horizontal) labels
             float yMinV = yLow + (viewBot - lineBot) / scaleXY;
             float yMaxV = yLow + (viewBot - lineTop) / scaleXY;
             {
@@ -1279,7 +1247,6 @@ namespace OpenEphys.EphysVisualization.Design
                 }
             }
 
-            // X (vertical) labels
             float xMinV = xLow + (lineLeft  - viewLeft) / scaleXY;
             float xMaxV = xLow + (lineRight - viewLeft) / scaleXY;
             {
@@ -1377,9 +1344,6 @@ namespace OpenEphys.EphysVisualization.Design
             return value.ToString("F" + decimals) + units;
         }
 
-        // NB: the legend lies above the view rather than over it, where in a narrow view it would hide the probe,
-        // and not beneath it, so the view keeps its base level with the minimap's. It takes the room the grid's
-        // top margin leaves above the axis labels before it pushes the view down.
         float LegendHeader(float width)
         {
             float lineH = ImGui.GetTextLineHeight();
@@ -1398,7 +1362,6 @@ namespace OpenEphys.EphysVisualization.Design
             return lines;
         }
 
-        // NB: the entries wrap, so a narrow view stacks them rather than clipping them.
         IEnumerable<(LegendEntry Entry, float X, int Line)> LegendFlow(float width)
         {
             float lineH = ImGui.GetTextLineHeight();

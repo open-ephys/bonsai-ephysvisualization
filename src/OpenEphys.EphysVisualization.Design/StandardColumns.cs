@@ -81,9 +81,6 @@ namespace OpenEphys.EphysVisualization.Design
         internal StandardColumns(ImGuiWaveformPanel panel)
         {
             this.panel = panel;
-            // NB: each wide enough for its widest content: a timebase of five characters, a fitted height of three
-            // beside its steps and Fit, the color bar beside WidestRange, the longest palette name, and two
-            // checkboxes side by side.
             Timebase = new("Timebase (s)", TimebaseControls, 90);
             ChannelHeight = new("Chan. Height (px)", ChannelHeightControls, 130);
             Range = new(RangeLabel, RangeControls, 130);
@@ -176,8 +173,8 @@ namespace OpenEphys.EphysVisualization.Design
             return string.IsNullOrEmpty(panel.Unit) ? name : $"{name} ({panel.Unit})";
         }
 
-        // NB: follows what the plot draws rather than the Heatmap checkbox. An expanded channel is a trace even with
-        // the heatmap on, and a threshold set there would have no visible effect until the channel was collapsed.
+        // NB: follows what the plot draws rather than the Heatmap checkbox, since an expanded channel is a trace even
+        // with the heatmap on.
         void RangeControls(float width)
         {
             if (panel.HeatmapDrawn)
@@ -192,8 +189,6 @@ namespace OpenEphys.EphysVisualization.Design
                 panel.Range = range;
         }
 
-        // NB: the range sets the colors' bright end, so it stays in view, at the end of the bar it bounds. The bar
-        // is half height so that the threshold's value fits under it within the slot.
         void ColorControls(float width)
         {
             var corner = ImGui.GetCursorScreenPos();
@@ -262,7 +257,7 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        // NB: two lines of checkboxes in the height of a label and a control, so their frames are made shorter.
+        // Two lines of checkboxes in the height of a label and a control, so their frames are made shorter.
         void DisplayControls(float width)
         {
             var spacing = ImGui.GetStyle().ItemSpacing.Y;
@@ -297,17 +292,15 @@ namespace OpenEphys.EphysVisualization.Design
             ImGui.PopStyleVar();
         }
 
-        // NB: fixed rather than measured off the presets, which move with the range and would make the bar jump. %g
-        // prints any range of the sequence in seven characters or fewer, turning to an exponent below 1e-4 and from
-        // 1e6.
+        // NB: %g prints any range of the sequence in seven characters or fewer, turning to an exponent below 1e-4
+        // and from 1e6.
         const string WidestRange = "0.00025";
 
         const string RangeKeys = "Keys: Alt+W smaller, Alt+S larger\nOn the plot: Alt+Wheel, or Alt+Drag up and down";
 
         const string SingleChannelHint = "There is only one channel, which is always shown expanded.";
 
-        // NB: the preset arrow sits beside the input, so the input takes the slot less the arrow, and both carry
-        // the tooltip, which only ever belongs to one item.
+        // NB: the input and the preset arrow both carry the tooltip, which only ever belongs to one item.
         static bool InputDoubleCombo(
             string label, ref double value, IReadOnlyList<double> comboItems, float width, string tooltip)
         {

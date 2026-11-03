@@ -13,10 +13,8 @@ namespace OpenEphys.EphysVisualization.Design
     /// Draws a stack of traces from per-column minima and maxima into a texture, and shows it as one image.
     /// </summary>
     /// <remarks>
-    /// The envelope is uploaded to the GPU where it changed, which for a sweep is the columns it crossed since the
-    /// last frame, and the GPU draws the texture from it: a quad for each channel's pixel column for the traces, or a
-    /// pass over every pixel for the heatmap. Which columns each pixel shows is worked out here, by the plot's pixel
-    /// axis, so the drawing agrees with everything placed over it.
+    /// Which columns each pixel shows is worked out here, by the plot's pixel axis, so the drawing agrees with
+    /// everything placed over it.
     /// </remarks>
     internal sealed class TraceRaster
     {
@@ -45,7 +43,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         /// <remarks>
         /// Must run with the plot's GL context current, as it is during a frame. The texture lives in that context
-        /// and goes with it. It spans every lane, each drawn in its own stretch of it.
+        /// and goes with it.
         /// </remarks>
         /// <param name="frames">The plot as it is drawn this frame, one for each lane, from the left.</param>
         /// <param name="colors">Each channel's color, packed as RGBA.</param>
@@ -82,10 +80,9 @@ namespace OpenEphys.EphysVisualization.Design
                 w, h,
                 layout.FirstVisible, layout.LastVisible, layout.RowHeight, Origin(frame), layout.Slots);
 
-            // NB: the columns changed since the last frame: all of them, or from the column the sweep was filling at
-            // the last frame to the one it is filling now, both included, since each was part filled when last drawn.
-            // A sweep that went all the way round since then changed every column, which is told from the samples
-            // that arrived, since the cursor repeats every sweep. Not so the last whole sweep, which is replaced every
+            // NB: from the column the sweep was filling at the last frame to the one it is filling now, both included,
+            // since each was part filled when last drawn. A sweep that went all the way round is told from the samples
+            // that arrived, since the cursor repeats every sweep; not so the last whole sweep, which is replaced every
             // few frames anyway.
             var columns = frame.Envelope.Cols;
             var all = current != key ||
@@ -371,8 +368,6 @@ namespace OpenEphys.EphysVisualization.Design
                 var heatmapView = frame.Heatmap && frame.Expanded < 0;
                 var width = (int)frame.Width;
 
-                // NB: which columns each pixel takes its min and max from is the same for every channel and every
-                // lane, so it is worked out once a frame, here, rather than by every channel's pass in the shaders.
                 if (cellData.Length != width * 3)
                     cellData = new float[width * 3];
                 for (int p = 0; p < width; p++)
@@ -386,7 +381,6 @@ namespace OpenEphys.EphysVisualization.Design
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb32f, width, 1, 0,
                     PixelFormat.Rgb, PixelType.Float, cellData);
 
-                // NB: alpha 0 for a channel not drawn: a hidden one, unless it is the expanded channel.
                 if (colorData.Length != colors.Length)
                     colorData = new uint[colors.Length];
                 for (int i = 0; i < colors.Length; i++)
@@ -467,9 +461,6 @@ namespace OpenEphys.EphysVisualization.Design
                         GL.Uniform1(GL.GetUniformLocation(program, "height"), height);
                         GL.Uniform1(GL.GetUniformLocation(program, "center"), (float)frame.Center);
                         GL.Uniform1(GL.GetUniformLocation(program, "scale"), scale);
-
-                        // NB: an expanded channel is drawn alone and translucent, under the outlines that show its
-                        // shape.
                         GL.Uniform1(GL.GetUniformLocation(program, "alpha"), frame.Expanded >= 0 ? 0x40 / 255f : 1f);
                         GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, visible * width);
                     }
