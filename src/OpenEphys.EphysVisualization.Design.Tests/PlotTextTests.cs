@@ -23,6 +23,17 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Theory]
+        [InlineData(0.0123456, "0.012")]
+        [InlineData(3.4567, "3.5")]
+        [InlineData(12.3456, "12")]
+        [InlineData(987.6, "990")]
+        [InlineData(1234.56, "1200")]
+        public void Significant_RoundsToTheFiguresGiven(double value, string printed)
+        {
+            Assert.Equal(printed, PlotText.Significant(value, 2).ToString(CultureInfo.InvariantCulture));
+        }
+
+        [Theory]
         [InlineData(0.0123456, "0.0123")]
         [InlineData(0.000456789, "0.000457")]
         [InlineData(1.23456, "1.23")]

@@ -138,6 +138,20 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void TheSelectionKeys_AreAnsweredOverAPane_WhichSelectsToo()
+        {
+            panel.SelectedChannel = 5;
+            panel.KeysElsewhere = true;
+
+            imgui.Key(ImGuiKey.X, draw);
+            Assert.Equal(5, panel.Expanded?.Channel);
+
+            imgui.Key(ImGuiKey.E, draw);
+            imgui.Frame(draw);
+            Assert.Equal(6, panel.Expanded?.Channel);
+        }
+
+        [Fact]
         public void ATallRightDrag_WhilePaused_FitsTheChannelsItSpansToThePlot()
         {
             panel.Paused = true;
@@ -327,6 +341,19 @@ namespace OpenEphys.EphysVisualization.Design.Tests
                 settings.RangeAmplitude = range;
                 Assert.Equal(all, panel.StandardRanges);
             }
+        }
+
+        [Fact]
+        public void TogglingExpanded_ExpandsTheSelection_ThenCollapsesIt_AsXDoes()
+        {
+            panel.SelectedChannel = 5;
+            panel.ToggleExpanded();
+            imgui.Frames(2, draw);
+            Assert.Equal(5, panel.Expanded?.Channel);
+
+            panel.ToggleExpanded();
+            imgui.Frames(2, draw);
+            Assert.Null(panel.Expanded);
         }
 
         void Scroll(int channels)

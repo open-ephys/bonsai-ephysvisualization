@@ -7,7 +7,7 @@ uniform vec2 tileSize;
 uniform vec2 viewSize;
 uniform float center;
 uniform float range;
-uniform float spikes;
+uniform float events;
 uniform vec4 color;
 out vec4 fragment;
 
@@ -19,9 +19,9 @@ void main()
     float y = binOf(value);
     float count = texture(atlas, (tile + vec2(x, y)) / atlasSize).r;
 
-    // NB: on a log scale against the most any pixel can hold, the channel's spike count up to what the atlas counts
-    // to, so a rare unit still shows beside a busy one and the brightest keeps its brightness as spikes go on
+    // NB: on a log scale against the most any pixel can hold, the channel's event count up to what the atlas counts
+    // to, so a rare waveform still shows beside a common one and the brightest keeps its brightness as events go on
     // arriving.
-    float brightness = spikes > 0.0 ? clamp(log(1.0 + count) / log(1.0 + spikes), 0.0, 1.0) : 0.0;
+    float brightness = events > 0.0 ? clamp(log(1.0 + count) / log(1.0 + events), 0.0, 1.0) : 0.0;
     fragment = vec4(color.rgb, brightness);
 }

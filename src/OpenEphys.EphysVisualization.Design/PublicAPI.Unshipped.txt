@@ -149,11 +149,17 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawMinimap() -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.DrawZoomedView(bool selectionEnabled) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.get -> System.Func<int, uint>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColor.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.OutlineColor.get -> System.Func<int, uint>!
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.OutlineColor.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectedOutlineColor.get -> uint
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectedOutlineColor.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColorOverridesBlocked.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.FillColorOverridesBlocked.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hotkeys.get -> System.Collections.Generic.IEnumerable<Hexa.NET.ImGui.ImGuiKey>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Hovered.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.HoveredContactIndex.get -> int
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.PointerPosition.get -> System.Numerics.Vector2?
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.CoordinateUnits.get -> string!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ImGuiProbeSelector(float? zoomWindow = null, float zoomWindowFraction = 0.1, float? scrollX = null, float? scrollY = null) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.get -> System.Collections.Generic.IReadOnlyList<OpenEphys.EphysVisualization.Design.LegendEntry>!
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Legend.set -> void
@@ -168,6 +174,8 @@ OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.get
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.SelectionSkipsBlocked.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowCoordinateReadout.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowCoordinateReadout.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowScrollBars.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowScrollBars.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowGrid.get -> bool
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ShowGrid.set -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.ToggleRuler() -> void
@@ -193,6 +201,7 @@ OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Order.set -> voi
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HoveredChannel.get -> int
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HoveredChannel.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Reveal(int channel) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ToggleExpanded() -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.KeysElsewhere.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.KeysElsewhere.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ZoomTo(System.Collections.Generic.IEnumerable<int>! channels) -> void
@@ -246,13 +255,18 @@ OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Amplitude.get ->
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ExpandedRow.get -> (int Channel, float Top, float Height)?
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.Select(System.Collections.Generic.IEnumerable<int>! contacts, bool add = false) -> void
 OpenEphys.EphysVisualization.Design.ImGuiProbeSelector.RulerSelected.get -> bool
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Add(int channel, float[]! waveform) -> void
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Clear() -> void
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Draw(int channel, System.Numerics.Vector2 size, uint color, double center, double range, double? threshold = null) -> double?
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Flush() -> void
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Reshape(int length, int delay, double sampleRate) -> void
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.ImGuiSpikeView(int channels, int length, int delay, double sampleRate, double span) -> void
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.SpikeCount(int channel) -> long
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Unit.get -> string!
-OpenEphys.EphysVisualization.Design.ImGuiSpikeView.Unit.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Add(int channel, float[]! waveform) -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Clear() -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Draw(int channel, System.Numerics.Vector2 size, uint color, double center, double range, double? threshold = null) -> double?
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Flush() -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Reshape(int length, int delay, double sampleRate) -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.ImGuiEventView(int channels, int length, int delay, double sampleRate, double span) -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.EventCount(int channel) -> long
+OpenEphys.EphysVisualization.Design.ImGuiEventView.EventRate(int channel) -> double
+OpenEphys.EphysVisualization.Design.ImGuiEventView.RateTimeConstant.get -> double
+OpenEphys.EphysVisualization.Design.ImGuiEventView.RateTimeConstant.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Paused.get -> bool
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Paused.set -> void
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Unit.get -> string!
+OpenEphys.EphysVisualization.Design.ImGuiEventView.Unit.set -> void

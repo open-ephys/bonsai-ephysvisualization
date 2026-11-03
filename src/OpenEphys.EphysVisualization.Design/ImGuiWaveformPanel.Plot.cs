@@ -155,6 +155,9 @@ namespace OpenEphys.EphysVisualization.Design
                 if (pendingReveal >= 0 && pendingReveal < rows)
                     ShowChannel(pendingReveal, layout);
                 pendingReveal = -1;
+                if (pendingToggle)
+                    ToggleExpanded(layout);
+                pendingToggle = false;
 
                 ImGui.TableNextColumn();
                 plotX = ImGui.GetCursorScreenPos().X;

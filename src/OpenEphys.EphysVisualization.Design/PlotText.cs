@@ -34,22 +34,22 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Rounds <paramref name="value"/> to three significant figures.
+        /// Rounds <paramref name="value"/> to <paramref name="figures"/> significant figures, three unless given.
         /// </summary>
         /// <remarks>
         /// Three significant figures are used because it covers full dynamic range of visual inspection of a
         /// screen. Math.Round with a number of decimal places returns the double closest to the rounded
         /// decimal, so it prints cleanly. Scaling by a power of ten below one and back doesn't, because those
         /// powers aren't exact in binary and leave a tail of digits like 0.30000000000000004. Math.Round
-        /// can't take negative decimal places, though, so values of 1000 and above are scaled by a power of
+        /// can't take negative decimal places, though, so values too large for any are scaled by a power of
         /// ten above one instead, which is exact.
         /// </remarks>
-        public static double Significant(double value)
+        public static double Significant(double value, int figures = 3)
         {
             if (value == 0)
                 return 0;
 
-            var decimals = 2 - (int)Math.Floor(Math.Log10(Math.Abs(value)));
+            var decimals = figures - 1 - (int)Math.Floor(Math.Log10(Math.Abs(value)));
             if (decimals >= 0)
                 return Math.Round(value, Math.Min(15, decimals));
 

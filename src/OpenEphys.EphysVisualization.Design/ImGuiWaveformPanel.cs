@@ -253,8 +253,14 @@ namespace OpenEphys.EphysVisualization.Design
             pendingScroll = first * ChannelHeight;
         }
 
+        /// <summary>
+        /// Expands the selected channel, or collapses the one expanded, on the next frame drawn, as X does.
+        /// </summary>
+        public void ToggleExpanded() => pendingToggle = true;
+
         int lastHoveredRow = -1;
         int pendingReveal = -1;
+        bool pendingToggle;
 
         Decimator? decimator;
         int sampleRate = 30000;

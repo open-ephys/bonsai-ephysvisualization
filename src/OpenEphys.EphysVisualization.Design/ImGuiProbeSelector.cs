@@ -114,6 +114,22 @@ namespace OpenEphys.EphysVisualization.Design
         public Func<int, uint> FillColor { get; set; } = _ => ColContactDefault;
 
         /// <summary>
+        /// Gets or sets the function giving the color, in packed <c>0xAABBGGRR</c> format, of an outline the owner
+        /// draws around the contact at an index into the probe's contacts, or zero for none. It is drawn in place of
+        /// the selection's outline.
+        /// </summary>
+        /// <remarks>
+        /// For marking contacts where a fill color would be read as data, as on a color scale.
+        /// </remarks>
+        public Func<int, uint> OutlineColor { get; set; } = _ => 0;
+
+        /// <summary>
+        /// Gets or sets the color of the outline drawn around selected contacts, <see cref="SelectionBorderColor"/>
+        /// unless set.
+        /// </summary>
+        public uint SelectedOutlineColor { get; set; } = ColContactSelBorder;
+
+        /// <summary>
         /// Gets or sets the function saying whether the contact at an index into the probe's contacts is blocked
         /// from selection.
         /// </summary>
@@ -166,6 +182,17 @@ namespace OpenEphys.EphysVisualization.Design
         public int HoveredContactIndex { get; private set; } = -1;
 
         /// <summary>
+        /// Gets the point under the pointer in the zoomed view, in the probe's coordinates and
+        /// <see cref="CoordinateUnits"/>, as of the last frame drawn, or null while the pointer is not over it.
+        /// </summary>
+        public Vector2? PointerPosition { get; private set; }
+
+        /// <summary>
+        /// Gets the unit of the probe's coordinates, as its file names it.
+        /// </summary>
+        public string CoordinateUnits => units;
+
+        /// <summary>
         /// Gets or sets a value specifying whether blocked contacts are left out of the selection. Clear it to
         /// let a drag sweep them up, as selecting whole banks does.
         /// </summary>
@@ -186,6 +213,13 @@ namespace OpenEphys.EphysVisualization.Design
         public bool ShowCoordinateReadout { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets a value specifying whether the zoomed view has scroll bars, along its left edge and its
+        /// bottom, that show where it sits on the probe and move it. They are always drawn while set, filling their
+        /// tracks while the whole probe is in view, so the room the probe is drawn in does not change with the zoom.
+        /// </summary>
+        public bool ShowScrollBars { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether the pointer was over the zoomed view when it was last drawn, for an owner
         /// whose keys, like the view's own, should work only there.
         /// </summary>
@@ -197,7 +231,8 @@ namespace OpenEphys.EphysVisualization.Design
         public IReadOnlyList<LegendEntry> Legend { get; set; } = Array.Empty<LegendEntry>();
 
         /// <summary>
-        /// Gets the color of the outline drawn around selected contacts, for a <see cref="Legend"/> entry.
+        /// Gets the color of the outline drawn around selected contacts unless <see cref="SelectedOutlineColor"/> is
+        /// set, for a <see cref="Legend"/> entry.
         /// </summary>
         public static uint SelectionBorderColor => ColContactSelBorder;
 
@@ -548,9 +583,18 @@ namespace OpenEphys.EphysVisualization.Design
             if (contacts.Count == 0) { ImGui.TextDisabled("No contacts."); return; }
 
             HoveredContactIndex = -1;
+            PointerPosition = null;
 
             var region = ImGui.GetContentRegionAvail();
             var regionTop = ImGui.GetCursorScreenPos();
+            var fullRegion = region;
+            var fullTop = regionTop;
+
+            // NB: the bars' room is kept whether or not the whole probe is in view, so the room the probe is drawn in
+            // never changes with the zoom.
+            float bar = ShowScrollBars ? ImGui.GetStyle().ScrollbarSize : 0f;
+            regionTop.X += bar;
+            region = new Vector2(Math.Max(0f, region.X - bar), Math.Max(0f, region.Y - bar));
             float marginH = ShowGrid ? GridMarginHPx : 0f;
             float marginV = ShowGrid ? GridMarginVPx : 0f;
             float legendWidth = region.X - 2f * GridLabelInsetPx;
@@ -590,6 +634,20 @@ namespace OpenEphys.EphysVisualization.Design
                     viewLeft, viewBot, xLow, yLow, scaleXY, gridMajor, gridMinor);
             }
 
+            // NB: before the grid's clip rect is pushed, since the bars lie outside it, which would hide them and
+            // keep them from being hovered.
+            var barTookClick = false;
+            if (ShowScrollBars)
+            {
+                var (mmXMin, mmXMax, mmYMin, mmYMax) = GetMmBounds();
+                barTookClick |= ScrollBar("##probeScrollY", new Vector2(fullTop.X, cp.Y), new Vector2(bar, avail.Y),
+                    vertical: true, mmYMin, mmYMax, zoomWindow, ref scrollY);
+                barTookClick |= ScrollBar("##probeScrollX", new Vector2(cp.X, cp.Y + avail.Y),
+                    new Vector2(avail.X, bar), vertical: false, mmXMin, mmXMax, effectiveXWindow, ref scrollX);
+                ClampScroll();
+                ClampScrollX();
+            }
+
             ImGui.PushClipRect(new Vector2(gridLeft, gridTop), new Vector2(gridRight, gridBot), true);
 
             if (probeGroup != null)
@@ -622,9 +680,13 @@ namespace OpenEphys.EphysVisualization.Design
                 if (blocked && !FillColorOverridesBlocked)
                     DrawDottedRect(dl, rMin, rMax, ColBlockedOutline);
 
-                if (selected[i])
+                var outline = OutlineColor(c.Index);
+                if (outline != 0)
                     dl.AddRect(new Vector2(sx - 1, sy - 1), new Vector2(sx + rendEW + 1, sy + rendEH + 1),
-                        ColContactSelBorder, 0f, ContactSelBorderWidth);
+                        outline, 0f, ContactSelBorderWidth);
+                else if (selected[i])
+                    dl.AddRect(new Vector2(sx - 1, sy - 1), new Vector2(sx + rendEW + 1, sy + rendEH + 1),
+                        SelectedOutlineColor, 0f, ContactSelBorderWidth);
                 else if (inspected[i])
                     dl.AddRect(new Vector2(sx - 1, sy - 1), new Vector2(sx + rendEW + 1, sy + rendEH + 1),
                         ColContactInspectBorder, 0f, ContactSelBorderWidth);
@@ -636,6 +698,7 @@ namespace OpenEphys.EphysVisualization.Design
             bool inCanvas = Hovered &&
                             mp.X >= gridLeft && mp.X <= gridRight &&
                             mp.Y >= gridTop  && mp.Y <= gridBot;
+            PointerPosition = inCanvas ? new Vector2(mousePx, mousePy) : null;
             var canvasMin = new Vector2(gridLeft, gridTop);
             var canvasMax = new Vector2(gridRight, gridBot);
 
@@ -646,7 +709,8 @@ namespace OpenEphys.EphysVisualization.Design
                 ImGui.SetMouseCursor(ImGuiMouseCursor.None);
 
             if (selectionEnabled)
-                HandleDragSelect(dl, canvasMin, canvasMax, viewLeft, viewBot, xLow, yLow, scaleXY, rulerTookClick);
+                HandleDragSelect(dl, canvasMin, canvasMax, viewLeft, viewBot, xLow, yLow, scaleXY,
+                    rulerTookClick || barTookClick);
             HandleZoomBox(dl, canvasMin, canvasMax, inCanvas, avail, viewLeft, viewBot, xLow, yLow, scaleXY);
 
             if (ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
@@ -701,7 +765,59 @@ namespace OpenEphys.EphysVisualization.Design
                 dl.AddLine(new Vector2(gridLeft, mp.Y), new Vector2(gridRight, mp.Y), ColCrosshair);
             }
 
-            ImGui.Dummy(region);
+            ImGui.SetCursorScreenPos(fullTop);
+            ImGui.Dummy(fullRegion);
+        }
+
+        /// <summary>
+        /// A scroll bar along one axis of the zoomed view, showing where the view sits on the probe, which can be
+        /// dragged to move it, drawn as the waveform panel draws its time bar. Returns whether it was pressed this
+        /// frame, so a press on it starts nothing else.
+        /// </summary>
+        /// <remarks>
+        /// The probe's y rises up the view, so the vertical bar's top is the probe's highest point.
+        /// </remarks>
+        static bool ScrollBar(string id, Vector2 min, Vector2 size, bool vertical, float lo, float hi, float span,
+            ref float center)
+        {
+            if (size.X <= 0 || size.Y <= 0)
+                return false;
+
+            var length = vertical ? size.Y : size.X;
+            var thickness = vertical ? size.X : size.Y;
+            var inset = Math.Max(0f, Math.Min(3f, MathF.Floor((thickness - 2f) / 2f)));
+            var trackStart = (vertical ? min.Y : min.X) + inset;
+            var track = length - 2 * inset;
+            var extent = hi - lo;
+            var travel = Math.Max(0f, extent - span);
+            var thumb = Math.Min(track, Math.Max(ImGui.GetStyle().GrabMinSize,
+                extent > 0 ? track * Math.Min(1f, span / extent) : track));
+            var slack = track - thumb;
+            var offset = vertical ? hi - (center + span / 2f) : center - span / 2f - lo;
+            var thumbStart = trackStart + (travel > 0 ? slack * Clamp(offset / travel, 0f, 1f) : 0f);
+
+            ImGui.SetCursorScreenPos(min);
+            ImGui.InvisibleButton(id, size);
+            var pressed = ImGui.IsItemActivated();
+            if (ImGui.IsItemActive() && travel > 0 && slack > 0)
+            {
+                var delta = vertical ? ImGui.GetIO().MouseDelta.Y : ImGui.GetIO().MouseDelta.X;
+                var move = delta * travel / slack;
+                center += vertical ? -move : move;
+            }
+
+            var rounding = ImGui.GetStyle().ScrollbarRounding;
+            var grab = ImGui.IsItemActive() ? ImGuiCol.ScrollbarGrabActive
+                : ImGui.IsItemHovered() ? ImGuiCol.ScrollbarGrabHovered
+                : ImGuiCol.ScrollbarGrab;
+            var draw = ImGui.GetWindowDrawList();
+            draw.AddRectFilled(min, min + size, ImGui.GetColorU32(ImGuiCol.ScrollbarBg), rounding);
+            var thumbMin = vertical ? new Vector2(min.X + inset, thumbStart) : new Vector2(thumbStart, min.Y + inset);
+            var thumbMax = vertical
+                ? new Vector2(min.X + size.X - inset, thumbStart + thumb)
+                : new Vector2(thumbStart + thumb, min.Y + size.Y - inset);
+            draw.AddRectFilled(thumbMin, thumbMax, ImGui.GetColorU32(grab), rounding);
+            return pressed;
         }
 
         /// <summary>

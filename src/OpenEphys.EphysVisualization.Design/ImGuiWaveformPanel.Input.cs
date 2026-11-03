@@ -175,14 +175,16 @@ namespace OpenEphys.EphysVisualization.Design
             (ImGuiKey.Q, true, layout => { if (Modifiers()) StepSelection(-1, layout); }),
             (ImGuiKey.E, true, layout => { if (Modifiers()) StepSelection(1, layout); }),
             (ImGuiKey.L, false, LaneKey),
-            (ImGuiKey.X, false, layout =>
-            {
-                if (selectedRow < 0 && expandedRow < 0)
-                    selectedRow = FirstShownInView(layout);
-                if (expandedRow >= 0) Collapse();
-                else if (selectedRow >= 0) Expand(selectedRow);
-            }),
+            (ImGuiKey.X, false, ToggleExpanded),
         };
+
+        void ToggleExpanded(RowLayout layout)
+        {
+            if (selectedRow < 0 && expandedRow < 0)
+                selectedRow = FirstShownInView(layout);
+            if (expandedRow >= 0) Collapse();
+            else if (selectedRow >= 0) Expand(selectedRow);
+        }
 
         /// <summary>
         /// Every key the panel answers, for a host to hand to whichever panel is under the pointer.
@@ -191,9 +193,13 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Whether the pointer is over a pane beside the panel that answers keys of its own, which the panel then
-        /// leaves to it. Set by the host each frame, before the panel is drawn.
+        /// leaves to it, all but Q, E and X. Set by the host each frame, before the panel is drawn.
         /// </summary>
         public bool KeysElsewhere { get; set; }
+
+        // NB: these act on the selected channel, which a pane beside the panel, such as a probe, selects too, so they
+        // are answered wherever the pointer is.
+        static readonly ImGuiKey[] SelectionKeys = { ImGuiKey.Q, ImGuiKey.E, ImGuiKey.X };
 
         void AnswerFrameKeys()
         {
@@ -208,14 +214,14 @@ namespace OpenEphys.EphysVisualization.Design
         {
             foreach (var key in tableKeys)
             {
-                if (Pressed(key.Key, key.Repeat))
+                if (Pressed(key.Key, key.Repeat, anywhere: Array.IndexOf(SelectionKeys, key.Key) >= 0))
                     key.Answer(layout);
             }
         }
 
         // NB: not a key typed into a text field.
-        bool Pressed(ImGuiKey key, bool repeat) =>
-            !KeysElsewhere && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(key, repeat);
+        bool Pressed(ImGuiKey key, bool repeat, bool anywhere = false) =>
+            (anywhere || !KeysElsewhere) && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(key, repeat);
 
         /// <summary>
         /// Whether exactly the named modifiers are down and the rest are up.

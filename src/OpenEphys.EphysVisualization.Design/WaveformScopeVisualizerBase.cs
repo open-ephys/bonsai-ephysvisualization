@@ -188,6 +188,12 @@ namespace OpenEphys.EphysVisualization.Design
         protected void Reveal(int channel) => Panel.Reveal(channel);
 
         /// <summary>
+        /// Expands the plot's selected channel, or collapses the one expanded, on the next frame drawn, as X does.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
+        protected void ToggleExpanded() => Panel.ToggleExpanded();
+
+        /// <summary>
         /// Fits channels to the plot's height, as a zoom box over them does: the rows from the highest of them to the
         /// lowest fill the plot, with no channel expanded and, where they span lanes, every lane widened. Hidden
         /// channels, and ones the data does not show, are left out.
@@ -202,8 +208,8 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Gets or sets whether the pointer is over a pane beside the plot that answers keys of its own, such as a
-        /// probe, so the plot leaves every key to it. Elsewhere in the window, the control strip included, the plot
-        /// answers its keys.
+        /// probe, so the plot leaves its keys to it, all but Q, E and X, which act on the selected channel the pane
+        /// can select too. Elsewhere in the window, the control strip included, the plot answers its keys.
         /// </summary>
         /// <remarks>
         /// Set it each frame, as from <see cref="DrawFrame"/>, before <see cref="DrawPlot"/>.
@@ -305,7 +311,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <remarks>
         /// Called on the window's thread, between frames, with its GL context current, when no frame has been
         /// painted since the last call, about every 15 ms. For GL work that must keep up with what arrives, such as
-        /// <see cref="ImGuiSpikeView.Flush"/>. Nothing of ImGui's may be called, since no ImGui frame is under way.
+        /// <see cref="ImGuiEventView.Flush"/>. Nothing of ImGui's may be called, since no ImGui frame is under way.
         /// </remarks>
         protected virtual void DrawOffscreen()
         {
