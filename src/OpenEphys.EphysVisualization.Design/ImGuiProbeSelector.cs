@@ -132,6 +132,8 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public bool FillColorOverridesBlocked { get; set; } = false;
 
+        bool FilledAsBlocked(int index) => !FillColorOverridesBlocked && Blocked(index);
+
         bool[] inDragBox = Array.Empty<bool>();
         bool[] selected = Array.Empty<bool>();
         bool[] inspected = Array.Empty<bool>();
@@ -513,7 +515,8 @@ namespace OpenEphys.EphysVisualization.Design
                 float eh = Math.Max(1f, c.Size.Y * scale);
                 float sx = contactLeft + (c.Position.X - mmXMin) * scale - ew / 2f;
                 float sy = viewTop     + (mmYMax - c.Position.Y) * scale - eh / 2f;
-                dl.AddRectFilled(new Vector2(sx, sy), new Vector2(sx + ew, sy + eh), FillColor(c.Index));
+                dl.AddRectFilled(new Vector2(sx, sy), new Vector2(sx + ew, sy + eh),
+                    FilledAsBlocked(c.Index) ? ColContactBlocked : FillColor(c.Index));
             }
 
             float yHalf    = zoomWindow / 2f;
@@ -645,11 +648,9 @@ namespace OpenEphys.EphysVisualization.Design
                 var rMin = new Vector2(sx, sy);
                 var rMax = new Vector2(sx + rendEW, sy + rendEH);
 
-                bool blocked = Blocked(c.Index);
-                dl.AddRectFilled(rMin, rMax, blocked && !FillColorOverridesBlocked
-                    ? ColContactBlocked
-                    : FillColor(c.Index));
-                if (blocked && !FillColorOverridesBlocked)
+                bool blocked = FilledAsBlocked(c.Index);
+                dl.AddRectFilled(rMin, rMax, blocked ? ColContactBlocked : FillColor(c.Index));
+                if (blocked)
                     DrawDottedRect(dl, rMin, rMax, ColBlockedOutline);
 
                 var outline = OutlineColor(c.Index);

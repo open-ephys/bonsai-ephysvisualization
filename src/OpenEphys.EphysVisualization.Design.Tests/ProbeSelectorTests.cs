@@ -174,6 +174,17 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void TheMinimap_FillsBlockedContactsAsBlocked()
+        {
+            selector.Blocked = i => i == 3;
+
+            imgui.Frame(selector.DrawMinimap);
+
+            Assert.Empty(ImGuiHarness.Rects(Fill(3)));
+            Assert.Single(ImGuiHarness.Rects(Fill(4)));
+        }
+
+        [Fact]
         public void Escape_ClearsTheSelection()
         {
             Drag(contacts[4].Center, contacts[9].Center);
