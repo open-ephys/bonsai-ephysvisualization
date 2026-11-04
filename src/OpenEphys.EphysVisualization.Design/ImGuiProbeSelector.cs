@@ -463,11 +463,18 @@ namespace OpenEphys.EphysVisualization.Design
         public void Select(IEnumerable<int> contacts, bool add = false)
         {
             if (!add)
+            {
                 Array.Clear(selected, 0, selected.Length);
+                Array.Clear(inspected, 0, inspected.Length);
+            }
 
             foreach (var i in contacts)
             {
-                if ((uint)i < (uint)selected.Length && !(SelectionSkipsBlocked && Blocked(this.contacts[i].Index)))
+                if ((uint)i >= (uint)selected.Length)
+                    continue;
+
+                inspected[i] = true;
+                if (!(SelectionSkipsBlocked && Blocked(this.contacts[i].Index)))
                     selected[i] = true;
             }
 

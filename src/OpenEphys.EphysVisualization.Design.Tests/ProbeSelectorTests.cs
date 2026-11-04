@@ -209,6 +209,19 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Select_InspectsWhatItSelects_BlockedOrNot()
+        {
+            selector.Blocked = i => i == 7;
+            Drag(contacts[4].Center, contacts[9].Center);
+
+            selector.Select(new[] { 1, 2 });
+            Assert.Equal(new[] { 1, 2 }, Indices(c => c.Inspected));
+
+            selector.Select(new[] { 7 }, add: true);
+            Assert.Equal(new[] { 1, 2, 7 }, Indices(c => c.Inspected));
+        }
+
+        [Fact]
         public void Escape_AwayFromTheView_KeepsTheSelection()
         {
             Drag(contacts[4].Center, contacts[9].Center);
