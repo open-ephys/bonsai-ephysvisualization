@@ -97,6 +97,29 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         }
 
         /// <summary>
+        /// Calls <paramref name="post"/> with the control's ImGui context current, for input that arrives outside the
+        /// control's frames, unless the control has no context.
+        /// </summary>
+        private protected void WithImGuiContext(Action<ImGuiIOPtr> post)
+        {
+            if (!initialized || disposed)
+                return;
+
+            // NB: a message can be dispatched in the middle of another control's frame, which must find its own
+            // context current when it resumes.
+            var previous = ImGui.GetCurrentContext();
+            ImGui.SetCurrentContext(imGuiCtx);
+            try
+            {
+                post(ImGui.GetIO());
+            }
+            finally
+            {
+                ImGui.SetCurrentContext(previous);
+            }
+        }
+
+        /// <summary>
         /// Raises the <see cref="Render"/> event.
         /// </summary>
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>

@@ -47,11 +47,13 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                 // keys are only delivered to the focused window, and the backend polls the modifiers on mouse move
                 // and focus but not on wheel. The first wheel at a control that has just taken focus would read stale
                 // modifiers, so they are polled here the way the backend does for a move.
-                var io = ImGui.GetIO();
                 var keys = ModifierKeys;
-                io.AddKeyEvent(ImGuiKey.ModCtrl, (keys & Keys.Control) != 0);
-                io.AddKeyEvent(ImGuiKey.ModShift, (keys & Keys.Shift) != 0);
-                io.AddKeyEvent(ImGuiKey.ModAlt, (keys & Keys.Alt) != 0);
+                WithImGuiContext(io =>
+                {
+                    io.AddKeyEvent(ImGuiKey.ModCtrl, (keys & Keys.Control) != 0);
+                    io.AddKeyEvent(ImGuiKey.ModShift, (keys & Keys.Shift) != 0);
+                    io.AddKeyEvent(ImGuiKey.ModAlt, (keys & Keys.Alt) != 0);
+                });
             }
             base.WndProc(ref m);
         }
