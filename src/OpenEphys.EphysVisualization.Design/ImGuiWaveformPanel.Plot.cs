@@ -480,8 +480,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </remarks>
         void TimeScrollBar(float left, float width, float top, float height)
         {
-            var axisFirst = Paused && history is not null ? AxisFirst(history) : window.Start;
-            var axisLast = Paused && history is not null ? AxisLast : window.End;
+            var (axisFirst, axisLast) = ReachablePositions;
             var travel = Math.Max(0, axisLast - axisFirst - window.Span);
 
             // NB: the inset ImGui gives its own scrollbar grabs.
