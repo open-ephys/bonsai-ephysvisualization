@@ -74,9 +74,9 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         public void ShiftClick_AddsToTheSelection()
         {
             Click(5);
-            imgui.Hold(ImGuiKey.LeftShift, true, draw);
+            imgui.Hold(ImGuiKey.ModShift, true, draw);
             Click(7);
-            imgui.Hold(ImGuiKey.LeftShift, false, draw);
+            imgui.Hold(ImGuiKey.ModShift, false, draw);
 
             Assert.Equal(new[] { 5, 7 }, Selected());
         }
@@ -121,15 +121,15 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         {
             Drag(contacts[0].Center, contacts[Count - 1].Center);
 
-            imgui.Hold(ImGuiKey.LeftShift, true, draw);
-            imgui.Hold(ImGuiKey.LeftCtrl, true, draw);
+            imgui.Hold(ImGuiKey.ModShift, true, draw);
+            imgui.Hold(ImGuiKey.ModCtrl, true, draw);
             imgui.MoveMouse(contacts[4].Center, draw);
             imgui.Button(ImGuiMouseButton.Left, true, draw);
             imgui.MoveMouse(contacts[9].Center, draw);
             Assert.Equal(DragSelectIntent.Remove, selector.DragIntent);
             imgui.Button(ImGuiMouseButton.Left, false, draw);
-            imgui.Hold(ImGuiKey.LeftCtrl, false, draw);
-            imgui.Hold(ImGuiKey.LeftShift, false, draw);
+            imgui.Hold(ImGuiKey.ModCtrl, false, draw);
+            imgui.Hold(ImGuiKey.ModShift, false, draw);
 
             Assert.Equal(Enumerable.Range(0, Count).Except(Enumerable.Range(4, 6)), Selected());
         }
@@ -351,7 +351,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             PlaceRuler(0, 18);
             PlaceRuler(1, 19);
 
-            imgui.Key(ImGuiKey.LeftShift, ImGuiKey.Delete, draw);
+            imgui.Key(ImGuiKey.ModShift, ImGuiKey.Delete, draw);
 
             Assert.Equal(0, Rulers());
         }

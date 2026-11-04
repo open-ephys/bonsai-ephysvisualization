@@ -869,7 +869,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (ImGui.IsKeyPressed(ImGuiKey.Delete, false))
             {
-                if (ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift))
+                if (ImGui.GetIO().KeyShift)
                     ruler.RemoveAll();
                 else
                     ruler.RemoveSelected();
@@ -881,8 +881,8 @@ namespace OpenEphys.EphysVisualization.Design
             var io = ImGui.GetIO();
             if (io.MouseWheel == 0f) return;
 
-            bool ctrl  = ImGui.IsKeyDown(ImGuiKey.LeftCtrl)  || ImGui.IsKeyDown(ImGuiKey.RightCtrl);
-            bool shift = ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift);
+            bool ctrl  = io.KeyCtrl;
+            bool shift = io.KeyShift;
             var (_, _, mmYMin, mmYMax) = GetMmBounds();
 
             if (ctrl)
@@ -991,8 +991,8 @@ namespace OpenEphys.EphysVisualization.Design
             if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !selectBox.Dragging && !clickTaken)
             {
                 selectBox.Begin();
-                dragHadShift = ImGui.IsKeyDown(ImGuiKey.LeftShift)  || ImGui.IsKeyDown(ImGuiKey.RightShift);
-                dragHadCtrl  = ImGui.IsKeyDown(ImGuiKey.LeftCtrl)   || ImGui.IsKeyDown(ImGuiKey.RightCtrl);
+                dragHadShift = ImGui.GetIO().KeyShift;
+                dragHadCtrl  = ImGui.GetIO().KeyCtrl;
                 Array.Copy(selected,  preDragSelection, selected.Length);
                 Array.Copy(inspected, preDragInspected, inspected.Length);
                 DragIntent = (dragHadShift && dragHadCtrl) ? DragSelectIntent.Remove : DragSelectIntent.Add;
