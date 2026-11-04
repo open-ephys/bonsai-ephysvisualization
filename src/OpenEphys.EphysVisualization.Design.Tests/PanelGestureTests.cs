@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using Hexa.NET.ImGui;
+using OpenEphys.EphysVisualization.Design.WinForms;
 using Xunit;
 
 namespace OpenEphys.EphysVisualization.Design.Tests
@@ -149,6 +152,17 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             imgui.Key(ImGuiKey.E, draw);
             imgui.Frame(draw);
             Assert.Equal(6, panel.Expanded?.Channel);
+        }
+
+        [Fact]
+        public void EveryHotkey_ReachesTheScopeUnderThePointer()
+        {
+            var filter = typeof(ImGuiHoverGLControl).GetNestedType("HoverKeyFilter", BindingFlags.NonPublic)!;
+            var toImGuiKey = filter.GetMethod("ToImGuiKey", BindingFlags.NonPublic | BindingFlags.Static)!;
+            var keys = Enum.GetValues(toImGuiKey.GetParameters()[0].ParameterType).Cast<object>();
+            var reached = new HashSet<ImGuiKey>(keys.Select(key => (ImGuiKey)toImGuiKey.Invoke(null, new[] { key })));
+
+            Assert.Subset(reached, new HashSet<ImGuiKey>(panel.Hotkeys));
         }
 
         [Fact]
