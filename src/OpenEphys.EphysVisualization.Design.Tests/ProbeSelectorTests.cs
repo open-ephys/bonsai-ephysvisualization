@@ -117,6 +117,23 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void ADragReleasedOutsideTheView_EndsWhereItWasReleased()
+        {
+            var outside = new Vector2(ImGuiHarness.DisplaySize.X + 50, contacts[9].Center.Y);
+            imgui.MoveMouse(contacts[4].Center, draw);
+            imgui.Button(ImGuiMouseButton.Left, true, draw);
+            imgui.MoveMouse(outside, draw);
+            imgui.Button(ImGuiMouseButton.Left, false, draw);
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, Selected());
+            Assert.Equal(1, selectionChanges);
+
+            imgui.MoveMouse(contacts[Count - 1].Center, draw);
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, Selected());
+            Assert.Equal(1, selectionChanges);
+        }
+
+        [Fact]
         public void CtrlShiftDrag_RemovesTheContactsItSweeps()
         {
             Drag(contacts[0].Center, contacts[Count - 1].Center);

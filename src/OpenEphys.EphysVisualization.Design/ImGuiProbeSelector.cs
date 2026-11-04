@@ -986,9 +986,8 @@ namespace OpenEphys.EphysVisualization.Design
         void HandleDragSelect(ImDrawListPtr dl, Vector2 canvasMin, Vector2 canvasMax, float viewLeft, float viewBot,
             float xLow, float yLow, float scaleXY, bool clickTaken)
         {
-            if (!ImGui.IsWindowHovered()) return;
-
-            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !selectBox.Dragging && !clickTaken)
+            if (ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !selectBox.Dragging &&
+                !clickTaken)
             {
                 selectBox.Begin();
                 dragHadShift = ImGui.GetIO().KeyShift;
