@@ -27,7 +27,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         bool showMetrics = false;
 #endif
         ImGuiContextPtr imGuiCtx;
-        bool disposed;
+        Form? form;
         bool resizing;
         bool initialized;
         int renderDepth;
@@ -89,7 +89,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         /// </remarks>
         internal bool MakeCurrentOutsideFrame()
         {
-            if (!initialized || renderDepth > 0 || disposed || DesignMode || !HasValidContext || resizing)
+            if (!initialized || renderDepth > 0 || DesignMode || !HasValidContext || resizing)
                 return false;
 
             base.MakeCurrent();
@@ -102,7 +102,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         /// </summary>
         private protected void WithImGuiContext(Action<ImGuiIOPtr> post)
         {
-            if (!initialized || disposed)
+            if (!initialized)
                 return;
 
             // NB: a message can be dispatched in the middle of another control's frame, which must find its own
@@ -134,10 +134,13 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             base.OnHandleCreated(e);
             if (!HasValidContext) return;
 
-            var form = FindForm();
-            form.ResizeBegin += (_, _) => resizing = true;
-            form.ResizeEnd += (_, _) => resizing = false;
-            form.FormClosing += (_, _) => MakeContextsCurrent();
+            form = FindForm();
+            if (form is not null)
+            {
+                form.ResizeBegin += FormResizeBegin;
+                form.ResizeEnd += FormResizeEnd;
+                form.FormClosing += FormClosing;
+            }
 
             imGuiCtx = ImGui.CreateContext(null);
             ImGui.SetCurrentContext(imGuiCtx);
@@ -170,6 +173,12 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
                 pacer = null;
             }
         }
+
+        void FormResizeBegin(object? sender, EventArgs e) => resizing = true;
+
+        void FormResizeEnd(object? sender, EventArgs e) => resizing = false;
+
+        void FormClosing(object? sender, FormClosingEventArgs e) => MakeContextsCurrent();
 
         void MakeContextsCurrent()
         {
@@ -271,7 +280,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         /// <inheritdoc/>
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (keyData == Keys.Escape && initialized && !disposed)
+            if (keyData == Keys.Escape && initialized)
             {
                 ImGuiImplWin32.SetCurrentContext(imGuiCtx);
                 ImGuiImplWin32.WndProcHandler(Handle, (uint)msg.Msg, (nuint)(ulong)msg.WParam.ToInt64(), msg.LParam);
@@ -284,7 +293,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         /// <inheritdoc/>
         protected override void WndProc(ref Message m)
         {
-            if (initialized && !disposed)
+            if (initialized)
             {
                 ImGuiImplWin32.SetCurrentContext(imGuiCtx);
                 if (ImGuiImplWin32.WndProcHandler(Handle, (uint)m.Msg, (nuint)(ulong)m.WParam.ToInt64(), m.LParam) != 0)
@@ -311,15 +320,22 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         /// <inheritdoc/>
         protected override void OnHandleDestroyed(EventArgs e)
         {
-            initialized = false;
-            UpdatePacer();
-            if (HasValidContext && !disposed)
+            if (form is not null)
             {
+                form.ResizeBegin -= FormResizeBegin;
+                form.ResizeEnd -= FormResizeEnd;
+                form.FormClosing -= FormClosing;
+                form = null;
+            }
+
+            if (initialized)
+            {
+                initialized = false;
+                UpdatePacer();
                 ImGuiImplOpenGL3.Shutdown();
                 ImGuiImplWin32.Shutdown();
                 ImGui.SetCurrentContext(null);
                 ImGui.DestroyContext(imGuiCtx);
-                disposed = true;
             }
             base.OnHandleDestroyed(e);
         }
