@@ -152,6 +152,15 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Space_IsAnsweredOverAPane()
+        {
+            panel.KeysElsewhere = true;
+
+            imgui.Key(ImGuiKey.Space, draw);
+            Assert.True(panel.Paused);
+        }
+
+        [Fact]
         public void ATallRightDrag_WhilePaused_FitsTheChannelsItSpansToThePlot()
         {
             panel.Paused = true;
