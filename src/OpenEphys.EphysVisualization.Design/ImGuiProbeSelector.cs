@@ -253,18 +253,21 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         const float MinimapPaddingPx = 8f;
 
-        // NB: spans enough decades to serve a file written in millimeters as well as one in micrometers.
-        static readonly float[] TickCandidates =
-        {
-            0.01f, 0.02f, 0.05f, 0.1f, 0.2f, 0.5f, 1f, 2f, 5f, 10f, 20f, 50f,
-            100f, 200f, 500f, 1000f, 2000f, 5000f, 10000f, 20000f, 50000f, 100000f
-        };
-
         const float MajorTickSpacingPx = 60f;
         const float MinorTickSpacingPx = 8f;
 
         /// <summary>
-        /// A contact's index, position and extent in microns, as this component draws it.
+        /// The share of the space between minor grid lines that is left blank, between the crosses where they meet.
+        /// </summary>
+        const float MinorGridGap = 0.5f;
+
+        /// <summary>
+        /// How many of the shortest contact's heights the view shows when zoomed all the way in.
+        /// </summary>
+        const float MinZoomContactHeights = 4f;
+
+        /// <summary>
+        /// A contact's index, position and extent in the probe's units, as this component draws it.
         /// </summary>
         readonly record struct ProbeContact(int Index, Vector2 Position, Vector2 Size);
 
@@ -275,6 +278,7 @@ namespace OpenEphys.EphysVisualization.Design
 
         float scrollY, scrollX;
         float zoomWindow; // defines the major axis length of the zoom window.
+        float minZoomWindow;
         float effectiveXWindow;
 
         readonly DragBox selectBox = new(ImGuiMouseButton.Left);
@@ -400,6 +404,8 @@ namespace OpenEphys.EphysVisualization.Design
                     foreach (var v in probe.ProbePlanarContour) Expand((float)v[0], (float)v[1]);
                 }
             }
+
+            minZoomWindow = contacts.Count > 0 ? MinZoomContactHeights * contacts.Min(c => c.Size.Y) : 0f;
 
             var probeExtent = Math.Max(probeXMax - probeXMin, probeYMax - probeYMin);
             zoomWindow = initialZoomWindow
@@ -896,7 +902,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (ctrl)
             {
                 float factor = io.MouseWheel > 0f ? 0.85f : 1.15f;
-                zoomWindow = Math.Max(50f, Math.Min(mmYMax - mmYMin, zoomWindow * factor));
+                zoomWindow = Math.Max(minZoomWindow, Math.Min(mmYMax - mmYMin, zoomWindow * factor));
                 ClampScroll(); ClampScrollX();
             }
             else if (shift)
@@ -937,9 +943,10 @@ namespace OpenEphys.EphysVisualization.Design
             // One scale serves both axes, so the zoom is set by whichever side of the box needs more room at the
             // view's shape.
             var (_, _, mmYMin, mmYMax) = GetMmBounds();
-            var widthUm = (end.Max.X - end.Min.X) / scaleXY;
-            var heightUm = (end.Max.Y - end.Min.Y) / scaleXY;
-            zoomWindow = Math.Max(50f, Math.Min(mmYMax - mmYMin, Math.Max(heightUm, widthUm * region.Y / region.X)));
+            var boxWidth = (end.Max.X - end.Min.X) / scaleXY;
+            var boxHeight = (end.Max.Y - end.Min.Y) / scaleXY;
+            zoomWindow = Math.Max(minZoomWindow,
+                Math.Min(mmYMax - mmYMin, Math.Max(boxHeight, boxWidth * region.Y / region.X)));
             scrollX = xLow + ((end.Min.X + end.Max.X) / 2f - viewLeft) / scaleXY;
             scrollY = yLow + (viewBot - (end.Min.Y + end.Max.Y) / 2f) / scaleXY;
             ClampScroll();
@@ -1152,8 +1159,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (minor > 0f)
             {
-                float first = (float)(Math.Ceiling((double)yMin / minor) * minor);
-                for (float y = first; y <= yMax + 1f; y += minor)
+                foreach (var y in TickPositions(yMin, yMax, minor))
                 {
                     float sy = viewBot - (y - yMin) * pxPerUnit;
                     if (rightSide) dl.AddLine(new Vector2(rightX, sy), new Vector2(rightX + RulerMinorTickLen, sy), ColRulerAxis);
@@ -1162,8 +1168,7 @@ namespace OpenEphys.EphysVisualization.Design
                 }
             }
 
-            float firstMaj = (float)(Math.Ceiling((double)yMin / major) * major);
-            for (float y = firstMaj; y <= yMax + 1f; y += major)
+            foreach (var y in TickPositions(yMin, yMax, major))
             {
                 float sy = viewBot - (y - yMin) * pxPerUnit;
                 if (rightSide) dl.AddLine(new Vector2(rightX, sy), new Vector2(rightX + RulerMajorTickLen, sy), ColRulerMajorTick);
@@ -1186,48 +1191,75 @@ namespace OpenEphys.EphysVisualization.Design
 
             float yMinV = yLow + (viewBot - lineBot) / scaleXY;
             float yMaxV = yLow + (viewBot - lineTop) / scaleXY;
-
-            if (minor > 0f)
-            {
-                float first = (float)(Math.Ceiling((double)yMinV / minor) * minor);
-                for (float y = first; y <= yMaxV + 1f; y += minor)
-                {
-                    float sy = viewBot - (y - yLow) * scaleXY;
-                    if (sy < lineTop - 1f || sy > lineBot + 1f) continue;
-                    DrawDottedHLine(dl, lineLeft, lineRight, sy, ColGridMinor);
-                }
-            }
-            {
-                float first = (float)(Math.Ceiling((double)yMinV / major) * major);
-                for (float y = first; y <= yMaxV + 1f; y += major)
-                {
-                    float sy = viewBot - (y - yLow) * scaleXY;
-                    if (sy < lineTop - 1f || sy > lineBot + 1f) continue;
-                    dl.AddLine(new Vector2(lineLeft, sy), new Vector2(lineRight, sy), ColGridMajor);
-                }
-            }
-
             float xMinV = xLow + (lineLeft  - viewLeft) / scaleXY;
             float xMaxV = xLow + (lineRight - viewLeft) / scaleXY;
 
             if (minor > 0f)
             {
-                float first = (float)(Math.Ceiling((double)xMinV / minor) * minor);
-                for (float x = first; x <= xMaxV + 1f; x += minor)
-                {
-                    float sx = viewLeft + (x - xLow) * scaleXY;
-                    if (sx < lineLeft - 1f || sx > lineRight + 1f) continue;
-                    DrawDottedVLine(dl, sx, lineTop, lineBot, ColGridMinor);
-                }
+                // NB: one more line each side of the grid, unseen, so that the bars beyond the outermost lines are
+                // drawn too.
+                var rows = TickPositions(yMinV - minor, yMaxV + minor, minor)
+                    .Select(y => viewBot - (y - yLow) * scaleXY).ToArray();
+                var columns = TickPositions(xMinV - minor, xMaxV + minor, minor)
+                    .Select(x => viewLeft + (x - xLow) * scaleXY).ToArray();
+                DrawMinorCrosses(dl, lineLeft, lineRight, lineTop, lineBot, rows, columns, minor * scaleXY);
             }
+
+            foreach (var y in TickPositions(yMinV, yMaxV, major))
             {
-                float first = (float)(Math.Ceiling((double)xMinV / major) * major);
-                for (float x = first; x <= xMaxV + 1f; x += major)
-                {
-                    float sx = viewLeft + (x - xLow) * scaleXY;
-                    if (sx < lineLeft - 1f || sx > lineRight + 1f) continue;
-                    dl.AddLine(new Vector2(sx, lineTop), new Vector2(sx, lineBot), ColGridMajor);
-                }
+                float sy = viewBot - (y - yLow) * scaleXY;
+                if (sy < lineTop - 1f || sy > lineBot + 1f) continue;
+                dl.AddLine(new Vector2(lineLeft, sy), new Vector2(lineRight, sy), ColGridMajor);
+            }
+
+            foreach (var x in TickPositions(xMinV, xMaxV, major))
+            {
+                float sx = viewLeft + (x - xLow) * scaleXY;
+                if (sx < lineLeft - 1f || sx > lineRight + 1f) continue;
+                dl.AddLine(new Vector2(sx, lineTop), new Vector2(sx, lineBot), ColGridMajor);
+            }
+        }
+
+        /// <summary>
+        /// Draws the minor grid as a small cross where each row meets each column, inside the given bounds.
+        /// </summary>
+        /// <remarks>
+        /// Each line is drawn whole, and then covered between crossings by bars of the background halfway between
+        /// the lines, which takes a few hundred items where a segment for each arm of each cross would take
+        /// thousands.
+        /// </remarks>
+        static void DrawMinorCrosses(ImDrawListPtr dl, float left, float right, float top, float bottom,
+            float[] rows, float[] columns, float pitch)
+        {
+            var background = ImGui.GetColorU32(ImGuiCol.WindowBg);
+            dl.AddRectFilled(new Vector2(left, top), new Vector2(right, bottom), background);
+
+            foreach (var sy in rows)
+            {
+                if (sy >= top - 1f && sy <= bottom + 1f)
+                    dl.AddLine(new Vector2(left, sy), new Vector2(right, sy), ColGridMinor);
+            }
+            foreach (var sx in columns)
+            {
+                if (sx >= left - 1f && sx <= right + 1f)
+                    dl.AddLine(new Vector2(sx, top), new Vector2(sx, bottom), ColGridMinor);
+            }
+
+            // NB: rows run up the screen as the probe's y grows, so the bar after each row is above it.
+            var reach = pitch * (1 - MinorGridGap) / 2;
+            foreach (var sy in rows)
+            {
+                var barTop = Math.Max(top, sy - pitch + reach);
+                var barBottom = Math.Min(bottom, sy - reach);
+                if (barBottom > barTop)
+                    dl.AddRectFilled(new Vector2(left, barTop), new Vector2(right, barBottom), background);
+            }
+            foreach (var sx in columns)
+            {
+                var barLeft = Math.Max(left, sx + reach);
+                var barRight = Math.Min(right, sx + pitch - reach);
+                if (barRight > barLeft)
+                    dl.AddRectFilled(new Vector2(barLeft, top), new Vector2(barRight, bottom), background);
             }
         }
 
@@ -1242,8 +1274,7 @@ namespace OpenEphys.EphysVisualization.Design
             float yMinV = yLow + (viewBot - lineBot) / scaleXY;
             float yMaxV = yLow + (viewBot - lineTop) / scaleXY;
             {
-                float first = (float)(Math.Ceiling((double)yMinV / major) * major);
-                for (float y = first; y <= yMaxV + 1f; y += major)
+                foreach (var y in TickPositions(yMinV, yMaxV, major))
                 {
                     float sy = viewBot - (y - yLow) * scaleXY;
                     if (sy < lineTop - 1f || sy > lineBot + 1f) continue;
@@ -1257,8 +1288,7 @@ namespace OpenEphys.EphysVisualization.Design
             float xMinV = xLow + (lineLeft  - viewLeft) / scaleXY;
             float xMaxV = xLow + (lineRight - viewLeft) / scaleXY;
             {
-                float first = (float)(Math.Ceiling((double)xMinV / major) * major);
-                for (float x = first; x <= xMaxV + 1f; x += major)
+                foreach (var x in TickPositions(xMinV, xMaxV, major))
                 {
                     float sx = viewLeft + (x - xLow) * scaleXY;
                     if (sx < lineLeft - 1f || sx > lineRight + 1f) continue;
@@ -1324,28 +1354,48 @@ namespace OpenEphys.EphysVisualization.Design
             dl.AddText(new Vector2(x, y), ColRulerLabel, lbl);
         }
 
-        static (float Major, float Minor) TickIntervals(float pxPerUnit, bool withMinor)
+        /// <summary>
+        /// The major and minor tick intervals, in the probe's units, at a scale of <paramref name="pxPerUnit"/>, or
+        /// -1 for the minor where there are none.
+        /// </summary>
+        internal static (float Major, float Minor) TickIntervals(float pxPerUnit, bool withMinor)
         {
-            var major = TickCandidates[TickCandidates.Length - 1];
-            foreach (var c in TickCandidates)
-            {
-                if (c * pxPerUnit >= MajorTickSpacingPx) { major = c; break; }
-            }
-
-            var minor = -1f;
-            if (withMinor)
-            {
-                foreach (var c in TickCandidates)
-                {
-                    if (c >= major) break;
-                    if (c * pxPerUnit >= MinorTickSpacingPx) { minor = c; break; }
-                }
-            }
-
-            return (major, minor);
+            var major = NiceStep(MajorTickSpacingPx / pxPerUnit);
+            var minor = withMinor ? NiceStep(MinorTickSpacingPx / pxPerUnit) : -1f;
+            return (major, minor < major ? minor : -1f);
         }
 
-        static string FormatInterval(float value, float interval, string units)
+        /// <summary>
+        /// The smallest step of 1, 2 or 5 times a power of ten that is at least <paramref name="least"/>.
+        /// </summary>
+        static float NiceStep(float least)
+        {
+            var decade = Math.Pow(10, Math.Floor(Math.Log10(least)));
+            foreach (var mantissa in new[] { 1, 2, 5 })
+            {
+                if (mantissa * decade >= least * (1 - 1e-6))
+                    return (float)(mantissa * decade);
+            }
+            return (float)(10 * decade);
+        }
+
+        /// <summary>
+        /// The multiples of <paramref name="step"/> from <paramref name="min"/> to <paramref name="max"/>, either end
+        /// included.
+        /// </summary>
+        static IEnumerable<float> TickPositions(float min, float max, float step)
+        {
+            if (!(step > 0))
+                yield break;
+
+            // NB: a thousandth of a step either way, so a tick on an end that rounding puts just outside it is kept.
+            var first = (long)Math.Ceiling(min / (double)step - 1e-3);
+            var last = (long)Math.Floor(max / (double)step + 1e-3);
+            for (var k = first; k <= last; k++)
+                yield return (float)(k * (double)step);
+        }
+
+        internal static string FormatInterval(float value, float interval, string units = "")
         {
             var decimals = interval >= 1f ? 0 : Math.Min(6, (int)Math.Ceiling(-Math.Log10(interval)));
             return value.ToString("F" + decimals) + units;

@@ -12,21 +12,12 @@ namespace OpenEphys.EphysVisualization.Design
 
         readonly List<RulerLine> locked = new();
         PlacementState placement = PlacementState.None;
-        Vector2 draftStartUm;
+        Vector2 draftStart;
         Vector2 draftStartScreen;
-        Vector2 draftEndUm;
+        Vector2 draftEnd;
         int selectedIdx = -1;
 
-        readonly float majorTickSpacingUm;
-        readonly int   minorTicksPerMajor;
-
         public string Units { get; set; } = "um";
-
-        public ImGuiProbeRuler(float majorTickSpacingUm = 100f, int minorTicksPerMajor = 5)
-        {
-            this.majorTickSpacingUm = majorTickSpacingUm;
-            this.minorTicksPerMajor = minorTicksPerMajor;
-        }
 
         static readonly uint ColorLine = ImGuiPalette.AzureBlue;
         static readonly uint ColorSelected = ImGuiPalette.Yellow;
@@ -38,6 +29,7 @@ namespace OpenEphys.EphysVisualization.Design
         const float HoverDist = 15f;
         const float MajorTickHalfLen = 8f;
         const float MinorTickHalfLen = 4f;
+        const int MinorTicksPerMajor = 5;
 
         /// <summary>
         /// Whether a ruler is armed or partly placed, in which case it takes the clicks in the view.
@@ -80,7 +72,7 @@ namespace OpenEphys.EphysVisualization.Design
             float xLow, float yLow, float scaleXY)
         {
             if (placement != PlacementState.None)
-                draftEndUm = mouseProbeCoord;
+                draftEnd = mouseProbeCoord;
 
             var clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
             switch (placement)
@@ -95,8 +87,8 @@ namespace OpenEphys.EphysVisualization.Design
 
                 case PlacementState.Armed:
                     if (!clicked || !inCanvas) return false;
-                    draftStartUm     = mouseProbeCoord;
-                    draftEndUm       = mouseProbeCoord;
+                    draftStart     = mouseProbeCoord;
+                    draftEnd       = mouseProbeCoord;
                     draftStartScreen = mouseScreenPos;
                     placement        = PlacementState.Dragging;
                     return true;
@@ -139,29 +131,30 @@ namespace OpenEphys.EphysVisualization.Design
                     viewLeft, viewBot, xLow, yLow, scaleXY, i == selectedIdx);
 
             if (placement is PlacementState.Dragging or PlacementState.ClickMode)
-                DrawSingleRuler(dl, draftStartUm, draftEndUm,
+                DrawSingleRuler(dl, draftStart, draftEnd,
                     viewLeft, viewBot, xLow, yLow, scaleXY, false);
         }
 
         void LockDraft()
         {
             placement = PlacementState.None;
-            if ((draftEndUm - draftStartUm).LengthSquared() > 0f)
+            if ((draftEnd - draftStart).LengthSquared() > 0f)
             {
-                locked.Add(new RulerLine(draftStartUm, draftEndUm));
+                locked.Add(new RulerLine(draftStart, draftEnd));
                 selectedIdx = locked.Count - 1;
             }
         }
 
-        void DrawSingleRuler(ImDrawListPtr dl, Vector2 startUm, Vector2 endUm,
+        void DrawSingleRuler(ImDrawListPtr dl, Vector2 start, Vector2 end,
             float viewLeft, float viewBot, float xLow, float yLow, float scaleXY, bool isSelected)
         {
-            var s = ToScreen(startUm, viewLeft, viewBot, xLow, yLow, scaleXY);
-            var e = ToScreen(endUm,   viewLeft, viewBot, xLow, yLow, scaleXY);
+            var s = ToScreen(start, viewLeft, viewBot, xLow, yLow, scaleXY);
+            var e = ToScreen(end,   viewLeft, viewBot, xLow, yLow, scaleXY);
 
             uint lineCol = isSelected ? ColorSelected : ColorLine;
             dl.AddLine(s, e, lineCol, LineWidth);
 
+            var (major, _) = ImGuiProbeSelector.TickIntervals(scaleXY, withMinor: false);
             var dir = e - s;
             float lenPx = dir.Length();
 
@@ -171,39 +164,32 @@ namespace OpenEphys.EphysVisualization.Design
                 // For an upward ruler (screen dir (0,-1)): perp = (1,0) = screen right.
                 var perp = new Vector2(-dirUnit.Y, dirUnit.X);
 
-                float tickSpacingPx = majorTickSpacingUm * scaleXY;
-                int   minorN        = Math.Max(1, minorTicksPerMajor);
-                // If ticks too dense, suppress intermediates (only start + endpoint)
-                float minorSpacingPx = tickSpacingPx >= 0.5f
-                    ? tickSpacingPx / minorN
-                    : lenPx * 2f;
-
-                int totalMinors = (int)(lenPx / minorSpacingPx);
-                for (int k = 0; k <= totalMinors; k++)
+                float minorSpacingPx = major * scaleXY / MinorTicksPerMajor;
+                for (int k = 0; k * minorSpacingPx < lenPx - 0.5f; k++)
                 {
-                    float pos = k * minorSpacingPx;
-                    if (pos >= lenPx - 0.5f) break;
-
-                    bool  isMajor = k % minorN == 0;
+                    bool  isMajor = k % MinorTicksPerMajor == 0;
                     float halfLen = isMajor ? MajorTickHalfLen : MinorTickHalfLen;
-                    var   center  = s + dirUnit * pos;
+                    var   center  = s + dirUnit * (k * minorSpacingPx);
                     dl.AddLine(center - perp * halfLen, center + perp * halfLen, lineCol, LineWidth);
 
                     if (isMajor)
-                        DrawTickLabel(dl, center, $"{pos / scaleXY:0}", perp, halfLen);
+                    {
+                        var label = ImGuiProbeSelector.FormatInterval(k / MinorTicksPerMajor * major, major);
+                        DrawTickLabel(dl, center, label, perp, halfLen);
+                    }
                 }
 
                 dl.AddLine(e - perp * MajorTickHalfLen, e + perp * MajorTickHalfLen, lineCol, LineWidth);
             }
 
-            float dX  = endUm.X - startUm.X;
-            float dY  = endUm.Y - startUm.Y;
+            float dX  = end.X - start.X;
+            float dY  = end.Y - start.Y;
             float r   = (float)Math.Sqrt(dX * dX + dY * dY);
             float deg = (float)(Math.Atan2(dY, dX) * 180.0 / Math.PI);
 
-            string line1 = $"x: {dX:0} {Units}";
-            string line2 = $"y: {dY:0} {Units}";
-            string line3 = $"r: {r:0} {Units}";
+            string line1 = $"x: {ImGuiProbeSelector.FormatInterval(dX, major)} {Units}";
+            string line2 = $"y: {ImGuiProbeSelector.FormatInterval(dY, major)} {Units}";
+            string line3 = $"r: {ImGuiProbeSelector.FormatInterval(r, major)} {Units}";
             string line4 = $"deg: {deg:0}";
 
             float lineH = ImGui.CalcTextSize(line1).Y;
@@ -252,12 +238,12 @@ namespace OpenEphys.EphysVisualization.Design
             return new Vector2(p.X - (a.X + t * ab.X), p.Y - (a.Y + t * ab.Y)).Length();
         }
 
-        static Vector2 ToScreen(Vector2 probeUm, float viewLeft, float viewBot,
+        static Vector2 ToScreen(Vector2 point, float viewLeft, float viewBot,
             float xLow, float yLow, float scaleXY)
         {
             return new Vector2(
-                viewLeft + (probeUm.X - xLow) * scaleXY,
-                viewBot  - (probeUm.Y - yLow) * scaleXY);
+                viewLeft + (point.X - xLow) * scaleXY,
+                viewBot  - (point.Y - yLow) * scaleXY);
         }
     }
 }

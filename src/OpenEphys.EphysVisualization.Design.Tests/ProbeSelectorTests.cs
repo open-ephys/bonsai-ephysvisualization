@@ -485,6 +485,42 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void TheDeepestZoom_ShowsAsMuchOfAProbeWrittenInMillimeters()
+        {
+            var inMillimeters = new ImGuiProbeSelector(zoomWindowFraction: 1);
+            inMillimeters.Refresh(Probe(Columns, Rows, millimeters: true));
+            Action drawInMillimeters = () => inMillimeters.DrawZoomedView(selectionEnabled);
+            imgui.Frames(2, drawInMillimeters);
+
+            var tiny = new Vector2(10, 10);
+            RightDrag(contacts[4].Center, contacts[4].Center + tiny);
+
+            // NB: from another contact, since a right click where the last one was is a double-click, which zooms
+            // all the way out.
+            RightDrag(contacts[9].Center, contacts[9].Center + tiny, drawInMillimeters);
+
+            Assert.Equal(4 * 12, ZoomWindow(), 3);
+            Assert.Equal(ZoomWindow() * 1e-3f, Private.Get<float>(inMillimeters, "zoomWindow"), 6);
+        }
+
+        [Fact]
+        public void Ticks_InMillimeters_AreTheTicksInMicrometersScaled()
+        {
+            var (major, minor) = ImGuiProbeSelector.TickIntervals(2, withMinor: true);
+            var (majorMm, minorMm) = ImGuiProbeSelector.TickIntervals(2000, withMinor: true);
+            Assert.Equal(major * 1e-3f, majorMm, 6);
+            Assert.Equal(minor * 1e-3f, minorMm, 6);
+
+            var ticks = TickPositions(0, 200, major);
+            var ticksMm = TickPositions(0, 0.2f, majorMm);
+            Assert.Equal(ticks.Select(t => t * 1e-3f), ticksMm, (a, b) => Math.Abs(a - b) < 1e-6f);
+            Assert.Equal(200f, ticks.Last());
+        }
+
+        static float[] TickPositions(float min, float max, float step) =>
+            Private.Call<IEnumerable<float>>(typeof(ImGuiProbeSelector), "TickPositions", min, max, step).ToArray();
+
+        [Fact]
         public void Escape_CancelsAZoomBox_AndKeepsTheSelection()
         {
             Click(5);
@@ -563,13 +599,14 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
         float ZoomWindow() => Private.Get<float>(selector, "zoomWindow");
 
-        void RightDrag(Vector2 from, Vector2 to)
+        void RightDrag(Vector2 from, Vector2 to, Action? on = null)
         {
-            imgui.MoveMouse(from, draw);
-            imgui.Button(ImGuiMouseButton.Right, true, draw);
-            imgui.MoveMouse(to, draw);
-            imgui.Button(ImGuiMouseButton.Right, false, draw);
-            imgui.Frames(2, draw);
+            var frame = on ?? draw;
+            imgui.MoveMouse(from, frame);
+            imgui.Button(ImGuiMouseButton.Right, true, frame);
+            imgui.MoveMouse(to, frame);
+            imgui.Button(ImGuiMouseButton.Right, false, frame);
+            imgui.Frames(2, frame);
         }
 
         void Drag(Vector2 from, Vector2 to)
@@ -582,11 +619,12 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
         /// <summary>
         /// A probe of square contacts 12 µm wide, in columns 32 µm apart and rows 20 µm apart, numbered across each
-        /// row from the bottom, inside a contour around them.
+        /// row from the bottom, inside a contour around them, or the same probe written in millimeters.
         /// </summary>
-        static SingleProbeGroup Probe(int columns, int rows)
+        static SingleProbeGroup Probe(int columns, int rows, bool millimeters = false)
         {
-            const double Width = 12, ColumnPitch = 32, RowPitch = 20, Margin = 20;
+            var scale = millimeters ? 1e-3 : 1;
+            double Width = 12 * scale, ColumnPitch = 32 * scale, RowPitch = 20 * scale, Margin = 20 * scale;
             var count = columns * rows;
             var right = (columns - 1) * ColumnPitch + Margin;
             var top = (rows - 1) * RowPitch + Margin;
@@ -602,7 +640,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
                     new
                     {
                         ndim = 2,
-                        si_units = "um",
+                        si_units = millimeters ? "mm" : "um",
                         annotations = new { model_name = "test", manufacturer = "test" },
                         contact_annotations = new { },
                         contact_positions = Enumerable.Range(0, count)
