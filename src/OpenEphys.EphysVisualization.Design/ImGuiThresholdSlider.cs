@@ -49,8 +49,8 @@ namespace OpenEphys.EphysVisualization.Design
             var hovered = ImGui.IsItemHovered();
             if (active && domainMax > 0)
                 threshold = Math.Max(0, Math.Min(domainMax, (ImGui.GetMousePos().X - corner.X) / width * domainMax));
-            if (tooltip != null && hovered && !active)
-                ImGui.SetTooltip(tooltip);
+            if (tooltip != null)
+                ImGuiWidgets.Tooltip(tooltip);
 
             var middle = colormap.Length / 2;
             var split = corner.Y + height / 2;

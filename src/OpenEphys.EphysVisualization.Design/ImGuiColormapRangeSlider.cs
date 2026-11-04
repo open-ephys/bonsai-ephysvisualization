@@ -115,8 +115,8 @@ namespace OpenEphys.EphysVisualization.Design
             bool minHovered = ImGui.IsItemHovered();
             if (minActive)
                 rangeMin = Clamp(XToValue(ImGui.GetMousePos().X), domainMin, rangeMax);
-            if (minHandleTooltip != null && minHovered && !minActive)
-                ImGui.SetTooltip(minHandleTooltip);
+            if (minHandleTooltip != null)
+                ImGuiWidgets.Tooltip(minHandleTooltip);
 
             ImGui.SetCursorScreenPos(new Vector2(xMax - HandleHitWidth / 2f, cp.Y - HandleOverbitePx));
             ImGui.InvisibleButton(id + "_maxHandle", new Vector2(HandleHitWidth, barH + 2f * HandleOverbitePx));
@@ -124,8 +124,8 @@ namespace OpenEphys.EphysVisualization.Design
             bool maxHovered = ImGui.IsItemHovered();
             if (maxActive)
                 rangeMax = Clamp(XToValue(ImGui.GetMousePos().X), rangeMin, domainMax);
-            if (maxHandleTooltip != null && maxHovered && !maxActive)
-                ImGui.SetTooltip(maxHandleTooltip);
+            if (maxHandleTooltip != null)
+                ImGuiWidgets.Tooltip(maxHandleTooltip);
 
             xMin = ValueToX(rangeMin);
             xMax = ValueToX(rangeMax);
