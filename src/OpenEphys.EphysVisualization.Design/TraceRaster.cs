@@ -81,9 +81,9 @@ namespace OpenEphys.EphysVisualization.Design
                 layout.FirstVisible, layout.LastVisible, layout.RowHeight, Origin(frame), layout.Slots);
 
             // NB: from the column the sweep was filling at the last frame to the one it is filling now, both included,
-            // since each was part filled when last drawn. A sweep that went all the way round is told from the samples
-            // that arrived, since the cursor repeats every sweep; not so the last whole sweep, which is replaced every
-            // few frames anyway.
+            // since each was part filled when last drawn. The cursor is back in the same place after a full sweep, so
+            // the sample count is what shows that one passed between frames. The last whole sweep is overwritten in
+            // place when the cursor wraps, so it is uploaded whole then, and not at all otherwise.
             var columns = frame.Envelope.Cols;
             var all = current != key ||
                 !lanes.AsSpan().SequenceEqual(drawnLanes) ||
@@ -94,8 +94,10 @@ namespace OpenEphys.EphysVisualization.Design
             if (!all && sweepCursor >= 0)
             {
                 var wentRound = samples - drawnSamples >= frame.Window.Span;
-                if (drawnCursor < 0 || wentRound && !wholeSweeps)
+                if (drawnCursor < 0 || wentRound)
                     all = true;
+                else if (wholeSweeps)
+                    all = sweepCursor < drawnCursor;
                 else if (sweepCursor >= drawnCursor)
                     run = (drawnCursor, sweepCursor);
                 else
