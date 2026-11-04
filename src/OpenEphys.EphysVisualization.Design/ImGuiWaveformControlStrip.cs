@@ -66,6 +66,7 @@ namespace OpenEphys.EphysVisualization.Design
             ImGui.Indent(HeaderInset);
             if (ImGui.ArrowButton("##collapse", Collapsed ? ImGuiDir.Up : ImGuiDir.Down))
                 Collapsed = !Collapsed;
+            ImGuiWidgets.Tooltip(Collapsed ? "Show the control panel." : "Hide the control panel.");
 
             ImGui.SameLine();
             ImGui.Text("Control Panel");

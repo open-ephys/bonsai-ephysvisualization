@@ -498,8 +498,6 @@ namespace OpenEphys.EphysVisualization.Design
 
             ImGui.SetCursorScreenPos(new Vector2(left, top));
             ImGui.InvisibleButton("##timescroll", new Vector2(width, height));
-            ImGuiWidgets.Tooltip("Drag to move back and forth through the recent signal while paused.\n" +
-                "Keys: A and D\nOn the plot: Shift+Wheel, or drag with the middle button");
 
             if (ImGui.IsItemActive() && travel > 0 && slack > 0)
                 Pan(-(long)(ImGui.GetIO().MouseDelta.X * (travel / slack)));

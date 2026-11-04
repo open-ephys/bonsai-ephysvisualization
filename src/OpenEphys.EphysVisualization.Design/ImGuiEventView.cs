@@ -354,6 +354,8 @@ namespace OpenEphys.EphysVisualization.Design
                 grabbed = near || draggingThreshold;
                 if (grabbed)
                     ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeNs);
+                if (near && !draggingThreshold)
+                    ImGuiWidgets.Tooltip("Drag to set the threshold.");
             }
             else
                 draggingThreshold = false;
