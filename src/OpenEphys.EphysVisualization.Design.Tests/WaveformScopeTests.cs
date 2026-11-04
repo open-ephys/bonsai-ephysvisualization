@@ -34,6 +34,18 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void Unload_LeavesAPostedBlockUndisposed()
+        {
+            var visualizer = new WaveformScopeVisualizer();
+            using var block = new Mat(2, 3, Depth.F32, 1);
+            Private.Call<object>(visualizer, "PostData", new object[] { block, 1000 });
+
+            visualizer.Unload();
+
+            Assert.False(block.IsClosed);
+        }
+
+        [Fact]
         public void ChannelSettings_AreSavedAsOneElementEach_LeavingOutTheirDefaults()
         {
             var scope = new WaveformScope

@@ -481,8 +481,7 @@ namespace OpenEphys.EphysVisualization.Design
         public override void Unload()
         {
             drainTimer?.Dispose();
-            while (pending.TryDequeue(out var item))
-                item.Data?.Dispose();
+            while (pending.TryDequeue(out _)) { }
             panel?.Dispose();
             canvas?.Dispose();
 
