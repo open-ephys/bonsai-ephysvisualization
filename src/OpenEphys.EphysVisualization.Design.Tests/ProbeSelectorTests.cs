@@ -489,6 +489,20 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         }
 
         [Fact]
+        public void ARightClick_ClearsTheSelection_AndLeavesTheZoom()
+        {
+            Click(5);
+            var before = ZoomWindow();
+
+            imgui.MoveMouse(contacts[6].Center, draw);
+            imgui.Click(ImGuiMouseButton.Right, draw);
+
+            Assert.Empty(Selected());
+            Assert.Equal(2, selectionChanges);
+            Assert.Equal(before, ZoomWindow());
+        }
+
+        [Fact]
         public void ARightDoubleClick_ZoomsAllTheWayOut()
         {
             RightDrag(contacts[4].Center, contacts[9].Center);

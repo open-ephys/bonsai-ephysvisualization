@@ -31,8 +31,9 @@ The minimap and the zoomed view both answer the wheel. The other gestures and th
 | Shift+Wheel | Moves the view across the probe. |
 | Ctrl+Wheel | Zooms in or out, between 50 units across (50 µm for most probes) and the whole probe. |
 | Middle-drag | Grabs the probe and moves it with the pointer. |
-| Right-drag | Zooms to the box dragged, centering the view on it. Since both axes share one scale, the zoom is set by whichever side of the box needs more room. A box no larger than a few pixels does nothing, and Escape cancels one being dragged. |
+| Right-drag | Zooms to the box dragged, centering the view on it. Since both axes share one scale, the zoom is set by whichever side of the box needs more room. A box no larger than a few pixels is a right click, and Escape cancels one being dragged. |
 | Right double-click | Zooms all the way out, to the whole probe. |
+| Right click | Clears the selection, wherever it falls, so that no outline hides a contact's color. The first click of a right double-click clears it too. |
 | Click | Selects the contact clicked, alone. A click away from the contacts clears the selection. |
 | Drag | Selects every contact the box touches, in place of the selection. |
 | Shift+Click, Shift+Drag | Adds the contacts to the selection. |

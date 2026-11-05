@@ -704,7 +704,8 @@ namespace OpenEphys.EphysVisualization.Design
             if (selectionEnabled)
                 HandleDragSelect(dl, canvasMin, canvasMax, viewLeft, viewBot, xLow, yLow, scaleXY,
                     rulerTookClick || barTookClick);
-            HandleZoomBox(dl, canvasMin, canvasMax, inCanvas, avail, viewLeft, viewBot, xLow, yLow, scaleXY);
+            HandleZoomBox(dl, canvasMin, canvasMax, inCanvas, avail, viewLeft, viewBot, xLow, yLow, scaleXY,
+                selectionEnabled);
 
             if (ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
             {
@@ -880,7 +881,7 @@ namespace OpenEphys.EphysVisualization.Design
                 else if (Hovered && ruler.HasSelection)
                     ruler.Deselect();
                 else if ((Hovered || selectBox.Dragging) && selectionEnabled)
-                    ClearOnEscape();
+                    DeselectContacts();
             }
 
             if (!Hovered || ImGui.GetIO().WantTextInput) return;
@@ -925,10 +926,11 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Right click and drag a box to zoom to it, or double-click to zoom all the way out.
+        /// Right click and drag a box to zoom to it, double-click to zoom all the way out, or click to clear the
+        /// selection.
         /// </summary>
         void HandleZoomBox(ImDrawListPtr dl, Vector2 canvasMin, Vector2 canvasMax, bool inCanvas, Vector2 region,
-            float viewLeft, float viewBot, float xLow, float yLow, float scaleXY)
+            float viewLeft, float viewBot, float xLow, float yLow, float scaleXY, bool selectionEnabled)
         {
             if (inCanvas && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
             {
@@ -944,8 +946,15 @@ namespace OpenEphys.EphysVisualization.Design
                 PixelRect.Outline(dl, box.Min, box.Max, ImGuiWaveformPanel.ColZoomBox);
             }
 
-            if (!zoomBox.Released(canvasMin, canvasMax, out var end) || !end.Wide && !end.Tall)
+            if (!zoomBox.Released(canvasMin, canvasMax, out var end))
                 return;
+
+            if (!end.Wide && !end.Tall)
+            {
+                if (selectionEnabled)
+                    DeselectContacts();
+                return;
+            }
 
             // One scale serves both axes, so the zoom is set by whichever side of the box needs more room at the
             // view's shape.
@@ -1052,7 +1061,7 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        void ClearOnEscape()
+        void DeselectContacts()
         {
             Array.Clear(selected,  0, selected.Length);
             Array.Clear(inDragBox,   0, inDragBox.Length);
