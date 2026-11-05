@@ -27,7 +27,7 @@ namespace OpenEphys.EphysVisualization.Design
         Idle,
 
         /// <summary>
-        /// The drag adds the contacts it sweeps to the selection.
+        /// The drag adds the contacts it sweeps to the selection, as when Shift is held.
         /// </summary>
         Add,
 
@@ -35,6 +35,11 @@ namespace OpenEphys.EphysVisualization.Design
         /// The drag removes the contacts it sweeps from the selection, as when Ctrl+Shift is held.
         /// </summary>
         Remove,
+
+        /// <summary>
+        /// The drag selects the contacts it sweeps in place of the selection.
+        /// </summary>
+        Replace,
     }
 
     /// <summary>
@@ -166,6 +171,10 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Gets what the current drag does, or <see cref="DragSelectIntent.Idle"/> when no drag is in progress.
         /// </summary>
+        /// <remarks>
+        /// A drag's intent is still set while <see cref="SelectionChanged"/> is raised for its release, and is
+        /// <see cref="DragSelectIntent.Idle"/> after.
+        /// </remarks>
         public DragSelectIntent DragIntent { get; private set; } = DragSelectIntent.Idle;
 
         /// <summary>
@@ -1009,7 +1018,9 @@ namespace OpenEphys.EphysVisualization.Design
                 dragHadCtrl  = ImGui.GetIO().KeyCtrl;
                 Array.Copy(selected,  preDragSelection, selected.Length);
                 Array.Copy(inspected, preDragInspected, inspected.Length);
-                DragIntent = (dragHadShift && dragHadCtrl) ? DragSelectIntent.Remove : DragSelectIntent.Add;
+                DragIntent = dragHadShift && dragHadCtrl ? DragSelectIntent.Remove
+                    : dragHadShift ? DragSelectIntent.Add
+                    : DragSelectIntent.Replace;
             }
 
             if (selectBox.Current(canvasMin, canvasMax) is not { } box) return;
@@ -1039,6 +1050,7 @@ namespace OpenEphys.EphysVisualization.Design
                 if (!end.Wide && !end.Tall)
                     ApplyClick(viewLeft, viewBot, xLow, yLow, scaleXY, additive, deselect);
                 SelectionChanged?.Invoke(this, EventArgs.Empty);
+                DragIntent = DragSelectIntent.Idle;
             }
         }
 

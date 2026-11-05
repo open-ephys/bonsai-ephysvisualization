@@ -128,6 +128,7 @@ OpenEphys.EphysVisualization.Design.DragSelectIntent
 OpenEphys.EphysVisualization.Design.DragSelectIntent.Add = 1 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
 OpenEphys.EphysVisualization.Design.DragSelectIntent.Idle = 0 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
 OpenEphys.EphysVisualization.Design.DragSelectIntent.Remove = 2 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
+OpenEphys.EphysVisualization.Design.DragSelectIntent.Replace = 3 -> OpenEphys.EphysVisualization.Design.DragSelectIntent
 OpenEphys.EphysVisualization.Design.LegendEntry
 OpenEphys.EphysVisualization.Design.LegendEntry.Color.get -> uint
 OpenEphys.EphysVisualization.Design.LegendEntry.Color.init -> void

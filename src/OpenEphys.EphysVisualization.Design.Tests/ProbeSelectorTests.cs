@@ -108,12 +108,29 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             imgui.Button(ImGuiMouseButton.Left, true, draw);
             imgui.MoveMouse(contacts[9].Center, draw);
 
-            Assert.Equal(DragSelectIntent.Add, selector.DragIntent);
+            Assert.Equal(DragSelectIntent.Replace, selector.DragIntent);
             Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, Selected());
             Assert.Equal(0, selectionChanges);
 
             imgui.Button(ImGuiMouseButton.Left, false, draw);
             Assert.Equal(1, selectionChanges);
+            Assert.Equal(DragSelectIntent.Idle, selector.DragIntent);
+        }
+
+        [Fact]
+        public void ShiftDrag_AddsTheContactsItSweeps_AndSaysSoInSelectionChanged()
+        {
+            Click(0);
+            var intents = new List<DragSelectIntent>();
+            selector.SelectionChanged += (_, _) => intents.Add(selector.DragIntent);
+
+            imgui.Hold(ImGuiKey.ModShift, true, draw);
+            Drag(contacts[4].Center, contacts[9].Center);
+            imgui.Hold(ImGuiKey.ModShift, false, draw);
+
+            Assert.Equal(new[] { 0, 4, 5, 6, 7, 8, 9 }, Selected());
+            Assert.Equal(new[] { DragSelectIntent.Add }, intents);
+            Assert.Equal(DragSelectIntent.Idle, selector.DragIntent);
         }
 
         [Fact]
@@ -149,6 +166,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             imgui.Hold(ImGuiKey.ModShift, false, draw);
 
             Assert.Equal(Enumerable.Range(0, Count).Except(Enumerable.Range(4, 6)), Selected());
+            Assert.Equal(DragSelectIntent.Idle, selector.DragIntent);
         }
 
         [Fact]
