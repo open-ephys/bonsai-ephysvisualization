@@ -1,7 +1,6 @@
 ﻿using Hexa.NET.ImGui;
 using Hexa.NET.ImGui.Backends.OpenGL3;
 using Hexa.NET.ImGui.Backends.Win32;
-using HexaGen.Runtime;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
@@ -20,7 +19,7 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
     /// Each <see cref="ImGuiGLControl"/> owns its ImGui context and makes it current around its own frames
     /// and messages, so several can live in one process.
     /// </remarks>
-    public class ImGuiGLControl : GLControl, IGLContext
+    public class ImGuiGLControl : GLControl
     {
         static readonly object RenderEvent = new();
 #if DEBUG
@@ -339,20 +338,5 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             }
             base.OnHandleDestroyed(e);
         }
-
-        bool IGLContext.IsCurrent => Context.IsCurrent;
-
-        nint INativeContext.GetProcAddress(string procName)
-            => ((IGraphicsContextInternal)Context).GetAddress(procName);
-
-        bool INativeContext.TryGetProcAddress(string procName, out nint procAddress)
-        {
-            procAddress = ((IGraphicsContextInternal)Context).GetAddress(procName);
-            return procAddress != 0;
-        }
-
-        bool INativeContext.IsExtensionSupported(string extensionName) => true;
-
-        void IGLContext.SwapInterval(int interval) => Context.SwapInterval = interval;
     }
 }
