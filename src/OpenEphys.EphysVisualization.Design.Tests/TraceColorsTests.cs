@@ -16,15 +16,15 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         public void Dispose() => imgui.Dispose();
 
         [Fact]
-        public void AChannelTakesItsGroupsColor_WhateverThePalette_AndOneInNoGroupIsGrey()
+        public void AChannelTakesItsGroupsColor_WhateverThePalette_AndOneInTheDefaultGroupIsGrey()
         {
-            colors.GroupOf = channel => channel == 5 ? 3 : -1;
+            colors.GroupOf = channel => channel == 5 ? 1 : 0;
 
-            Assert.Equal(ImGuiPalette.Categorical[3], ImGui.ColorConvertFloat4ToU32(colors.Of(0, 5)));
+            Assert.Equal(ImGuiPalette.Categorical[0], ImGui.ColorConvertFloat4ToU32(colors.Of(0, 5)));
             Assert.Equal(ImGuiPalette.Grey0xCC, ImGui.ColorConvertFloat4ToU32(colors.Of(1, 6)));
 
             settings.Palette = ColorPalette.Custom;
-            Assert.Equal(ImGuiPalette.Categorical[3], ImGui.ColorConvertFloat4ToU32(colors.Of(0, 5)));
+            Assert.Equal(ImGuiPalette.Categorical[0], ImGui.ColorConvertFloat4ToU32(colors.Of(0, 5)));
         }
 
         [Fact]

@@ -72,8 +72,9 @@ namespace OpenEphys.EphysVisualization.Design
 
         /// <summary>
         /// Gets or sets the function giving the group a channel takes its color from, or null, the default, for
-        /// each row to take the next color of the palette. Channels sharing a group share a color, and a channel in a
-        /// negative group, which is none, is drawn in a neutral grey.
+        /// each row to take the next color of the palette. Groups are numbered as <see cref="ChannelSettings.Group"/>
+        /// is. Channels sharing a group share a color, and a channel in the default group, 0, is drawn in a neutral
+        /// grey.
         /// </summary>
         /// <remarks>
         /// Groups take their colors from a categorical palette whatever palette the rows are drawn in. Called for
@@ -90,7 +91,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// Returns the color a group's channels are drawn in, so that what the owner draws for the group, such as a
         /// probe's contacts, matches its traces.
         /// </summary>
-        /// <param name="group">The group, as <see cref="ChannelGroup"/> gives it, negative for none.</param>
+        /// <param name="group">The group, as <see cref="ChannelGroup"/> gives it.</param>
         /// <returns>The color in packed <c>0xAABBGGRR</c> format.</returns>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
         protected uint GroupColor(int group) => ImGui.ColorConvertFloat4ToU32(Panel.Colors.Group(group));

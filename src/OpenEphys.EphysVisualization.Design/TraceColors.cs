@@ -39,8 +39,8 @@ namespace OpenEphys.EphysVisualization.Design
         public TraceColors(WaveformScopeBuilder settings) => this.settings = settings;
 
         /// <summary>
-        /// The group a channel takes its color from, which channels sharing a color share, or null for each row
-        /// to take the next color of the palette.
+        /// The group a channel takes its color from, numbered as <see cref="ChannelSettings.Group"/> is, which
+        /// channels sharing a color share, or null for each row to take the next color of the palette.
         /// </summary>
         /// <remarks>
         /// Groups take their colors from <see cref="ImGuiPalette.Categorical"/> whatever the palette. Read for every
@@ -78,7 +78,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public Vector4 Of(int row, int channel) => GroupOf is { } group ? Group(group(channel)) : Row(row);
 
-        static readonly uint Ungrouped = ImGuiPalette.Grey0xCC;
+        static readonly uint DefaultGroup = ImGuiPalette.Grey0xCC;
 
         /// <summary>
         /// The colors of the first <paramref name="count"/> rows, each its channel's, packed as RGBA, for drawing in
@@ -101,11 +101,11 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// The color for channel group <paramref name="group"/>, or a neutral grey for a negative group, which is none.
-        /// Groups past the last of <see cref="ImGuiPalette.Categorical"/> reuse its colors in order.
+        /// The color for channel group <paramref name="group"/>: a neutral grey for the default group, 0, and the
+        /// colors of <see cref="ImGuiPalette.Categorical"/> in order from group 1, reused in order past its last.
         /// </summary>
         public Vector4 Group(int group) => ImGui.ColorConvertU32ToFloat4(
-            group < 0 ? Ungrouped : ImGuiPalette.Categorical[group % ImGuiPalette.Categorical.Count]);
+            group <= 0 ? DefaultGroup : ImGuiPalette.Categorical[(group - 1) % ImGuiPalette.Categorical.Count]);
 
         /// <summary>
         /// The color for row <paramref name="row"/> under the selected <see cref="Palette"/>.

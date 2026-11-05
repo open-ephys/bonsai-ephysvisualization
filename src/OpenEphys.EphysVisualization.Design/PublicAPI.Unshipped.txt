@@ -247,6 +247,7 @@ OpenEphys.EphysVisualization.Design.ChannelSettings.Hidden.get -> bool
 OpenEphys.EphysVisualization.Design.ChannelSettings.Hidden.set -> void
 OpenEphys.EphysVisualization.Design.ChannelSettings.Index.get -> int
 OpenEphys.EphysVisualization.Design.ChannelSettings.Index.set -> void
+static OpenEphys.EphysVisualization.Design.ChannelSettings.WithGroup(OpenEphys.EphysVisualization.Design.ChannelSettings![]? channels, System.Collections.Generic.IEnumerable<int>! moved, int group, bool replace = false) -> OpenEphys.EphysVisualization.Design.ChannelSettings![]?
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.get -> System.Func<int, int>?
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ChannelGroup.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.GroupColor(int group) -> uint

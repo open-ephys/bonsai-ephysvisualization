@@ -25,7 +25,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             base.Load(provider);
             var viewer = Viewer;
-            grouping = channel => channel / Math.Max(1, viewer.ColorGrouping);
+            grouping = channel => channel / Math.Max(1, viewer.ColorGrouping) + 1;
 
             var standard = StandardColumns;
             columns = new[]
