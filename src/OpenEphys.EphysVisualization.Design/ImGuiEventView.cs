@@ -2,11 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Numerics;
 using System.Threading;
 using Hexa.NET.ImGui;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 
 namespace OpenEphys.EphysVisualization.Design
@@ -456,7 +454,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// The GL objects the densities live in and are drawn with, made the first time they are needed in the
         /// window's context.
         /// </summary>
-        sealed class Gpu
+        sealed class Gpu : GLResources
         {
             // NB: a whole number of segments, so a chunk never splits a line.
             internal const int ChunkFloats = 65536 * 3;
@@ -478,38 +476,14 @@ namespace OpenEphys.EphysVisualization.Design
             int vertexArray;
             int vertexBuffer;
             int quadArray;
-            bool tried;
 
             public Gpu(ImGuiEventView view) => this.view = view;
-
-            public string? Error { get; private set; }
 
             public int TilesPerRow { get; private set; } = 1;
 
             public int TileWidth { get; private set; }
 
-            public bool Ready()
-            {
-                if (!tried)
-                {
-                    // NB: GL's entry points are loaded with a context, and a call made without one faults the
-                    // process past any catch, so nothing is tried until one is current.
-                    if (GraphicsContext.CurrentContext is null)
-                    {
-                        Error = "no OpenGL context is current";
-                        return false;
-                    }
-
-                    tried = true;
-                    Error = null;
-                    try { Build(); }
-                    catch (Exception ex) { Error = ex.Message; }
-                }
-
-                return Error is null;
-            }
-
-            void Build()
+            protected override void Build()
             {
                 var common = Source("EventView.Common.glsl");
                 accumulate = Link(Source("EventView.Accumulate.vert"), Source("EventView.Accumulate.frag"), common);
@@ -702,42 +676,6 @@ namespace OpenEphys.EphysVisualization.Design
                 GL.UseProgram(0);
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
                 GL.Viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-            }
-
-            static string Source(string name)
-            {
-                using var stream = typeof(ImGuiEventView).Assembly.GetManifestResourceStream($"OpenEphys.EphysVisualization.Design.Shaders.{name}")
-                    ?? throw new InvalidOperationException($"The shader {name} is missing.");
-                using var reader = new StreamReader(stream);
-                return reader.ReadToEnd();
-            }
-
-            static int Link(string vertex, string fragment, string common)
-            {
-                const string Version = "#version 330 core\n";
-                var vertexShader = Compile(ShaderType.VertexShader, Version + common + vertex);
-                var fragmentShader = Compile(ShaderType.FragmentShader, Version + common + fragment);
-                var program = GL.CreateProgram();
-                GL.AttachShader(program, vertexShader);
-                GL.AttachShader(program, fragmentShader);
-                GL.LinkProgram(program);
-                GL.DeleteShader(vertexShader);
-                GL.DeleteShader(fragmentShader);
-                GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int linked);
-                if (linked == 0)
-                    throw new InvalidOperationException(GL.GetProgramInfoLog(program));
-                return program;
-            }
-
-            static int Compile(ShaderType type, string source)
-            {
-                var shader = GL.CreateShader(type);
-                GL.ShaderSource(shader, source);
-                GL.CompileShader(shader);
-                GL.GetShader(shader, ShaderParameter.CompileStatus, out int compiled);
-                if (compiled == 0)
-                    throw new InvalidOperationException(GL.GetShaderInfoLog(shader));
-                return shader;
             }
         }
     }

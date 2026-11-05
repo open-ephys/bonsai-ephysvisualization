@@ -1,10 +1,8 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using Hexa.NET.ImGui;
 using OpenCV.Net;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 
 namespace OpenEphys.EphysVisualization.Design
@@ -207,7 +205,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// The GL objects the GPU draws the texture with, made the first time they are needed in the plot's context.
         /// </summary>
-        sealed class GpuPainter
+        sealed class GpuPainter : GLResources
         {
             int framebuffer;
             int vertexArray;
@@ -221,38 +219,11 @@ namespace OpenEphys.EphysVisualization.Design
             int colormap;
             int envelopeRows;
             int envelopeColumns;
-            bool tried;
             float[] cellData = Array.Empty<float>();
             uint[] colorData = Array.Empty<uint>();
             float[] slotData = Array.Empty<float>();
 
-            /// <summary>
-            /// Why the traces cannot be drawn, or null.
-            /// </summary>
-            public string? Error { get; private set; }
-
-            public bool Ready()
-            {
-                if (!tried)
-                {
-                    // NB: GL's entry points are loaded with a context, and a call made without one faults the
-                    // process past any catch, so nothing is tried until one is current.
-                    if (GraphicsContext.CurrentContext is null)
-                    {
-                        Error = "no OpenGL context is current";
-                        return false;
-                    }
-
-                    tried = true;
-                    Error = null;
-                    try { Build(); }
-                    catch (Exception ex) { Error = ex.Message; }
-                }
-
-                return Error is null;
-            }
-
-            void Build()
+            protected override void Build()
             {
                 var common = Source("TraceRaster.Common.glsl");
                 traces = Link(Source("TraceRaster.Traces.vert"), Source("TraceRaster.Traces.frag"), common);
@@ -270,42 +241,6 @@ namespace OpenEphys.EphysVisualization.Design
                 GL.BindTexture(TextureTarget.Texture2D, colormap);
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, map.Length, 1, 0,
                     PixelFormat.Rgba, PixelType.UnsignedByte, map);
-            }
-
-            static string Source(string name)
-            {
-                using var stream = typeof(TraceRaster).Assembly.GetManifestResourceStream($"OpenEphys.EphysVisualization.Design.Shaders.{name}")
-                    ?? throw new InvalidOperationException($"The shader {name} is missing.");
-                using var reader = new StreamReader(stream);
-                return reader.ReadToEnd();
-            }
-
-            static int Link(string vertex, string fragment, string common)
-            {
-                const string Version = "#version 330 core\n";
-                var vertexShader = Compile(ShaderType.VertexShader, Version + common + vertex);
-                var fragmentShader = Compile(ShaderType.FragmentShader, Version + common + fragment);
-                var program = GL.CreateProgram();
-                GL.AttachShader(program, vertexShader);
-                GL.AttachShader(program, fragmentShader);
-                GL.LinkProgram(program);
-                GL.DeleteShader(vertexShader);
-                GL.DeleteShader(fragmentShader);
-                GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int linked);
-                if (linked == 0)
-                    throw new InvalidOperationException(GL.GetProgramInfoLog(program));
-                return program;
-            }
-
-            static int Compile(ShaderType type, string source)
-            {
-                var shader = GL.CreateShader(type);
-                GL.ShaderSource(shader, source);
-                GL.CompileShader(shader);
-                GL.GetShader(shader, ShaderParameter.CompileStatus, out int compiled);
-                if (compiled == 0)
-                    throw new InvalidOperationException(GL.GetShaderInfoLog(shader));
-                return shader;
             }
 
             // NB: read with texelFetch, which ignores filtering, but a texture whose filter asks for mipmaps it does
