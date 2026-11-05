@@ -28,6 +28,8 @@ namespace OpenEphys.EphysVisualization.Design
         int reference;
         int active;
         int grabbed = -1;
+        int tooltipLabel = -1;
+        double tooltipSince;
         Vector2 tableSize;
 
         /// <summary>
@@ -377,7 +379,16 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (hovered >= 0 && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
                 reference = active = hovered;
-            if (hovered >= 0)
+
+            // NB: the labels aren't items, so the hover delay ImGuiWidgets.Tooltip waits out is timed here, and
+            // starts over after a click as it does there.
+            if (hovered != tooltipLabel || ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+            {
+                tooltipLabel = hovered;
+                tooltipSince = ImGui.GetTime();
+            }
+            if (hovered >= 0 && !ImGui.IsMouseDown(ImGuiMouseButton.Left) &&
+                ImGui.GetTime() - tooltipSince >= ImGui.GetStyle().HoverDelayNormal)
                 ImGui.SetTooltip("Click to measure the other cursors from this one, and to make it the one the Left and Right keys move. " +
                     "Drag its line on the plot to move it.");
 
