@@ -25,20 +25,6 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
         [Theory]
         [InlineData(100, 0)]
-        [InlineData(106, 0)]
-        [InlineData(107, 1)]
-        [InlineData(379, 39)]
-        [InlineData(380, 40)]
-        [InlineData(99, -1)]
-        [InlineData(93, -1)]
-        [InlineData(92, -2)]
-        public void ColumnOf_FloorsTowardTheLeft_OnAndOffThePlot(long position, int column)
-        {
-            Assert.Equal(column, new DisplayWindow(100, 7, 40).ColumnOf(position));
-        }
-
-        [Theory]
-        [InlineData(100, 0)]
         [InlineData(240, 0.5)]
         [InlineData(380, 1)]
         public void FractionOf_IsZeroAtTheLeftEdgeAndOneAtTheRight(double position, double fraction)

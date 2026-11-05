@@ -278,7 +278,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// A contact's index, position and extent in the probe's units, as this component draws it.
         /// </summary>
-        readonly record struct ProbeContact(int Index, Vector2 Position, Vector2 Size);
+        readonly record struct ProbeContact(Vector2 Position, Vector2 Size);
 
         ProbeGroup? probeGroup;
         IReadOnlyList<ProbeContact> contacts = Array.Empty<ProbeContact>();
@@ -332,7 +332,6 @@ namespace OpenEphys.EphysVisualization.Design
         static readonly uint  ColGridMajor        = ImGuiPalette.Grey0x55;
         static readonly uint  ColGridMinor        = ImGuiPalette.Grey0x30;
         const float RulerMajorTickLen   = 6f;
-        const float RulerMinorTickLen   = 3f;
         static readonly uint  ColDragSelect       = ImGuiPalette.Yellow;
         static readonly uint  ColDragDeselect     = ImGuiPalette.Red;
         static readonly uint  ColBottomInfoText   = ImGuiPalette.White;
@@ -363,7 +362,7 @@ namespace OpenEphys.EphysVisualization.Design
                     ContactShape.Rect => new Vector2((float)sp.Width!.Value, (float)sp.Height!.Value),
                     _ => new Vector2((float)sp.Width!.Value, (float)sp.Width!.Value)
                 };
-                result[i] = new ProbeContact(i, new Vector2((float)c.PosX, (float)c.PosY), size);
+                result[i] = new ProbeContact(new Vector2((float)c.PosX, (float)c.PosY), size);
             }
             return result;
         }
@@ -489,7 +488,7 @@ namespace OpenEphys.EphysVisualization.Design
                     continue;
 
                 inspected[i] = true;
-                if (!(SelectionSkipsBlocked && Blocked(this.contacts[i].Index)))
+                if (!(SelectionSkipsBlocked && Blocked(i)))
                     selected[i] = true;
             }
 
@@ -538,7 +537,7 @@ namespace OpenEphys.EphysVisualization.Design
                 float sx = contactLeft + (c.Position.X - mmXMin) * scale - ew / 2f;
                 float sy = viewTop     + (mmYMax - c.Position.Y) * scale - eh / 2f;
                 dl.AddRectFilled(new Vector2(sx, sy), new Vector2(sx + ew, sy + eh),
-                    FilledAsBlocked(c.Index) ? ColContactBlocked : FillColor(c.Index));
+                    FilledAsBlocked(i) ? ColContactBlocked : FillColor(i));
             }
 
             float yHalf    = zoomWindow / 2f;
@@ -651,8 +650,7 @@ namespace OpenEphys.EphysVisualization.Design
                 foreach (var probe in probeGroup.Probes)
                 {
                     DrawContourFill(dl, probe, viewLeft, viewBot, xLow, yLow, scaleXY);
-                    DrawContour(dl, probe, viewLeft, viewBot, xLow, -1f /* unused */, scaleXY,
-                        ContourWidthZoomed, yOffset: yLow, yUp: true);
+                    DrawContour(dl, probe, viewLeft, viewBot, xLow, yLow, scaleXY, ContourWidthZoomed);
                 }
 
             for (int i = 0; i < contacts.Count; i++)
@@ -670,12 +668,12 @@ namespace OpenEphys.EphysVisualization.Design
                 var rMin = new Vector2(sx, sy);
                 var rMax = new Vector2(sx + rendEW, sy + rendEH);
 
-                bool blocked = FilledAsBlocked(c.Index);
-                dl.AddRectFilled(rMin, rMax, blocked ? ColContactBlocked : FillColor(c.Index));
+                bool blocked = FilledAsBlocked(i);
+                dl.AddRectFilled(rMin, rMax, blocked ? ColContactBlocked : FillColor(i));
                 if (blocked)
                     DrawDottedRect(dl, rMin, rMax, ColBlockedOutline);
 
-                var outline = OutlineColor(c.Index);
+                var outline = OutlineColor(i);
                 if (outline != 0)
                     dl.AddRect(new Vector2(sx - 1, sy - 1), new Vector2(sx + rendEW + 1, sy + rendEH + 1),
                         outline, 0f, ContactSelBorderWidth);
@@ -1099,7 +1097,7 @@ namespace OpenEphys.EphysVisualization.Design
                 if (cx < c.Position.X - hw || cx > c.Position.X + hw ||
                     cy < c.Position.Y - hh || cy > c.Position.Y + hh) continue;
 
-                bool blocked = Blocked(contacts[i].Index);
+                bool blocked = Blocked(i);
                 if (!(SelectionSkipsBlocked && blocked))
                 {
                     selected[i] = !deselect;
@@ -1114,7 +1112,7 @@ namespace OpenEphys.EphysVisualization.Design
         {
             for (int i = 0; i < contacts.Count; i++)
             {
-                if (skipBlocked && Blocked(contacts[i].Index)) continue;
+                if (skipBlocked && Blocked(i)) continue;
                 var c = contacts[i];
                 if (c.Position.X + c.Size.X / 2f >= minX && c.Position.X - c.Size.X / 2f <= maxX &&
                     c.Position.Y + c.Size.Y / 2f >= minY && c.Position.Y - c.Size.Y / 2f <= maxY)
@@ -1126,12 +1124,9 @@ namespace OpenEphys.EphysVisualization.Design
 
         #region Private: rendering helpers
 
-        // Minimap path: origin=(contactLeft, viewTop), y-axis grows down, probe-y via (mmYMax - probeY).
-        // Zoomed path:  origin=(viewLeft, viewBot),    y-axis grows up,   probe-y via (probeY - yOffset).
         static void DrawContour(ImDrawListPtr dl, Probe probe,
             float originX, float originY, float xRef, float yRef,
-            float scale, float width,
-            float yOffset = 0f, bool yUp = false)
+            float scale, float width)
         {
             if (probe?.ProbePlanarContour == null || probe.ProbePlanarContour.Length < 2) return;
             var pts = probe.ProbePlanarContour;
@@ -1139,58 +1134,31 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 var c0 = pts[j];
                 var c1 = pts[(j + 1) % pts.Length];
-                Vector2 p0, p1;
-                if (yUp)
-                {
-                    p0 = new Vector2(originX + ((float)c0[0] - xRef) * scale, originY - ((float)c0[1] - yOffset) * scale);
-                    p1 = new Vector2(originX + ((float)c1[0] - xRef) * scale, originY - ((float)c1[1] - yOffset) * scale);
-                }
-                else
-                {
-                    p0 = new Vector2(originX + ((float)c0[0] - xRef) * scale, originY + (yRef - (float)c0[1]) * scale);
-                    p1 = new Vector2(originX + ((float)c1[0] - xRef) * scale, originY + (yRef - (float)c1[1]) * scale);
-                }
+                var p0 = new Vector2(originX + ((float)c0[0] - xRef) * scale, originY + (yRef - (float)c0[1]) * scale);
+                var p1 = new Vector2(originX + ((float)c1[0] - xRef) * scale, originY + (yRef - (float)c1[1]) * scale);
                 dl.AddLine(p0, p1, ColContour, width);
             }
         }
 
         static void DrawDepthRuler(ImDrawListPtr dl, float rightX, float viewTop, float viewBot,
-            float yMin, float yMax, string units, float gridLeft = -1f, float gridRight = -1f,
-            bool rightSide = false, float yLabelBase = 0f)
+            float yMin, float yMax, string units)
         {
             float pxH = viewBot - viewTop;
             float range = yMax - yMin;
             if (pxH <= 0 || range <= 0) return;
 
             float pxPerUnit = pxH / range;
-            bool hasGrid = gridLeft >= 0f && gridRight > gridLeft;
 
             dl.AddLine(new Vector2(rightX, viewTop), new Vector2(rightX, viewBot), ColRulerAxis);
 
-            var (major, minor) = TickIntervals(pxPerUnit, hasGrid);
-
-            if (minor > 0f)
-            {
-                foreach (var y in TickPositions(yMin, yMax, minor))
-                {
-                    float sy = viewBot - (y - yMin) * pxPerUnit;
-                    if (rightSide) dl.AddLine(new Vector2(rightX, sy), new Vector2(rightX + RulerMinorTickLen, sy), ColRulerAxis);
-                    else           dl.AddLine(new Vector2(rightX - RulerMinorTickLen, sy), new Vector2(rightX, sy), ColRulerAxis);
-                    if (hasGrid) DrawDottedHLine(dl, gridLeft, gridRight, sy, ColGridMinor);
-                }
-            }
-
+            var (major, _) = TickIntervals(pxPerUnit, withMinor: false);
             foreach (var y in TickPositions(yMin, yMax, major))
             {
                 float sy = viewBot - (y - yMin) * pxPerUnit;
-                if (rightSide) dl.AddLine(new Vector2(rightX, sy), new Vector2(rightX + RulerMajorTickLen, sy), ColRulerMajorTick);
-                else           dl.AddLine(new Vector2(rightX - RulerMajorTickLen, sy), new Vector2(rightX, sy), ColRulerMajorTick);
-                if (hasGrid)
-                    dl.AddLine(new Vector2(gridLeft, sy), new Vector2(gridRight, sy), ColGridMajor);
-                string lbl = FormatInterval(y - yLabelBase, major, units);
+                dl.AddLine(new Vector2(rightX - RulerMajorTickLen, sy), new Vector2(rightX, sy), ColRulerMajorTick);
+                string lbl = FormatInterval(y, major, units);
                 var tsz = ImGui.CalcTextSize(lbl);
-                float lblX = rightSide ? rightX + 8f : rightX - 8f - tsz.X;
-                dl.AddText(new Vector2(lblX, sy - tsz.Y / 2f), ColRulerLabel, lbl);
+                dl.AddText(new Vector2(rightX - 8f - tsz.X, sy - tsz.Y / 2f), ColRulerLabel, lbl);
             }
         }
 
@@ -1292,8 +1260,8 @@ namespace OpenEphys.EphysVisualization.Design
                     if (sy < lineTop - 1f || sy > lineBot + 1f) continue;
                     string lbl = FormatInterval(y, major, units);
                     var tsz = ImGui.CalcTextSize(lbl);
-                    DrawGridLabel(dl, lbl, tsz, lblLeft  + GridLabelInsetPx,         sy - tsz.Y / 2f);
-                    DrawGridLabel(dl, lbl, tsz, lblRight - tsz.X - GridLabelInsetPx, sy - tsz.Y / 2f);
+                    DrawGridLabel(dl, lbl, lblLeft  + GridLabelInsetPx,         sy - tsz.Y / 2f);
+                    DrawGridLabel(dl, lbl, lblRight - tsz.X - GridLabelInsetPx, sy - tsz.Y / 2f);
                 }
             }
 
@@ -1306,8 +1274,8 @@ namespace OpenEphys.EphysVisualization.Design
                     if (sx < lineLeft - 1f || sx > lineRight + 1f) continue;
                     string lbl = FormatInterval(x, major, units);
                     var tsz = ImGui.CalcTextSize(lbl);
-                    DrawGridLabel(dl, lbl, tsz, sx - tsz.X / 2f, lineTop - tsz.Y - GridLabelGapPx);
-                    DrawGridLabel(dl, lbl, tsz, sx - tsz.X / 2f, lineBot + GridLabelGapPx);
+                    DrawGridLabel(dl, lbl, sx - tsz.X / 2f, lineTop - tsz.Y - GridLabelGapPx);
+                    DrawGridLabel(dl, lbl, sx - tsz.X / 2f, lineBot + GridLabelGapPx);
                 }
             }
         }
@@ -1361,7 +1329,7 @@ namespace OpenEphys.EphysVisualization.Design
             }
         }
 
-        static void DrawGridLabel(ImDrawListPtr dl, string lbl, Vector2 tsz, float x, float y)
+        static void DrawGridLabel(ImDrawListPtr dl, string lbl, float x, float y)
         {
             dl.AddText(new Vector2(x, y), ColRulerLabel, lbl);
         }

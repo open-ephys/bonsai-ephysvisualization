@@ -56,11 +56,6 @@ namespace OpenEphys.EphysVisualization.Design
         public long PositionOf(int column) => Start + (long)column * Step;
 
         /// <summary>
-        /// Column holding <paramref name="position"/>, outside <see cref="Columns"/> if it is off the plot.
-        /// </summary>
-        public int ColumnOf(long position) => (int)Math.Floor((position - Start) / (double)Step);
-
-        /// <summary>
         /// How far across the plot <paramref name="position"/> falls, zero at the left edge and one at the
         /// right.
         /// </summary>

@@ -90,12 +90,6 @@ namespace OpenEphys.EphysVisualization.Design
         bool selectOnShow;
 
         /// <summary>
-        /// Moves the cursors to the middle of the view, keeping their spacing, or spreads them evenly across it
-        /// if they span more than it does.
-        /// </summary>
-        public void HomeCursors() => cursors.Home(Axis);
-
-        /// <summary>
         /// Whether channels are drawn as rows of color, a compressed view of every channel at once, rather than
         /// as traces. Rows are laid out alike in both views, so a channel stays in place when the view changes.
         /// </summary>
@@ -229,11 +223,8 @@ namespace OpenEphys.EphysVisualization.Design
             if (rows.Length == 0 || SingleChannel || visibleHeight <= 0)
                 return;
 
-            var starts = LanesFor(rowCount);
-            float Slot(int row) =>
-                SlotsFor(rowCount) is null && starts is not null ? row - starts[LaneOf(row)] : SlotOf(row);
-            var first = (int)Math.Floor(rows.Min(Slot));
-            var end = (int)Math.Ceiling(rows.Max(Slot) + 1);
+            var first = (int)Math.Floor(rows.Min(SlotOf));
+            var end = (int)Math.Ceiling(rows.Max(SlotOf) + 1);
             expandedRow = -1;
             if (expandedLane >= 0)
                 expandedLane = rows.Select(LaneOf).Distinct().Count() == 1 ? LaneOf(rows[0]) : -1;

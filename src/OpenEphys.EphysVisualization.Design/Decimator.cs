@@ -17,7 +17,6 @@ namespace OpenEphys.EphysVisualization.Design
     {
         int carry;
         int writeIndex;
-        int inputIndex;
         readonly Mat carryMin;
         readonly Mat carryMax;
 
@@ -71,6 +70,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <param name="input">Channel-by-sample matrix of 32-bit floats to reduce.</param>
         public void Process(Mat input)
         {
+            var inputIndex = 0;
             while (inputIndex < input.Cols)
             {
                 var inputSamples = Math.Min(input.Cols - inputIndex, carry);
@@ -104,11 +104,7 @@ namespace OpenEphys.EphysVisualization.Design
                         Sweep.CopyTo(LastSweep);
                     }
                 }
-
-                writeIndex = writeIndex % Sweep.Cols;
             }
-
-            inputIndex -= input.Cols;
         }
 
         /// <summary>
@@ -118,7 +114,6 @@ namespace OpenEphys.EphysVisualization.Design
         public void Reset()
         {
             writeIndex = 0;
-            inputIndex = 0;
             carry = DownsampleFactor;
             Sweep.Clear();
         }

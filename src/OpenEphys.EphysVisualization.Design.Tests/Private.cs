@@ -55,5 +55,8 @@ namespace OpenEphys.EphysVisualization.Design.Tests
 
         public static IReadOnlyList<long> CursorPositions(this ImGuiWaveformPanel panel) =>
             Private.Get<List<long>>(Private.Get<WaveformCursors>(panel, "cursors"), "positions");
+
+        public static void HomeCursors(this ImGuiWaveformPanel panel) =>
+            Private.Get<WaveformCursors>(panel, "cursors").Home(panel.Axis());
     }
 }
