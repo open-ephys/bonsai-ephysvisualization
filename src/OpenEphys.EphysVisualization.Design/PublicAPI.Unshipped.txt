@@ -81,6 +81,7 @@ override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.OnPaint(Sys
 override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.ProcessCmdKey(ref System.Windows.Forms.Message msg, System.Windows.Forms.Keys keyData) -> bool
 override OpenEphys.EphysVisualization.Design.WinForms.ImGuiGLControl.WndProc(ref System.Windows.Forms.Message m) -> void
 static OpenEphys.EphysVisualization.Design.ImGuiColormapRangeSlider.Draw(string! id, System.Collections.Generic.IReadOnlyList<uint>! colormap, float domainMin, float domainMax, ref float rangeMin, ref float rangeMax, float width = -1, float height = -1, string! valueFormat = "F1", string? minHandleTooltip = null, string? maxHandleTooltip = null) -> bool
+static OpenEphys.EphysVisualization.Design.ImGuiColormapRangeSlider.DrawFloor(string! id, System.Collections.Generic.IReadOnlyList<uint>! colormap, float domainMin, float domainMax, ref float rangeMin, float width = -1, float height = -1, string! valueFormat = "F1", string? tooltip = null) -> bool
 static OpenEphys.EphysVisualization.Design.ImGuiWidgets.ConfirmModal(string! id, string! message, string! acceptLabel = "Continue", string! declineLabel = "Cancel") -> OpenEphys.EphysVisualization.Design.ModalChoice
 static OpenEphys.EphysVisualization.Design.ImGuiWidgets.InfoRow(string! label, string! value) -> void
 static OpenEphys.EphysVisualization.Design.ImGuiWidgets.StackedLabel(string! text) -> void

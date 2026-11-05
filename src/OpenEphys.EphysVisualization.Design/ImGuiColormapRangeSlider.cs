@@ -47,7 +47,51 @@ namespace OpenEphys.EphysVisualization.Design
             float height = -1f,
             string valueFormat = "F1",
             string? minHandleTooltip = null,
-            string? maxHandleTooltip = null)
+            string? maxHandleTooltip = null) =>
+            DrawBar(id, colormap, domainMin, domainMax, ref rangeMin, ref rangeMax, width, height, valueFormat,
+                minHandleTooltip, maxHandleTooltip, true);
+
+        /// <summary>
+        /// Draws the control with only its lower handle, the colormap's top held at the bar's right edge. Must be
+        /// called once per frame.
+        /// </summary>
+        /// <param name="id">Unique ID for this control's interactive elements.</param>
+        /// <param name="colormap">The colormap as a packed-ABGR lookup table, from its low end to its high end.</param>
+        /// <param name="domainMin">Fixed lower bound of the axis (left edge of the bar).</param>
+        /// <param name="domainMax">Fixed upper bound of the axis (right edge of the bar), where the colormap
+        /// ends.</param>
+        /// <param name="rangeMin">Current handle value; clamped into [domainMin, domainMax].</param>
+        /// <param name="width">Bar width in pixels, or -1 to use the available content region width.</param>
+        /// <param name="height">Bar height in pixels, or -1 to use the default ImGui frame height.</param>
+        /// <param name="valueFormat">.NET numeric format string used for all labels.</param>
+        /// <param name="tooltip">Tooltip shown while hovering the handle, or null.</param>
+        /// <returns>True if <paramref name="rangeMin"/> changed this frame.</returns>
+        public static bool DrawFloor(
+            string id,
+            IReadOnlyList<uint> colormap,
+            float domainMin, float domainMax,
+            ref float rangeMin,
+            float width = -1f,
+            float height = -1f,
+            string valueFormat = "F1",
+            string? tooltip = null)
+        {
+            var rangeMax = domainMax;
+            return DrawBar(id, colormap, domainMin, domainMax, ref rangeMin, ref rangeMax, width, height, valueFormat,
+                tooltip, null, false);
+        }
+
+        static bool DrawBar(
+            string id,
+            IReadOnlyList<uint> colormap,
+            float domainMin, float domainMax,
+            ref float rangeMin, ref float rangeMax,
+            float width,
+            float height,
+            string valueFormat,
+            string? minHandleTooltip,
+            string? maxHandleTooltip,
+            bool upperHandle)
         {
             float startMin = rangeMin;
             float startMax = rangeMax;
@@ -118,14 +162,19 @@ namespace OpenEphys.EphysVisualization.Design
             if (minHandleTooltip != null)
                 ImGuiWidgets.Tooltip(minHandleTooltip);
 
-            ImGui.SetCursorScreenPos(new Vector2(xMax - HandleHitWidth / 2f, cp.Y - HandleOverbitePx));
-            ImGui.InvisibleButton(id + "_maxHandle", new Vector2(HandleHitWidth, barH + 2f * HandleOverbitePx));
-            bool maxActive = ImGui.IsItemActive();
-            bool maxHovered = ImGui.IsItemHovered();
-            if (maxActive)
-                rangeMax = Clamp(XToValue(ImGui.GetMousePos().X), rangeMin, domainMax);
-            if (maxHandleTooltip != null)
-                ImGuiWidgets.Tooltip(maxHandleTooltip);
+            bool maxActive = false;
+            bool maxHovered = false;
+            if (upperHandle)
+            {
+                ImGui.SetCursorScreenPos(new Vector2(xMax - HandleHitWidth / 2f, cp.Y - HandleOverbitePx));
+                ImGui.InvisibleButton(id + "_maxHandle", new Vector2(HandleHitWidth, barH + 2f * HandleOverbitePx));
+                maxActive = ImGui.IsItemActive();
+                maxHovered = ImGui.IsItemHovered();
+                if (maxActive)
+                    rangeMax = Clamp(XToValue(ImGui.GetMousePos().X), rangeMin, domainMax);
+                if (maxHandleTooltip != null)
+                    ImGuiWidgets.Tooltip(maxHandleTooltip);
+            }
 
             xMin = ValueToX(rangeMin);
             xMax = ValueToX(rangeMax);
@@ -133,10 +182,13 @@ namespace OpenEphys.EphysVisualization.Design
                 new Vector2(xMin - HandleVisualWidth / 2f, cp.Y - HandleOverbitePx),
                 new Vector2(xMin + HandleVisualWidth / 2f, cp.Y + barH + HandleOverbitePx),
                 minActive || minHovered ? ColorHandleActive : ColorHandle);
-            dl.AddRectFilled(
-                new Vector2(xMax - HandleVisualWidth / 2f, cp.Y - HandleOverbitePx),
-                new Vector2(xMax + HandleVisualWidth / 2f, cp.Y + barH + HandleOverbitePx),
-                maxActive || maxHovered ? ColorHandleActive : ColorHandle);
+            if (upperHandle)
+            {
+                dl.AddRectFilled(
+                    new Vector2(xMax - HandleVisualWidth / 2f, cp.Y - HandleOverbitePx),
+                    new Vector2(xMax + HandleVisualWidth / 2f, cp.Y + barH + HandleOverbitePx),
+                    maxActive || maxHovered ? ColorHandleActive : ColorHandle);
+            }
 
             string minStr = rangeMin.ToString(valueFormat);
             string maxStr = rangeMax.ToString(valueFormat);
@@ -155,7 +207,7 @@ namespace OpenEphys.EphysVisualization.Design
             float maxLabelX1 = xMax + maxLabelW / 2f;
 
             bool showMinLabel = !Overlaps(minLabelX0, minLabelX1, domainMinX0, domainMinX1);
-            bool showMaxLabel = !Overlaps(maxLabelX0, maxLabelX1, domainMaxX0, domainMaxX1);
+            bool showMaxLabel = upperHandle && !Overlaps(maxLabelX0, maxLabelX1, domainMaxX0, domainMaxX1);
             if (showMinLabel && showMaxLabel && Overlaps(minLabelX0, minLabelX1, maxLabelX0, maxLabelX1))
                 showMaxLabel = false;
 
