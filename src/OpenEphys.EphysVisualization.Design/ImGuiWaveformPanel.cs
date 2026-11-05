@@ -200,7 +200,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// The value at the middle of a channel's row and the amplitude the row spans, as the plot draws them.
         /// </summary>
-        public (double Center, double Range) Amplitude => AmplitudeView;
+        public (double Center, double Span) Amplitude => AmplitudeView;
 
         /// <summary>
         /// The channel drawn alone and where its row lay on screen, as of the last frame drawn, or null while none was.

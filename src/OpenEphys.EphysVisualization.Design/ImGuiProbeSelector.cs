@@ -73,8 +73,8 @@ namespace OpenEphys.EphysVisualization.Design
     {
         readonly float? initialZoomWindow;
         readonly float initialZoomWindowFraction;
-        readonly float? initialScrollX;
-        readonly float? initialScrollY;
+        readonly float? initialCenterX;
+        readonly float? initialCenterY;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImGuiProbeSelector"/> class.
@@ -90,19 +90,19 @@ namespace OpenEphys.EphysVisualization.Design
         /// The zoomed view's major extent as a fraction of the probe's larger extent, used where
         /// <paramref name="zoomWindow"/> is null. One shows the whole probe.
         /// </param>
-        /// <param name="scrollX">
+        /// <param name="centerX">
         /// The horizontal position of the zoomed view's center on the probe, or null for the probe's center.
         /// </param>
-        /// <param name="scrollY">
+        /// <param name="centerY">
         /// The vertical position of the zoomed view's center on the probe, or null for the probe's center.
         /// </param>
-        public ImGuiProbeSelector(float? zoomWindow = null, float zoomWindowFraction = 0.1f, float? scrollX = null,
-            float? scrollY = null)
+        public ImGuiProbeSelector(float? zoomWindow = null, float zoomWindowFraction = 0.1f, float? centerX = null,
+            float? centerY = null)
         {
             initialZoomWindow = zoomWindow;
             initialZoomWindowFraction = zoomWindowFraction;
-            initialScrollX = scrollX;
-            initialScrollY = scrollY;
+            initialCenterX = centerX;
+            initialCenterY = centerY;
             Contacts = new ContactStates(this);
         }
 
@@ -120,8 +120,8 @@ namespace OpenEphys.EphysVisualization.Design
         public Func<int, uint> OutlineColor { get; set; } = _ => 0;
 
         /// <summary>
-        /// Gets or sets the color of the outline drawn around selected contacts, <see cref="SelectionBorderColor"/>
-        /// unless set.
+        /// Gets or sets the color of the outline drawn around selected contacts,
+        /// <see cref="DefaultSelectedOutlineColor"/> unless set.
         /// </summary>
         public uint SelectedOutlineColor { get; set; } = ColContactSelBorder;
 
@@ -232,13 +232,13 @@ namespace OpenEphys.EphysVisualization.Design
         /// Gets the color of the outline drawn around selected contacts unless <see cref="SelectedOutlineColor"/> is
         /// set, for a <see cref="Legend"/> entry.
         /// </summary>
-        public static uint SelectionBorderColor => ColContactSelBorder;
+        public static uint DefaultSelectedOutlineColor => ColContactSelBorder;
 
         /// <summary>
         /// Gets the color of the outline drawn around contacts inspected but not selected, for a
         /// <see cref="Legend"/> entry.
         /// </summary>
-        public static uint InspectionBorderColor => ColContactInspectBorder;
+        public static uint InspectedOutlineColor => ColContactInspectBorder;
 
         /// <summary>
         /// Gets the color blocked contacts are filled with, unless <see cref="FillColorOverridesBlocked"/> is set,
@@ -419,9 +419,9 @@ namespace OpenEphys.EphysVisualization.Design
             var probeExtent = Math.Max(probeXMax - probeXMin, probeYMax - probeYMin);
             zoomWindow = initialZoomWindow
                 ?? (probeExtent > 0 ? initialZoomWindowFraction * probeExtent : 1f);
-            scrollY = initialScrollY ?? (probeYMin + probeYMax) / 2f;
+            scrollY = initialCenterY ?? (probeYMin + probeYMax) / 2f;
             ClampScroll();
-            scrollX = initialScrollX ?? (probeXMin + probeXMax) / 2f;
+            scrollX = initialCenterX ?? (probeXMin + probeXMax) / 2f;
             var (mxMin, mxMax, _, _) = GetMmBounds();
             effectiveXWindow = mxMax - mxMin;
         }

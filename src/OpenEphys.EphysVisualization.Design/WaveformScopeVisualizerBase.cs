@@ -111,13 +111,13 @@ namespace OpenEphys.EphysVisualization.Design
         /// share the plot's axis.
         /// </summary>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
-        protected (double Center, double Range) Amplitude => Panel.Amplitude;
+        protected (double Center, double Span) Amplitude => Panel.Amplitude;
 
         /// <summary>
         /// Gets the channel drawn alone in the plot and where its row lay on screen, as of the last frame drawn, or
         /// null while no channel is expanded, so that what the owner draws of the channel can line up with it.
         /// </summary>
-        protected (int Channel, float Top, float Height)? ExpandedRow => panel?.Expanded;
+        protected (int Channel, float Top, float Height)? Expanded => panel?.Expanded;
 
         /// <summary>
         /// Gets or sets the channel each row of the posted data shows, from the top, and where each row lies, or null

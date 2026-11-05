@@ -286,16 +286,16 @@ namespace OpenEphys.EphysVisualization.Design
         /// <param name="size">The size of the view, in pixels.</param>
         /// <param name="color">The color the waveforms are drawn in, packed as <c>0xAABBGGRR</c>.</param>
         /// <param name="center">The value at the middle of the view, in the waveforms' units.</param>
-        /// <param name="range">The amplitude the view's height spans, in the waveforms' units.</param>
+        /// <param name="span">The amplitude the view's height spans, in the waveforms' units.</param>
         /// <param name="threshold">The threshold the events were detected at, in the waveforms' units, or null for none.</param>
         /// <returns>The threshold dropped this frame, or null while none was.</returns>
-        public unsafe double? Draw(int channel, Vector2 size, uint color, double center, double range, double? threshold = null)
+        public unsafe double? Draw(int channel, Vector2 size, uint color, double center, double span, double? threshold = null)
         {
             Flush();
             var min = ImGui.GetCursorScreenPos();
             var w = (int)size.X;
             var h = (int)size.Y;
-            if (w <= 0 || h <= 0 || range <= 0)
+            if (w <= 0 || h <= 0 || span <= 0)
                 return null;
 
             ImGui.InvisibleButton("##eventView", new Vector2(w, h));
@@ -314,18 +314,18 @@ namespace OpenEphys.EphysVisualization.Design
 
             if ((uint)channel < (uint)channels)
             {
-                var texture = gpu.Display(id, channel, w, h, (float)center, (float)range, eventCounts[channel], color);
+                var texture = gpu.Display(id, channel, w, h, (float)center, (float)span, eventCounts[channel], color);
                 if (texture != 0)
                     draw.AddImage(new ImTextureRef(null, (ulong)texture), min, max);
             }
 
             float? HeightOf(double value)
             {
-                var fraction = 0.5 - (value - center) / range;
+                var fraction = 0.5 - (value - center) / span;
                 return fraction > 0 && fraction < 1 ? MathF.Floor(min.Y + (float)fraction * h) + 0.5f : null;
             }
 
-            double ValueAt(float y) => center + range * (0.5 - (Math.Max(min.Y, Math.Min(max.Y, y)) - min.Y) / h);
+            double ValueAt(float y) => center + span * (0.5 - (Math.Max(min.Y, Math.Min(max.Y, y)) - min.Y) / h);
 
             double? dropped = null;
             var shownThreshold = threshold;
