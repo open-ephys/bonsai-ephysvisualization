@@ -138,7 +138,6 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             {
                 form.ResizeBegin += FormResizeBegin;
                 form.ResizeEnd += FormResizeEnd;
-                form.FormClosing += FormClosing;
             }
 
             imGuiCtx = ImGui.CreateContext(null);
@@ -176,8 +175,6 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
         void FormResizeBegin(object? sender, EventArgs e) => resizing = true;
 
         void FormResizeEnd(object? sender, EventArgs e) => resizing = false;
-
-        void FormClosing(object? sender, FormClosingEventArgs e) => MakeContextsCurrent();
 
         void MakeContextsCurrent()
         {
@@ -323,7 +320,6 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             {
                 form.ResizeBegin -= FormResizeBegin;
                 form.ResizeEnd -= FormResizeEnd;
-                form.FormClosing -= FormClosing;
                 form = null;
             }
 
@@ -331,6 +327,10 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
             {
                 initialized = false;
                 UpdatePacer();
+
+                // NB: the backends shut down whichever context their shared global names, which another control's
+                // paint may have repointed since this one last drew.
+                MakeContextsCurrent();
                 ImGuiImplOpenGL3.Shutdown();
                 ImGuiImplWin32.Shutdown();
                 ImGui.SetCurrentContext(null);
