@@ -155,19 +155,11 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// Gets or sets the channel hovered in the plot as of the last frame drawn, or -1 for none: the one under the
-        /// pointer, or else the one set. A channel set is drawn as one under the pointer is, and not scrolled to.
+        /// Gets the channel hovered in the plot as of the last frame drawn, or -1 for none: the one under the
+        /// pointer, or else the one hovered elsewhere that <see cref="DrawPlot"/> was given.
         /// </summary>
-        /// <remarks>
-        /// Set it each frame, as from <see cref="DrawFrame"/>, to the channel hovered elsewhere, such as on a probe,
-        /// or to -1 when there is none.
-        /// </remarks>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
-        protected int HoveredChannel
-        {
-            get => Panel.HoveredChannel;
-            set => Panel.HoveredChannel = value;
-        }
+        protected int HoveredChannel => Panel.HoveredChannel;
 
         /// <summary>
         /// Brings a channel into view in the plot on the next frame drawn: centered, in its lane widened if that is
@@ -196,21 +188,6 @@ namespace OpenEphys.EphysVisualization.Design
         /// <param name="channels">The channels to fit.</param>
         /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
         protected void ZoomTo(IEnumerable<int> channels) => Panel.ZoomTo(channels);
-
-        /// <summary>
-        /// Gets or sets whether the pointer is over a pane beside the plot that answers keys of its own, such as a
-        /// probe, so the plot leaves its keys to it, all but Q, E and X, which act on the selected channel the pane
-        /// can select too. Elsewhere in the window, the control strip included, the plot answers its keys.
-        /// </summary>
-        /// <remarks>
-        /// Set it each frame, as from <see cref="DrawFrame"/>, before <see cref="DrawPlot"/>.
-        /// </remarks>
-        /// <exception cref="InvalidOperationException">The visualizer is not loaded.</exception>
-        protected bool KeysElsewhere
-        {
-            get => Panel.KeysElsewhere;
-            set => Panel.KeysElsewhere = value;
-        }
 
         /// <summary>
         /// Gets a value indicating whether a fault has been reported, after which the viewer shows it in place of
@@ -417,7 +394,16 @@ namespace OpenEphys.EphysVisualization.Design
         /// The size of the plot in pixels. A component of zero or less fills the space left in that direction, as
         /// ImGui sizes a child window.
         /// </param>
-        protected void DrawPlot(Vector2 size)
+        /// <param name="hoveredChannel">
+        /// The channel hovered elsewhere, such as on a probe, or -1 for none. It is drawn as one under the pointer
+        /// is, and not scrolled to.
+        /// </param>
+        /// <param name="keysElsewhere">
+        /// Whether the pointer is over a pane beside the plot that answers keys of its own, such as a probe, so the
+        /// plot leaves its keys to it, all but Space, Q, E and X, which pause and act on the selected channel the
+        /// pane can select too. Elsewhere in the window, the control strip included, the plot answers its keys.
+        /// </param>
+        protected void DrawPlot(Vector2 size, int hoveredChannel = -1, bool keysElsewhere = false)
         {
             var waveform = Panel;
             ImGui.BeginChild("##plot", size);
@@ -425,7 +411,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (message is null)
             {
                 waveform.RefreshRate = canvas?.RefreshRate ?? waveform.RefreshRate;
-                waveform.Draw();
+                waveform.Draw(hoveredChannel, keysElsewhere);
             }
             else
             {

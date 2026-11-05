@@ -23,7 +23,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         public RowChannelsTests()
         {
             panel = new ImGuiWaveformPanel(settings, 12 * SampleRate * Channels * sizeof(float), maxColumns: 2000);
-            draw = panel.Draw;
+            draw = () => panel.Draw();
             Feed();
         }
 
@@ -270,16 +270,15 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             Reorder(Reversed);
             imgui.MoveMouse(new Vector2(-100, -100), draw);
 
-            panel.HoveredChannel = 3;
-            imgui.Frames(1, draw);
+            Action hovering3 = () => panel.Draw(hoveredElsewhere: 3);
+            imgui.Frames(1, hovering3);
             Assert.Equal(3, panel.HoveredChannel);
 
             // NB: a double-click on a hovered row would expand it.
-            imgui.Click(ImGuiMouseButton.Left, draw);
-            imgui.Click(ImGuiMouseButton.Left, draw);
+            imgui.Click(ImGuiMouseButton.Left, hovering3);
+            imgui.Click(ImGuiMouseButton.Left, hovering3);
             Assert.Equal(-1, Private.Get<int>(panel, "expandedRow"));
 
-            panel.HoveredChannel = -1;
             imgui.Frames(1, draw);
             Assert.Equal(-1, panel.HoveredChannel);
         }

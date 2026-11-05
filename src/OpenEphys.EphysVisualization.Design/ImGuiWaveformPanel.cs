@@ -185,14 +185,10 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         /// <summary>
-        /// The channel hovered as of the last frame drawn, or -1: the one under the pointer, or else the one set, as
-        /// from a probe the pointer is over. A channel set is drawn as one under the pointer is, and not scrolled to.
+        /// The channel hovered as of the last frame drawn, or -1: the one under the pointer, or else the one hovered
+        /// elsewhere that <see cref="Draw"/> was given.
         /// </summary>
-        public int HoveredChannel
-        {
-            get => lastHoveredRow >= 0 ? ChannelOf(lastHoveredRow) : -1;
-            set => hoveredElsewhere = value;
-        }
+        public int HoveredChannel => lastHoveredRow >= 0 ? ChannelOf(lastHoveredRow) : -1;
         int hoveredElsewhere = -1;
 
         /// <summary>
@@ -742,8 +738,19 @@ namespace OpenEphys.EphysVisualization.Design
         /// <summary>
         /// Draws the waveform stack into the region the caller has opened. Called once per frame.
         /// </summary>
-        public void Draw()
+        /// <param name="hoveredElsewhere">
+        /// The channel hovered beside the panel, as on a probe the pointer is over, or -1. It is drawn as one under
+        /// the pointer is, and not scrolled to.
+        /// </param>
+        /// <param name="keysElsewhere">
+        /// Whether the pointer is over a pane beside the panel that answers keys of its own, which the panel then
+        /// leaves to it, all but Space, Q, E and X.
+        /// </param>
+        public void Draw(int hoveredElsewhere = -1, bool keysElsewhere = false)
         {
+            this.hoveredElsewhere = hoveredElsewhere;
+            this.keysElsewhere = keysElsewhere;
+
             // NB: ahead of the envelope, which resuming with Space disposes. Answering it with the other
             // gestures would free the matrices the plot is about to read.
             AnswerFrameKeys();

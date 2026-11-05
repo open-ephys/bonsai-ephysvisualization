@@ -23,7 +23,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         public PanelGestureTests()
         {
             panel = new ImGuiWaveformPanel(settings, 12 * SampleRate * Channels * sizeof(float), maxColumns: 2000);
-            draw = panel.Draw;
+            draw = () => panel.Draw();
             TestSignal.Feed(TestSignal.Random(Channels, 5 * SampleRate), new[] { 100 }, block => panel.Update(block, SampleRate));
             imgui.Frames(3, draw);
         }
@@ -131,11 +131,9 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         {
             settings.FitChannels = false;
 
-            panel.KeysElsewhere = true;
-            imgui.Key(ImGuiKey.F, draw);
+            imgui.Key(ImGuiKey.F, DrawOverPane);
             Assert.False(panel.FitChannels);
 
-            panel.KeysElsewhere = false;
             imgui.Key(ImGuiKey.F, draw);
             Assert.True(panel.FitChannels);
         }
@@ -144,15 +142,16 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         public void TheSelectionKeys_AreAnsweredOverAPane_WhichSelectsToo()
         {
             panel.SelectedChannel = 5;
-            panel.KeysElsewhere = true;
 
-            imgui.Key(ImGuiKey.X, draw);
+            imgui.Key(ImGuiKey.X, DrawOverPane);
             Assert.Equal(5, panel.Expanded?.Channel);
 
-            imgui.Key(ImGuiKey.E, draw);
-            imgui.Frame(draw);
+            imgui.Key(ImGuiKey.E, DrawOverPane);
+            imgui.Frame(DrawOverPane);
             Assert.Equal(6, panel.Expanded?.Channel);
         }
+
+        void DrawOverPane() => panel.Draw(keysElsewhere: true);
 
         [Fact]
         public void EveryHotkey_ReachesTheScopeUnderThePointer()
@@ -168,9 +167,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         [Fact]
         public void Space_IsAnsweredOverAPane()
         {
-            panel.KeysElsewhere = true;
-
-            imgui.Key(ImGuiKey.Space, draw);
+            imgui.Key(ImGuiKey.Space, DrawOverPane);
             Assert.True(panel.Paused);
         }
 

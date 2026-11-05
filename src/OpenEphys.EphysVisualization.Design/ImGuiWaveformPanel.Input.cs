@@ -184,11 +184,7 @@ namespace OpenEphys.EphysVisualization.Design
         /// </summary>
         public IEnumerable<ImGuiKey> Hotkeys => frameKeys.Select(k => k.Key).Concat(tableKeys.Select(k => k.Key));
 
-        /// <summary>
-        /// Whether the pointer is over a pane beside the panel that answers keys of its own, which the panel then
-        /// leaves to it, all but Space, Q, E and X. Set by the host each frame, before the panel is drawn.
-        /// </summary>
-        public bool KeysElsewhere { get; set; }
+        bool keysElsewhere;
 
         static readonly ImGuiKey[] AnywhereKeys = { ImGuiKey.Space, ImGuiKey.Q, ImGuiKey.E, ImGuiKey.X };
 
@@ -211,7 +207,7 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         bool Pressed(ImGuiKey key, bool repeat) =>
-            (!KeysElsewhere || Array.IndexOf(AnywhereKeys, key) >= 0) && !ImGui.GetIO().WantTextInput &&
+            (!keysElsewhere || Array.IndexOf(AnywhereKeys, key) >= 0) && !ImGui.GetIO().WantTextInput &&
             ImGui.IsKeyPressed(key, repeat);
 
         /// <summary>

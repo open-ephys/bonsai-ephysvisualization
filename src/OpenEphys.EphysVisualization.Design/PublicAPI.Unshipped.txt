@@ -188,7 +188,7 @@ OpenEphys.EphysVisualization.Design.ControlStripColumn.Draw.get -> System.Action
 OpenEphys.EphysVisualization.Design.ControlStripColumn.Label.get -> string!
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ControlStripHeight.get -> float
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawPlot(System.Numerics.Vector2 size) -> void
+OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.DrawPlot(System.Numerics.Vector2 size, int hoveredChannel = -1, bool keysElsewhere = false) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Fail(string! message) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Faulted.get -> bool
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Maximized.get -> bool
@@ -199,11 +199,8 @@ OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.PostData(OpenCV.
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Order.get -> OpenEphys.EphysVisualization.Design.RowOrder?
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Order.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HoveredChannel.get -> int
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.HoveredChannel.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.Reveal(int channel) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ToggleExpanded() -> void
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.KeysElsewhere.get -> bool
-OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.KeysElsewhere.set -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.ZoomTo(System.Collections.Generic.IEnumerable<int>! channels) -> void
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.SelectedChannel.get -> int
 OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase.SelectedChannel.set -> void

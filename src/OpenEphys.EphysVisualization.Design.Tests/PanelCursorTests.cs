@@ -19,7 +19,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
         public PanelCursorTests()
         {
             panel = new ImGuiWaveformPanel(settings, 12 * SampleRate * Channels * sizeof(float), maxColumns: 2000);
-            draw = panel.Draw;
+            draw = () => panel.Draw();
             TestSignal.Feed(TestSignal.Random(Channels, 5 * SampleRate), new[] { 100 }, block => panel.Update(block, SampleRate));
             imgui.Frames(3, draw);
             imgui.Key(ImGuiKey.C, draw);

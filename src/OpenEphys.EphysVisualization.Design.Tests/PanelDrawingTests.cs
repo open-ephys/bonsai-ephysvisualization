@@ -26,7 +26,7 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             // NB: padding off whole pixels, which puts the plot's edges off them, as display scaling does.
             ImGui.GetStyle().FramePadding = new Vector2(4.3f, 3.3f);
             panel = new ImGuiWaveformPanel(settings, 12 * SampleRate * Channels * sizeof(float), maxColumns: 2000);
-            draw = panel.Draw;
+            draw = () => panel.Draw();
             TestSignal.Feed(TestSignal.Random(Channels, 5 * SampleRate), new[] { 100 }, block => panel.Update(block, SampleRate));
             imgui.Frames(3, draw);
         }

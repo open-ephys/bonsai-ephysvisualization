@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>GPU-drawn waveform viewers for multichannel electrophysiology in Bonsai.</Description>
+    <Description>GPU-drawn GUI elements for multichannel electrophysiology in Bonsai.</Description>
     <PackageTags>Bonsai Rx OpenEphys EphysVisualization Design</PackageTags>
     <TargetFrameworks>net472</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
