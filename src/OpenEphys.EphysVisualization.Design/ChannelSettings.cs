@@ -9,7 +9,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// <summary>
     /// Represents the settings of one channel, kept only for a channel whose settings differ from the defaults.
     /// </summary>
-    public class ChannelSettings
+    public sealed class ChannelSettings
     {
         /// <summary>
         /// Gets or sets the index of the channel.

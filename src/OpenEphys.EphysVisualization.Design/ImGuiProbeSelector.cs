@@ -69,7 +69,7 @@ namespace OpenEphys.EphysVisualization.Design
     /// and answer the wheel while it is over them: scroll, Shift to pan across, Ctrl to zoom. Size the minimap's
     /// child with <see cref="MinimapWidth"/>.
     /// </remarks>
-    public class ImGuiProbeSelector
+    public sealed class ImGuiProbeSelector
     {
         readonly float? initialZoomWindow;
         readonly float initialZoomWindowFraction;
