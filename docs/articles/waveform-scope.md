@@ -1,10 +1,10 @@
 # Waveform Scope
 
-The [WaveformScope](xref:OpenEphys.EphysVisualization.Design.WaveformScope) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample, of any element type and one value per element. Data in .NET arrays can be converted to matrices first (see [Array input](#array-input)). The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer.
+The [WaveformScope](xref:OpenEphys.EphysVisualization.Design.WaveformScope) node shows a sequence of matrices as a live multichannel waveform display. Each matrix is one block of samples, with one row per channel and one column per sample. The node passes its input through unchanged, so it can sit anywhere in a workflow, and its display opens like any other visualizer. Its settings are standard operator properties and are saved in the .bonsai workflow file.
 
 ## Getting started
 
-This workflow plays back a NeuropixelsV2 recording, saved by the Open Ephys GUI as 384 channels of signed 16-bit samples at 30 kHz, with MatrixReader, and loops it with Repeat. To use it, set the reader's Path to a recording of your own, and its ChannelCount, SampleRate and Depth to match it.
+The following workflow plays back a NeuropixelsV2 recording, saved by the Open Ephys GUI as 384 channels of signed 16-bit samples at 30 kHz, with MatrixReader, and loops it with Repeat. To use it, set the reader's Path to a recording of your own, and its ChannelCount, SampleRate and Depth to match it.
 
 :::workflow
 ![A Neuropixels recording played from a file into WaveformScope](~/workflows/npx2-playback.bonsai)
@@ -13,15 +13,13 @@ This workflow plays back a NeuropixelsV2 recording, saved by the Open Ephys GUI 
 The WaveformScope's settings describe the samples it is given:
 
 - SampleRate is left at its default of 30000, the recording's rate.
-- Scale is 0.195, the microvolts each count stands for in this recording, so the amplitudes shown are in microvolts, though they are shown without a unit, since the viewer cannot know that.
+- Scale is 0.195, the microvolts each count stands for in this recording, so the amplitudes shown are in microvolts.
 - Offset is left at 0, since the samples are signed and centered on zero.
 - SaturationLow and SaturationHigh are left empty, so a channel is marked as clipping when a sample reaches −32768 or 32767, the limits of 16-bit samples.
 
-For a signal that needs no hardware or recording, see [Single channel](#single-channel).
+The viewer opens by double-clicking the WaveformScope node while the workflow is running. It can be closed and reopened during a run. When closed, it consumes virtually no resources. To open it when the workflow starts, including when Bonsai runs without the editor (`--no-editor`), place Bonsai's VisualizerWindow operator after the node; its properties set the window's position and size.
 
-The viewer opens like any visualizer, from the node, and can be closed and reopened during a run. To open it when the workflow starts, including when Bonsai runs without the editor (`--no-editor`), place Bonsai's VisualizerWindow operator after the node; its properties set the window's position and size.
-
-Every control has a tooltip saying what it does and naming its keys and gestures. Labels name only the control and, in parentheses, its unit.
+Every control has a tooltip, shown when the pointer rests on it for a moment, saying what it does and naming its keys and gestures.
 
 ## Array input
 
@@ -48,9 +46,12 @@ The matrix's depth follows the array's element type, unless ConvertFromArray's D
 
 ## Settings
 
-The display's settings are properties of the node, saved with the workflow. The viewer reads and writes them directly, so a change made in the viewer is saved with the workflow, including when it is saved during a run, and a change made in the property grid shows in the viewer at once.
+Settings are properties of the node. The viewer reads and writes them directly, so a change made in the property grid shows in the viewer at once, and a change made in the viewer is kept when the workflow is saved, including during a run.
 
-### Input
+> [!NOTE]
+> Changes made in the viewer are not saved automatically. Save the workflow to keep them.
+
+### Input properties
 
 | Property | Description |
 |---|---|
@@ -59,7 +60,7 @@ The display's settings are properties of the node, saved with the workflow. The 
 | [SaturationLow](xref:OpenEphys.EphysVisualization.Design.WaveformScope.SaturationLow), [SaturationHigh](xref:OpenEphys.EphysVisualization.Design.WaveformScope.SaturationHigh) | A channel is marked as clipping when a sample, before Offset and Scale are applied, reaches either of these values (see [Clipping](#clipping)). When they are left empty, the limits of the input's integer type are used, such as 0 and 65535 for unsigned 16-bit samples, and floating point input is not checked. An ADC that does not fill its type, such as a 10-bit ADC in 16-bit samples, never reaches those limits, so for it they need to be set. |
 | [HistorySize](xref:OpenEphys.EphysVisualization.Design.WaveformScope.HistorySize) | This is the memory, in megabytes, given to the record of recent signal that a paused view is redrawn from. How many seconds that holds depends on the channel count and sample rate, and is shown in the control panel. |
 
-### Display
+### Display properties
 
 Each of these is also a control in the viewer (see [Control panel](#control-panel)).
 
@@ -78,7 +79,7 @@ Each of these is also a control in the viewer (see [Control panel](#control-pane
 
 ## Keys and mouse
 
-The viewer is meant to be driven while watching the data, without reaching for the control panel. The left hand rests on W, A, S and D, with Shift, Ctrl and Alt beside them, and the right hand on the mouse, as in a game. Between them they move through channels and time, zoom, and set the gain in quick strokes, so that a burst on one channel can be found, magnified and measured in a few seconds.
+The viewer is meant to be driven while watching the data, without reaching for the control panel. The left hand rests near W, A, S and D, and the right hand on the mouse. Almost all actions are bound to a hotkey or mouse gesture. The view can be paused, panned, zoomed and measured in quick strokes, so that an event of interest can be inspected in a few seconds, even with hundreds of channels on screen.
 
 The keys and the mouse follow one scheme:
 
@@ -86,19 +87,17 @@ The keys and the mouse follow one scheme:
 - Shift makes a move larger, most of a screen rather than a channel or a division. On the mouse it turns the wheel sideways, as in other applications.
 - Ctrl zooms: with W and S, or the wheel, it sets the channel height; with A and D, or the wheel with Shift as well, it sets the timebase.
 - Alt sets the gain, the range, with W and S, the wheel, or a drag.
-- Up and right magnify.
+- With Ctrl or Alt, W, D, wheel up and dragging up magnify; S, A, wheel down and dragging down shrink.
 
 Every key and gesture acts on a setting that a control in the control panel shows, so its effect is always in view and can also be set by hand there.
-
-[](#fig-stacked-gestures) runs through them on a recording.
-
-^^^
-<video id="fig-stacked-gestures" controls preload="metadata" src="../images/waveform-scope/npx2_stacked-view-gestures.webm"></video>
-^^^ The keys and mouse are used on a NeuropixelsV2 recording. The wheel, then W and S, move through the channels, and Shift+W and Shift+S move most of a screen at a time. Ctrl+Wheel, then Ctrl+W and Ctrl+S, set the channel height, and Alt+Wheel, then Alt+W and Alt+S, set the gain. Space pauses the display, and Shift+Wheel, A and D, and Shift+A and Shift+D move back and forth through time. A middle-drag moves through the channels and time at once, and a Ctrl+drag zooms in on a pair of large spikes. The keys and buttons pressed are shown as they are used.
 
 ### Keys
 
 Each key has a single owner in the window, so a key does the same thing wherever the pointer is within it. Keys are ignored while typing in a text field. Keys reach the viewer under the pointer, whichever window has the keyboard.
+
+^^^
+![The keyboard, with the keys the viewer answers colored by what they act on](~/images/waveform-scope/keyboard.png){#fig-keyboard}
+^^^ The keys, grouped by what they act on. The table below gives each one in full, with when it applies.
 
 | Key | Action | When |
 |---|---|---|
@@ -106,7 +105,7 @@ Each key has a single owner in the window, so a key does the same thing wherever
 | W / S | Scroll the channels up or down by one channel | Always |
 | Shift+W / Shift+S | Scroll the channels by most of a screen | Always |
 | Ctrl+W / Ctrl+S | Make the channels taller or shorter, to the next multiple of 5 px | No channel expanded |
-| Alt+W / Alt+S | Narrow or widen the range, through its presets | Always |
+| Alt+W / Alt+S | Make the range smaller or larger, through its presets | Always |
 | A / D | Move back or forward in time by one division | Paused |
 | Shift+A / Shift+D | Move back or forward in time by most of a screen | Paused |
 | Ctrl+A / Ctrl+D | Lengthen or shorten the timebase, through its presets, about the middle of the plot | Always |
@@ -122,11 +121,14 @@ Each key has a single owner in the window, so a key does the same thing wherever
 | Q / E | Select the previous or next channel, skipping hidden channels. With a channel expanded, expand that one instead | Always |
 | Escape | Clear the selection, or cancel a zoom box being dragged, leaving the selection | Always |
 | X | Expand the selected channel, selecting the first shown channel in view if none is, or collapse the expanded one, returning to the view from before the expand, moved only as far as brings the channel into view | More than one channel |
-| L | Widen the lane under the pointer, or the selected channel's lane, shrinking the others, or give the lanes equal widths again if it is the one widened, as the lane's button does | The rows shown in lanes, which a viewer built on this one may do |
 
 ### Mouse
 
 Dragged zooms and gain round to three significant figures, and an axis answers only past a few pixels, so a drag along one barely moves the other.
+
+^^^
+![A mouse, with the gestures of each button and the wheel](~/images/waveform-scope/mouse.png){#fig-mouse}
+^^^ The mouse gestures, by button. The table below gives each one in full, with where and when it applies.
 
 | Gesture | Where | Action | When |
 |---|---|---|---|
@@ -134,9 +136,9 @@ Dragged zooms and gain round to three significant figures, and an axis answers o
 | Shift+Wheel, or a sideways swipe or tilt | Plot or channel labels | Move back or forward in time by a division per notch | Paused |
 | Ctrl+Wheel, or a pinch | Plot | Make the channels taller or shorter, to the next multiple of 5 px, keeping the channel under the pointer in place. On an expanded channel, magnify or shrink its amplitude, keeping the value under the pointer in place | Always |
 | Ctrl+Shift+Wheel | Plot | Shorten or lengthen the timebase through its presets, keeping the time under the pointer in place while paused | Always |
-| Alt+Wheel | Plot | Narrow or widen the range through its presets | Always |
+| Alt+Wheel | Plot | Make the range smaller or larger through its presets | Always |
 | Ctrl+Drag | Plot | Drag up or down to make the channels taller or shorter, keeping the channel pressed on in place, or on an expanded channel to magnify or shrink its amplitude, keeping the value pressed on in place. Drag right or left to shorten or lengthen the timebase, keeping the time pressed on in place. A diagonal drag does both | Paused |
-| Alt+Drag (vertical) | Plot | Narrow the range upward, widen it downward | Always |
+| Alt+Drag (vertical) | Plot | Make the range smaller upward, larger downward | Always |
 | Right-drag | Plot | Zoom to the box dragged: the timebase to its width, starting at its left edge, and the channels it touches to fill the plot, or on an expanded channel the amplitude to its height. A box no wider than a few pixels leaves the timebase as it is, and one no taller leaves the channels or amplitude, so a flat or narrow box zooms one axis alone. While live, only its height counts, since the sweep moves under its edges: it zooms the channels or amplitude and leaves the timebase. While it is dragged, the box is drawn as it will zoom, across the whole plot along an axis it leaves. Escape cancels it | Always |
 | Right double-click | Plot | Zoom all the way out: the longest timebase, every channel fitted to the plot once, leaving Fit as it is, and on an expanded channel its whole range | Always |
 | Middle-drag | Plot or channel labels | Grab the plot and move it with the pointer: through the channels, or an expanded channel's amplitudes, and through time while paused | Always |
@@ -147,6 +149,14 @@ Dragged zooms and gain round to three significant figures, and an axis answers o
 | Drag (horizontal) | A cursor line | Move the cursor, snapping to the pixel under the pointer | Cursors shown |
 | Click | A channel's trace, away from the cursor lines | Select the channel, which the cursors read | No channel expanded |
 | Hover | A channel | Show its readout, and, when no channel is expanded, highlight its label and outline its trace, or in the heatmap draw grey lines just above and below its row | Always |
+
+### Example: inspecting a recording
+
+[](#fig-stacked-gestures) uses the keys and mouse to inspect a NeuropixelsV2 recording live: it moves through the channels and sets their height and gain, then pauses to move back through time and zoom in on a pair of spikes. The keys and buttons pressed are shown on screen, so each step can be matched to the tables above.
+
+^^^
+<video id="fig-stacked-gestures" controls preload="metadata" src="../images/waveform-scope/npx2_stacked-view-gestures.webm"></video>
+^^^ The keys and mouse are used on a NeuropixelsV2 recording. The wheel, then W and S, move through the channels, and Shift+W and Shift+S move most of a screen at a time. Ctrl+Wheel, then Ctrl+W and Ctrl+S, set the channel height, and Alt+Wheel, then Alt+W and Alt+S, set the gain. Space pauses the display, and Shift+Wheel, A and D, and Shift+A and Shift+D move back and forth through time. A middle-drag moves through the channels and time at once, and a Ctrl+drag zooms in on a pair of large spikes. The keys and buttons pressed are shown as they are used.
 
 ## Control panel
 
@@ -204,7 +214,7 @@ Each channel has a row, labeled on its left. A channel can be hidden, selected f
 
 ### Clipping
 
-A channel clips when a sample reaches the node's saturation limits (see [Input](#input)). While any channel has clipped within the last second of data, CLIPPING flashes in the plot's top right corner, beside the maximize button, and that channel's label flashes red in step with it, written even where labels are thinned out ([](#fig-clipping)). Clicking CLIPPING brings the first clipping channel to the middle of the plot, or expands it where a channel is expanded ([](#fig-clipping-expanded)).
+A channel clips when a sample reaches the node's saturation limits (see [Input properties](#input-properties)). While any channel has clipped within the last second of data, CLIPPING flashes in the plot's top right corner, beside the maximize button, and that channel's label flashes red in step with it, written even where labels are thinned out ([](#fig-clipping)). Clicking CLIPPING brings the first clipping channel to the middle of the plot, or expands it where a channel is expanded ([](#fig-clipping-expanded)).
 
 Each channel's second starts again whenever it clips, and counts data, not wall time, so the marks also stay while no data arrives. When the display is paused, the marks stay as they were when it was paused and stop flashing, so the channels that were clipping stay marked, steadily, while the paused view is studied. Hidden channels raise no warning, so hiding a channel that is always clipping silences it, and the Clipping checkbox silences them all.
 
@@ -247,7 +257,7 @@ The heatmap draws each channel's row as a strip of color instead of a trace, whi
 
 ^^^
 <video id="fig-heatmap" controls preload="metadata" src="../images/waveform-scope/npx2_heatmap.webm"></video>
-^^^ A NeuropixelsV2 recording is shown at a 1 s timebase and a 500 µV range. H switches from the stacked traces to the heatmap, where the overall structure is hard to see at this range. F fits every channel to the plot, which makes the heatmap visible but fairly dark. An Alt+Drag narrows the heatmap's range to raise the contrast, so that spikes saturate nearly to white and slower signals show as waves that travel across the probe's depth. Space pauses the display, and A moves back through the record. A double-click near some active channels expands one, and Q and E step through the channels around it. X collapses the channel, and T sets the 10 s timebase. The threshold is raised to remove the subthreshold activity and leave the spikes. Another channel near the active ones is expanded, Q and E again step through its neighbors, and X collapses it. Space resumes the live display. H returns to the stacked traces, still fitted, so every channel is shown, and the traces are drawn at their own 500 µV range rather than the heatmap's narrowed one. F turns Fit off, which leaves readable stacked traces at the 10 s timebase. The keys and buttons pressed are shown as they are used.
+^^^ A NeuropixelsV2 recording is shown at a 1 s timebase and a 500 µV range. H switches from the stacked traces to the heatmap, where the overall structure is hard to see at this range. F fits every channel to the plot, which makes the heatmap visible but fairly dark. An Alt+Drag makes the heatmap's range smaller to raise the contrast, so that spikes saturate nearly to white and slower signals show as waves that travel across the probe's depth. Space pauses the display, and A moves back through the record. A double-click near some active channels expands one, and Q and E step through the channels around it. X collapses the channel, and T sets the 10 s timebase. The threshold is raised to remove the subthreshold activity and leave the spikes. Another channel near the active ones is expanded, Q and E again step through its neighbors, and X collapses it. Space resumes the live display. H returns to the stacked traces, still fitted, so every channel is shown, and the traces are drawn at their own 500 µV range rather than the heatmap's smaller one. F turns Fit off, which leaves readable stacked traces at the 10 s timebase. The keys and buttons pressed are shown as they are used.
 
 | Element | Description |
 |---|---|
@@ -326,3 +336,7 @@ The workflow below makes one: it generates a sine wave with FunctionGenerator, a
 ^^^
 ![A single expanded channel](~/images/waveform-scope/sine-gen_expanded.png){#fig-single-channel}
 ^^^ The generated sine wave's one channel is shown expanded, with Chan. Height, Fit and Heatmap disabled.
+
+## Extending the viewer
+
+A package can extend this viewer by deriving from [WaveformScopeVisualizerBase](xref:OpenEphys.EphysVisualization.Design.WaveformScopeVisualizerBase), which provides the window, the plot and the control panel, while the package supplies the signal and anything drawn beside the plot. Its API documentation describes each member. The [bonsai-onix1](https://github.com/open-ephys/bonsai-onix1) repository extends it with scopes for Neuropixels probes. Each shows a probe beside the plot, orders and groups the channels by where they lie on the probe, bounds the range, and adds its own controls and an event view.
