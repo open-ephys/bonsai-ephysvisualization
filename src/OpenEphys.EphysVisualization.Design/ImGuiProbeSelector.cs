@@ -728,7 +728,7 @@ namespace OpenEphys.EphysVisualization.Design
 
             if (ShowGrid)
             {
-                DrawGridLabels(dl, cp.X, cp.X + avail.X, cp.Y, cp.Y + avail.Y,
+                DrawGridLabels(dl, cp.X, cp.X + avail.X,
                     gridLeft, gridRight, gridTop, gridBot, viewLeft, viewBot, xLow, yLow, scaleXY, units,
                     gridMajor);
             }
@@ -1253,7 +1253,7 @@ namespace OpenEphys.EphysVisualization.Design
         }
 
         static void DrawGridLabels(ImDrawListPtr dl,
-            float lblLeft, float lblRight, float lblTop, float lblBot,
+            float lblLeft, float lblRight,
             float lineLeft, float lineRight, float lineTop, float lineBot,
             float viewLeft, float viewBot, float xLow, float yLow, float scaleXY, string units,
             float major)
