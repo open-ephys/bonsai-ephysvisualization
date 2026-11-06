@@ -240,7 +240,9 @@ namespace OpenEphys.EphysVisualization.Design
         public override void Load(IServiceProvider provider)
         {
             var context = (ITypeVisualizerContext)provider.GetService(typeof(ITypeVisualizerContext));
-            scope = (WaveformScopeBuilder)ExpressionBuilder.GetWorkflowElement(context.Source);
+            // NB: a VisualizerWindow after the node opens this visualizer with itself as the source.
+            scope = (WaveformScopeBuilder)ExpressionBuilder.GetWorkflowElement(
+                ExpressionBuilder.GetVisualizerElement(context.Source));
             fault = null;
 
             // NB: no plot can be wider than the widest monitor unless its window spans two, so that is as much
