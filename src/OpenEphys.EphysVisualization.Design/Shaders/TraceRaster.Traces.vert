@@ -8,6 +8,10 @@ uniform int width;
 uniform int height;
 uniform int firstVisible;
 
+// The pixel columns drawn: the whole width, or only those the newly arrived columns reach.
+uniform int firstPixel;
+uniform int pixels;
+
 // Where values fall in a row: the top of the first row, in pixels down from the texture's top, the height of a
 // row, the value at a row's middle and the pixels per unit.
 uniform float origin;
@@ -22,8 +26,8 @@ flat out vec4 color;
 
 void main()
 {
-    int channel = firstVisible + gl_InstanceID / width;
-    int p = gl_InstanceID % width;
+    int channel = firstVisible + gl_InstanceID / pixels;
+    int p = firstPixel + gl_InstanceID % pixels;
     vec4 channelColor = texelFetch(colorTexture, ivec2(channel, 0), 0);
 
     float low;
