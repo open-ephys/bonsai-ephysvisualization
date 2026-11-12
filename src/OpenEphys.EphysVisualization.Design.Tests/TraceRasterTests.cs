@@ -42,6 +42,51 @@ namespace OpenEphys.EphysVisualization.Design.Tests
             }
         }
 
+        // NB: a pixel's trace spans from its own bin to the pixel before's, so a pixel changes when either bin does.
+        [Theory]
+        [InlineData(1000, 100, 0, 0)]
+        [InlineData(1000, 300, 37, 52)]
+        [InlineData(1000, 300, 990, 999)]
+        [InlineData(50, 200, 0, 0)]
+        [InlineData(50, 200, 20, 23)]
+        [InlineData(50, 200, 49, 49)]
+        public void Pixels_CoverEveryPixelTheColumnsChange(int columns, int width, int first, int last)
+        {
+            var axis = new PixelAxis(new DisplayWindow(0, 1, columns), 0, width);
+            var min = new float[columns];
+            var max = new float[columns];
+            for (int c = 0; c < columns; c++)
+                (min[c], max[c]) = (c, c + 1);
+
+            var before = new (float, float)[width];
+            fixed (float* minLine = min, maxLine = max)
+                for (int p = 0; p < width; p++)
+                    before[p] = TraceRaster.Bin(minLine, maxLine, axis, p);
+
+            for (int c = first; c <= last; c++)
+                (min[c], max[c]) = (-1000, 1000);
+
+            var (low, high) = TraceRaster.Pixels(axis, first, last);
+            fixed (float* minLine = min, maxLine = max)
+            {
+                for (int p = 0; p < width; p++)
+                {
+                    var changed = !TraceRaster.Bin(minLine, maxLine, axis, p).Equals(before[p]) ||
+                        p > 0 && !TraceRaster.Bin(minLine, maxLine, axis, p - 1).Equals(before[p - 1]);
+                    if (changed)
+                        Assert.InRange(p, low, high);
+                }
+            }
+        }
+
+        [Fact]
+        public void Pixels_AreEmptyForNoColumns()
+        {
+            var axis = new PixelAxis(new DisplayWindow(0, 1, 1000), 0, 300);
+            var (low, high) = TraceRaster.Pixels(axis, 5, 4);
+            Assert.True(high < low);
+        }
+
         [Fact]
         public void SpreadBin_InterpolatesBetweenColumnsAtThePixelsMiddle()
         {

@@ -112,7 +112,16 @@ namespace OpenEphys.EphysVisualization.Design
             {
                 gpu.Upload(frame.Envelope, run.First, run.Last, reallocate: all);
                 gpu.Upload(frame.Envelope, wrapped.First, wrapped.Last, reallocate: false);
-                gpu.Draw(frames, lanes.Select(lane => lane.Offset).ToArray(), colors, texture, w, h);
+                var offsets = lanes.Select(lane => lane.Offset).ToArray();
+                if (all)
+                    gpu.Draw(frames, offsets, colors, texture, w, h, (0, (int)frame.Width - 1), whole: true);
+                else
+                {
+                    // NB: only the pixels the new columns reach, so a live frame costs what arrived rather than the
+                    // plot's width.
+                    gpu.Draw(frames, offsets, colors, texture, w, h, Pixels(frame.Axis, run.First, run.Last), whole: false);
+                    gpu.Draw(frames, offsets, colors, texture, w, h, Pixels(frame.Axis, wrapped.First, wrapped.Last), whole: false);
+                }
             }
 
             if (all)
@@ -180,6 +189,30 @@ namespace OpenEphys.EphysVisualization.Design
 
             return (minLine[first] + fraction * (minLine[last] - minLine[first]),
                 maxLine[first] + fraction * (maxLine[last] - maxLine[first]));
+        }
+
+        /// <summary>
+        /// The pixel columns that show any of envelope columns <paramref name="first"/> to <paramref name="last"/>,
+        /// both included, and the pixel column after them, whose span reaches back to the last of them. Empty, with
+        /// <c>Last</c> below <c>First</c>, where none do.
+        /// </summary>
+        internal static (int First, int Last) Pixels(in PixelAxis axis, int first, int last)
+        {
+            int low = -1, high = -1;
+            for (int p = 0; p < axis.Width && last >= first; p++)
+            {
+                // NB: a combined cell ends before its last column, and an interpolated one reads both of its.
+                var (start, end, _) = Cell(axis, p);
+                var shown = axis.Combines ? end - 1 : end;
+                if (start <= last && shown >= first)
+                {
+                    if (low < 0)
+                        low = p;
+                    high = p;
+                }
+            }
+
+            return low < 0 ? (0, -1) : (low, Math.Min(axis.Width - 1, high + 1));
         }
 
         /// <summary>
@@ -296,14 +329,20 @@ namespace OpenEphys.EphysVisualization.Design
 
             /// <summary>
             /// Draws the traces or the heatmap into <paramref name="target"/> from the envelope as uploaded, each lane
-            /// at its offset.
+            /// at its offset, over <paramref name="pixels"/> of each lane, or clearing the whole texture first where
+            /// <paramref name="whole"/> asks.
             /// </summary>
-            public void Draw(PlotFrame[] frames, int[] offsets, uint[] colors, int target, int textureWidth, int height)
+            public void Draw(PlotFrame[] frames, int[] offsets, uint[] colors, int target, int textureWidth, int height,
+                (int First, int Last) pixels, bool whole)
             {
+                if (pixels.Last < pixels.First)
+                    return;
+
                 var frame = frames[0];
                 var layout = frame.Layout;
                 var heatmapView = frame.Heatmap && frame.Expanded < 0;
                 var width = (int)frame.Width;
+                var count = pixels.Last - pixels.First + 1;
 
                 if (cellData.Length != width * 3)
                     cellData = new float[width * 3];
@@ -359,7 +398,9 @@ namespace OpenEphys.EphysVisualization.Design
                 GL.Disable(EnableCap.DepthTest);
                 GL.Disable(EnableCap.CullFace);
                 GL.ClearColor(0, 0, 0, 0);
-                GL.Clear(ClearBufferMask.ColorBufferBit);
+                if (whole)
+                    GL.Clear(ClearBufferMask.ColorBufferBit);
+                GL.Enable(EnableCap.ScissorTest);
 
                 var program = heatmapView ? heatmap : traces;
                 GL.UseProgram(program);
@@ -378,6 +419,9 @@ namespace OpenEphys.EphysVisualization.Design
                 {
                     var rows = frames[lane].Layout;
                     GL.Viewport(offsets[lane], 0, width, height);
+                    GL.Scissor(offsets[lane] + pixels.First, 0, count, height);
+                    if (!whole)
+                        GL.Clear(ClearBufferMask.ColorBufferBit);
                     GL.Uniform1(GL.GetUniformLocation(program, "firstVisible"), rows.FirstVisible);
 
                     var visible = rows.LastVisible - rows.FirstVisible;
@@ -396,13 +440,16 @@ namespace OpenEphys.EphysVisualization.Design
                         var (_, scale) = frame.ValueMapping(rows.FirstVisible);
                         GL.Uniform1(GL.GetUniformLocation(program, "width"), width);
                         GL.Uniform1(GL.GetUniformLocation(program, "height"), height);
+                        GL.Uniform1(GL.GetUniformLocation(program, "firstPixel"), pixels.First);
+                        GL.Uniform1(GL.GetUniformLocation(program, "pixels"), count);
                         GL.Uniform1(GL.GetUniformLocation(program, "center"), (float)frame.Center);
                         GL.Uniform1(GL.GetUniformLocation(program, "scale"), scale);
                         GL.Uniform1(GL.GetUniformLocation(program, "alpha"), frame.Expanded >= 0 ? 0x40 / 255f : 1f);
-                        GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, visible * width);
+                        GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, visible * count);
                     }
                 }
 
+                GL.Disable(EnableCap.ScissorTest);
                 GL.BindVertexArray(0);
                 GL.UseProgram(0);
                 GL.ActiveTexture(TextureUnit.Texture0);
