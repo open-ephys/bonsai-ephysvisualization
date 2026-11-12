@@ -330,24 +330,44 @@ namespace OpenEphys.EphysVisualization.Design.WinForms
 
                 // NB: the backends shut down whichever context their shared global names, which another control's
                 // paint may have repointed since this one last drew.
-                try
+                ImGui.SetCurrentContext(imGuiCtx);
+                ImGuiImplWin32.SetCurrentContext(imGuiCtx);
+                ImGuiImplOpenGL3.SetCurrentContext(imGuiCtx);
+
+                // NB: when this control's GL context can't be made current, another control's may be, and the OpenGL
+                // backend's shutdown would delete that control's objects. The ImGui context is left alive instead,
+                // since destroying it before its backends are shut down trips ImGui's asserts. This control's GL
+                // objects are freed with its GL context just after.
+                if (MakeCurrentWhileDestroying())
                 {
-                    MakeContextsCurrent();
+                    ImGuiImplOpenGL3.Shutdown();
+                    ImGuiImplWin32.Shutdown();
+                    ImGui.SetCurrentContext(null);
+                    ImGui.DestroyContext(imGuiCtx);
                 }
-                catch (GraphicsContextException)
-                {
-                    // NB: some drivers (Intel UHD 620) will not make a context current on a window being destroyed,
-                    // which leaves current whichever context was, possibly another control's. None is made current
-                    // instead, so the backend's deletes do nothing rather than delete that control's objects; this
-                    // control's are freed with its context.
-                    Context.MakeCurrent(null);
-                }
-                ImGuiImplOpenGL3.Shutdown();
-                ImGuiImplWin32.Shutdown();
-                ImGui.SetCurrentContext(null);
-                ImGui.DestroyContext(imGuiCtx);
+                else
+                    ImGui.SetCurrentContext(null);
             }
             base.OnHandleDestroyed(e);
+        }
+
+        // NB: Intel UHD 620's driver refuses wglMakeCurrent on a window being destroyed, both to make a context
+        // current and to release one, with ERROR_INVALID_HANDLE. This control's context is usually still current from
+        // its last paint, and then the backends need nothing more.
+        bool MakeCurrentWhileDestroying()
+        {
+            if (Context.IsCurrent)
+                return true;
+
+            try
+            {
+                base.MakeCurrent();
+                return true;
+            }
+            catch (GraphicsContextException)
+            {
+                return false;
+            }
         }
     }
 }
