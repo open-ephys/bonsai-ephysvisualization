@@ -598,23 +598,26 @@ namespace OpenEphys.EphysVisualization.Design
             float legendWidth = region.X - 2f * GridLabelInsetPx;
             float header = LegendHeader(legendWidth);
             var avail = new Vector2(region.X, Math.Max(0f, region.Y - header));
-            UpdateLayout(avail.Y, avail.X);
+
+            // NB: the probe is drawn clipped to the grid, inside the axis labels' margins, so the view is sized from
+            // the grid. Sized from the whole area, the minimap's zoom box would include what the margins cut off.
+            var view = new Vector2(Math.Max(0f, avail.X - 2f * marginH), Math.Max(0f, avail.Y - 2f * marginV));
+            UpdateLayout(view.Y, view.X);
             if (ImGui.IsWindowHovered())
                 HandleWheel();
 
             float xLow = scrollX - effectiveXWindow / 2f;
             float yLow = scrollY - zoomWindow       / 2f;
 
-            float zW   = avail.X;
             float scaleXY = effectiveXWindow > 0 && zoomWindow > 0
-                ? Math.Min(zW / effectiveXWindow, avail.Y / zoomWindow) : 1f;
+                ? Math.Min(view.X / effectiveXWindow, view.Y / zoomWindow) : 1f;
             float drawW = effectiveXWindow * scaleXY;
             float drawH = zoomWindow       * scaleXY;
 
             var dl = ImGui.GetWindowDrawList();
             var cp = regionTop + new Vector2(0f, header);
-            float viewLeft = cp.X + (zW - drawW) / 2f;
-            float viewTop  = cp.Y + (avail.Y - drawH) / 2f;
+            float viewLeft = cp.X + marginH + (view.X - drawW) / 2f;
+            float viewTop  = cp.Y + marginV + (view.Y - drawH) / 2f;
             float viewBot  = viewTop + drawH;
 
             float gridLeft  = cp.X + marginH;
@@ -704,7 +707,7 @@ namespace OpenEphys.EphysVisualization.Design
             if (selectionEnabled)
                 HandleDragSelect(dl, canvasMin, canvasMax, viewLeft, viewBot, xLow, yLow, scaleXY,
                     rulerTookClick || barTookClick);
-            HandleZoomBox(dl, canvasMin, canvasMax, inCanvas, avail, viewLeft, viewBot, xLow, yLow, scaleXY,
+            HandleZoomBox(dl, canvasMin, canvasMax, inCanvas, view, viewLeft, viewBot, xLow, yLow, scaleXY,
                 selectionEnabled);
 
             if (ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
@@ -929,13 +932,13 @@ namespace OpenEphys.EphysVisualization.Design
         /// Right click and drag a box to zoom to it, double-click to zoom all the way out, or click to clear the
         /// selection.
         /// </summary>
-        void HandleZoomBox(ImDrawListPtr dl, Vector2 canvasMin, Vector2 canvasMax, bool inCanvas, Vector2 region,
+        void HandleZoomBox(ImDrawListPtr dl, Vector2 canvasMin, Vector2 canvasMax, bool inCanvas, Vector2 view,
             float viewLeft, float viewBot, float xLow, float yLow, float scaleXY, bool selectionEnabled)
         {
             if (inCanvas && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right))
             {
                 zoomBox.Cancel();
-                ZoomAll(region);
+                ZoomAll(view);
             }
             else if (inCanvas && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
                 zoomBox.Begin();
@@ -962,23 +965,23 @@ namespace OpenEphys.EphysVisualization.Design
             var boxWidth = (end.Max.X - end.Min.X) / scaleXY;
             var boxHeight = (end.Max.Y - end.Min.Y) / scaleXY;
             zoomWindow = Math.Max(minZoomWindow,
-                Math.Min(mmYMax - mmYMin, Math.Max(boxHeight, boxWidth * region.Y / region.X)));
+                Math.Min(mmYMax - mmYMin, Math.Max(boxHeight, boxWidth * view.Y / view.X)));
             scrollX = xLow + ((end.Min.X + end.Max.X) / 2f - viewLeft) / scaleXY;
             scrollY = yLow + (viewBot - (end.Min.Y + end.Max.Y) / 2f) / scaleXY;
             ClampScroll();
-            UpdateLayout(region.Y, region.X);
+            UpdateLayout(view.Y, view.X);
         }
 
         // NB: the view's width follows from the zoom, so the layout is redone before the view is clamped across,
         // which would otherwise use the width from before.
-        void ZoomAll(Vector2 region)
+        void ZoomAll(Vector2 view)
         {
             var (_, _, mmYMin, mmYMax) = GetMmBounds();
             zoomWindow = mmYMax - mmYMin;
             scrollX = (probeXMin + probeXMax) / 2f;
             scrollY = (probeYMin + probeYMax) / 2f;
             ClampScroll();
-            UpdateLayout(region.Y, region.X);
+            UpdateLayout(view.Y, view.X);
         }
 
         #region Private: scroll clamping
