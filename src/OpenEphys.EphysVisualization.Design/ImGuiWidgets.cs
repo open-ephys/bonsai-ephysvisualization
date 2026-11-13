@@ -94,7 +94,17 @@ namespace OpenEphys.EphysVisualization.Design
             if (!ImGui.IsItemHovered(ImGuiHoveredFlags.DelayNormal | ImGuiHoveredFlags.AllowWhenDisabled))
                 return;
             bool disabled = ((ImGuiItemFlagsPrivate)ImGuiP.GetItemFlags() & ImGuiItemFlagsPrivate.Disabled) != 0;
-            ImGui.SetTooltip(disabled && disabledHint != null ? $"{text}\n{disabledHint}" : text);
+            WrappedTooltip(disabled && disabledHint != null ? $"{text}\n{disabledHint}" : text);
+        }
+
+        // NB: ImGui sizes a tooltip to its longest line, so a long sentence runs off the screen unless it wraps.
+        internal static void WrappedTooltip(string text)
+        {
+            if (!ImGui.BeginTooltip()) return;
+            ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35f);
+            ImGui.TextUnformatted(text);
+            ImGui.PopTextWrapPos();
+            ImGui.EndTooltip();
         }
 
         /// <summary>
