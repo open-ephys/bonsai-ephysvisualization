@@ -389,7 +389,7 @@ namespace OpenEphys.EphysVisualization.Design
             }
             if (hovered >= 0 && !ImGui.IsMouseDown(ImGuiMouseButton.Left) &&
                 ImGui.GetTime() - tooltipSince >= ImGui.GetStyle().HoverDelayNormal)
-                ImGui.SetTooltip("Click to measure the other cursors from this one, and to make it the one the Left and Right keys move. " +
+                ImGuiWidgets.WrappedTooltip("Click to measure the other cursors relative to this one. " +
                     "Drag its line on the plot to move it.");
 
             var margin = new Vector2(pad.X + ImGui.GetStyle().ItemSpacing.X, pad.Y);

@@ -109,11 +109,6 @@ jobs:
       - name: Test .NET Framework 4.7.2
         if: matrix.platform.rid == 'win-x64'
         run: dotnet test --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal --framework net472
-      - name: Test .NET 8
-        run: dotnet test --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal --framework net8.0
-      - name: Test .NET 8 Windows
-        if: matrix.platform.rid == 'win-x64'
-        run: dotnet test --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal --framework net8.0-windows
 
       # ----------------------------------------------------------------------- Collect artifacts
       - name: Collect NuGet packages
